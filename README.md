@@ -1,17 +1,27 @@
 # AI Property Maintenance Advisor
 
-**Photograph a data plate, get a cited service brief, or a straight answer that
-there is no reliable one.** A short term rental owner ninety miles from the
-property can describe a symptom and nothing else. This reads the equipment data
-plate from a photo, searches manufacturer and dealer documentation live, and
-hands the technician a brief where every claim carries a citation and an honest
-label saying how good the source is.
+**Photograph a data plate, get a cited service brief for that exact model.**
 
-The interesting part is what it does when it cannot find one. A maintenance tool
-that invents a plausible repair is worse than no tool, because the cost of a
-confident wrong answer lands on someone standing in front of live equipment. So
-NO RELIABLE ANSWER is a first class output, and it is enforced in validation
-code rather than requested in a prompt.
+When a short term rental owner lives ninety miles from the property and the hot
+tub stops working, the guest can only describe the problem and read out an
+error code. A technician gets called, inspects the panel, looks up the code,
+identifies the model, and diagnoses the fault. Often that first visit is spent
+working out which part is needed, and the part is ordered or fetched on a second
+one. Aberdeen Group research, widely cited across field service, puts about 51
+percent of repeat visits down to a missing or wrong part.
+
+None of that information is hard to find. The code is on the panel, the model is
+on the data plate, and the manufacturer publishes what the code means. It is all
+available and it is never in the same place at the same time as the person who
+needs it. So this reads the data plate from a photo, searches the manufacturer
+documentation live, and uses generative AI to write a brief for that exact
+model, where every claim is cited back to the document it came from.
+
+The interesting part is what it does when the documentation does not support an
+answer. A maintenance tool that invents a plausible repair is worse than no
+tool, because the cost of a confident wrong answer lands on someone standing in
+front of live equipment. So NO RELIABLE ANSWER is a first class output, enforced
+in validation code rather than requested in a prompt.
 
 ## Two pages, one URL
 
@@ -63,10 +73,9 @@ record and the evidence.
 
 ## Status
 
-**Zero real users.** This is a validation instrument built to answer one
-question, and the question is still open: does a cited brief change what a
-technician brings to the job. Every number in the teardown describes how
-carefully it was built, not whether it works for anyone.
+This is a validation instrument, built to answer one question: does a cited
+brief change what a technician brings to the job. No technician has used it
+yet, and answering that is the next step rather than a footnote.
 
 ## License
 

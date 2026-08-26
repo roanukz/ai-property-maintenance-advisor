@@ -38,13 +38,23 @@
         <p class="eyebrow">Product teardown</p>
         <h1>AI Property Maintenance Advisor</h1>
         <p class="lede">
-          A short term rental owner is ninety miles from the property when the
-          hot tub stops heating. They can describe the symptom and nothing else,
-          so the technician drives out, looks at the panel, and drives back for
-          the part. I built a tool that reads the equipment data plate from a
-          photo, searches the documentation live, and hands the technician a
-          brief where every claim carries a citation. The interesting part is
-          what it does when it cannot find one.
+          When a short term rental owner lives ninety miles from the property
+          and the hot tub stops working, the guest can only describe the
+          problem and read out an error code. A technician gets called, inspects
+          the panel, looks up the code, identifies the model, and diagnoses the
+          fault. Often that first visit is spent working out which part is
+          needed, and the part is ordered or fetched on a second one.
+        </p>
+        <p class="lede">
+          What made me build this is that none of that information is hard to
+          find. The code is on the panel, the model is on the data plate, and
+          the manufacturer publishes what the code means. It is all available
+          and it is never in the same place at the same time as the person who
+          needs it. So I built a tool that reads the data plate from a photo,
+          searches the manufacturer documentation live, and uses generative AI
+          to write a brief for that exact model, where every claim is cited back
+          to the document it came from. The interesting part is what it does
+          when the documentation does not support an answer.
         </p>
         <p class="byline">
           Roanuk Zaman &middot; Product teardown of a tool I designed, directed
@@ -58,23 +68,37 @@
 
         <div class="facts">
           <div class="fact">
-            <span class="fact-value">1 day</span>
-            <span class="fact-label">From written spec to a tested build, deliberately</span>
+            <span class="fact-value">51%</span>
+            <span class="fact-label"
+              >Of repeat service visits trace to a missing or wrong part, in
+              Aberdeen Group research widely cited across field service. An
+              information problem before it is a skills problem</span
+            >
           </div>
           <div class="fact">
-            <span class="fact-value">31</span>
-            <span class="fact-label">Defects found by reviewing my own build adversarially, before shipping</span>
+            <span class="fact-value">1 in 4</span>
+            <span class="fact-label"
+              >Service calls need at least one follow up visit, on the same
+              research</span
+            >
           </div>
           <div class="fact">
-            <span class="fact-value">6 of 6</span>
-            <span class="fact-label">Acceptance cases passed, including refusing to answer about a model that does not exist</span>
+            <span class="fact-value">1.6</span>
+            <span class="fact-label"
+              >Further visits it takes on average to close a job that was not
+              fixed the first time</span
+            >
           </div>
           <div class="fact">
-            <span class="fact-value">Zero</span>
-            <span class="fact-label">Technicians have used it. The question it was built to ask is still open</span>
+            <span class="fact-value">Every claim</span>
+            <span class="fact-label"
+              >Cited to a document the tool actually fetched, labeled
+              manufacturer, dealer, or forum</span
+            >
           </div>
         </div>
-      </div>
+        </div>
+      
     </header>
 
     <div class="wrap layout">
@@ -120,10 +144,12 @@
               unflattering.
             </li>
             <li>
-              <strong>I reviewed my own build adversarially before shipping</strong>
-              and it found thirty one real defects, including one that would
-              have failed intermittently on exactly the cases the product exists
-              for.
+              <strong>I reviewed the build adversarially before shipping rather
+              than after</strong>, with every finding checked by a second pass
+              whose job was to refute it. It caught a failure that would have
+              hit intermittently on exactly the search heavy cases the product
+              exists for, and which testing the happy path would never have
+              surfaced.
             </li>
             <li>
               <strong>It missed one of its own acceptance criteria and I
@@ -180,6 +206,20 @@
           <div class="evidence">
             <p><strong>Verified.</strong></p>
             <ul>
+              <li>
+                <strong>The failure this addresses is documented and it is an
+                information failure.</strong> Aberdeen Group research, cited
+                widely across field service writing, puts about 51 percent of
+                repeat visits down to a missing or wrong part, against 25
+                percent for technician experience and 13 percent for a job
+                scheduled too short. A quarter of service calls need at least
+                one follow up, and a job not fixed the first time takes about
+                1.6 further visits to close. Stated as I found it: I am citing
+                secondary sources quoting Aberdeen rather than the original
+                report, which I could not reach.
+                <a href="https://delight.ai/blog/ai-for-cx/how-to-prevent-second-truck-rolls-in-field-service">Source</a>,
+                <a href="https://www.industrility.com/blog/first-time-fix-rate-repeat-repairs/">second source</a>.
+              </li>
               <li>
                 The operations tools in this category track the schedule, not the
                 house. One of the leading products stores make, model, and serial
@@ -338,7 +378,7 @@
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>Each brief costs money and takes a minute or two, and quality depends on what is public.</span></li>
-              <li><span class="k">Bought</span><span>A working product in a day instead of a data acquisition project with no end date.</span></li>
+              <li><span class="k">Bought</span><span>A working, testable product instead of a data acquisition project with no end date.</span></li>
             </ul>
           </div>
 
@@ -521,7 +561,7 @@
 
           <h3>Honest limits of this write up</h3>
           <ul>
-            <li>Zero real users. Every number here describes how carefully it was built, not whether it works for anyone.</li>
+            <li>No technician has used it yet. Everything here describes the build and the documented failure it targets, not a measured result, and the next step is the one that changes that.</li>
             <li>The demo is recorded, not live, so you are seeing real output but not exercising the system.</li>
             <li>The property, the owner, and the commercial detail are genericized. The equipment and the retrieved documentation are real and unaltered.</li>
           </ul>
