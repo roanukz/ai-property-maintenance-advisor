@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Property Maintenance Advisor: A Product Teardown</title>
+    <meta
+      name="description"
+      content="The product thinking behind a tool that reads an equipment data plate, searches documentation live, and returns a cited service brief: the job, the evidence, five decisions, and the one where refusing to answer is the feature."
+    />
+    <meta property="og:title" content="AI Property Maintenance Advisor: A Product Teardown" />
+    <meta
+      property="og:description"
+      content="A tool that tells a technician what is wrong with a hot tub before they drive out, or says plainly that it does not know. The product thinking behind it."
+    />
+    <meta property="og:url" content="https://roanukz.github.io/ai-property-maintenance-advisor/" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="src/tokens.css" />
+    <link rel="stylesheet" href="src/teardown.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231f6379'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='sans-serif'%3E%3F%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <nav class="topbar" aria-label="Site">
+      <div class="wrap">
+        <a href="tool.html">See the demo &rarr;</a>
+        <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">View source</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Product teardown</p>
+        <h1>AI Property Maintenance Advisor</h1>
+        <p class="lede">
+          A short term rental owner is ninety miles from the property when the
+          hot tub stops heating. They can describe the symptom and nothing else,
+          so the technician drives out, looks at the panel, and drives back for
+          the part. I built a tool that reads the equipment data plate from a
+          photo, searches the documentation live, and hands the technician a
+          brief where every claim carries a citation. The interesting part is
+          what it does when it cannot find one.
+        </p>
+        <p class="byline">
+          Roanuk Zaman &middot; Product teardown of a tool I designed, directed
+          and shipped
+        </p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="tool.html">See the demo &rarr;</a>
+          <a class="btn btn-secondary" href="https://github.com/Roanukz/ai-property-maintenance-advisor">View the source</a>
+        </div>
+
+        <div class="facts">
+          <div class="fact">
+            <span class="fact-value">1 day</span>
+            <span class="fact-label">From written spec to a tested build, deliberately</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">31</span>
+            <span class="fact-label">Defects found by reviewing my own build adversarially, before shipping</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">6 of 6</span>
+            <span class="fact-label">Acceptance cases passed, including refusing to answer about a model that does not exist</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">Zero</span>
+            <span class="fact-label">Technicians have used it. The question it was built to ask is still open</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap layout">
+      <nav class="toc" aria-label="Contents">
+        <p class="toc-title">Contents</p>
+        <ol>
+          <li><a href="#tldr">Summary</a></li>
+          <li><a href="#problem">1. The problem</a></li>
+          <li><a href="#evidence">2. What I actually know</a></li>
+          <li><a href="#refusal">3. The decision that shapes the rest</a></li>
+          <li><a href="#built">4. What I built</a></li>
+          <li><a href="#results">5. What the run showed</a></li>
+          <li><a href="#next">6. What I would do next</a></li>
+          <li><a href="#cut">7. What I cut</a></li>
+          <li><a href="#method">Appendix. Method made visible</a></li>
+        </ol>
+      </nav>
+
+      <main id="main">
+        <section id="tldr" class="tldr">
+          <p class="section-kicker">The short version</p>
+          <h2>Summary</h2>
+          <ul>
+            <li>
+              <strong>The job is not diagnosis, it is packing the van.</strong>
+              A technician who knows the model and the documented failure brings
+              the part. One who knows only "it is not heating" brings a guess
+              and sometimes a second visit.
+            </li>
+            <li>
+              <strong>Refusing to answer is the feature.</strong> A maintenance
+              tool that invents a plausible repair is worse than no tool,
+              because the cost of a confident wrong answer lands on someone
+              standing in front of live equipment. The tool has a NO RELIABLE
+              ANSWER state, and it is enforced in code rather than requested in
+              a prompt.
+            </li>
+            <li>
+              <strong>Every claim carries a citation and an honest label.</strong>
+              Sources are tiered manufacturer, dealer, or forum, and a dealer
+              page stays labeled dealer even when it is the best thing found.
+              The label is only worth something if it is allowed to be
+              unflattering.
+            </li>
+            <li>
+              <strong>I reviewed my own build adversarially before shipping</strong>
+              and it found thirty one real defects, including one that would
+              have failed intermittently on exactly the cases the product exists
+              for.
+            </li>
+            <li>
+              <strong>It missed one of its own acceptance criteria and I
+              published that</strong> rather than changing a setting to make the
+              number. The setting that buys the speed is the setting that buys
+              the refusal.
+            </li>
+            <li>
+              <strong>What it has not done is meet a technician.</strong> This is
+              a validation instrument built to ask one question, and the question
+              is still open.
+            </li>
+          </ul>
+        </section>
+
+        <section id="problem">
+          <p class="section-kicker">Part 1</p>
+          <h2>The problem</h2>
+          <p>
+            The property is an eight bedroom lake rental with a hot tub, two
+            HVAC systems, a septic system, and a dock. The owner lives ninety
+            miles away. When something breaks, the report arrives as a sentence
+            from a guest or a cleaner: the hot tub is not heating, the upstairs
+            is warm.
+          </p>
+          <p>
+            That sentence is everything the technician gets. It does not carry
+            the model, the age of the unit, the code on the panel, or what was
+            tried the last time this happened. So the first visit is often
+            diagnostic rather than corrective, and the part comes on the second
+            one.
+          </p>
+          <p class="jtbd">
+            <strong>The job:</strong> when equipment fails at a property I am not
+            at, help me tell whoever is going to fix it what this thing is and
+            what the documentation says about this symptom, so they arrive with
+            the right part instead of finding out what they need.
+          </p>
+          <p>
+            Note the shape of that job. It is not "diagnose the fault." Nobody
+            standing ninety miles away, and no tool, should be doing that. It is
+            "carry the documentation to the person who can."
+          </p>
+        </section>
+
+        <section id="evidence">
+          <p class="section-kicker">Part 2</p>
+          <h2>What I actually know</h2>
+          <p>
+            I want to be careful here, because the honest version of this
+            section is shorter than the flattering version.
+          </p>
+
+          <div class="evidence">
+            <p><strong>Verified.</strong></p>
+            <ul>
+              <li>
+                The operations tools in this category track the schedule, not the
+                house. One of the leading products stores make, model, and serial
+                as fields and does nothing further with them. The data is already
+                being collected and is not being used.
+              </li>
+              <li>
+                Manufacturer error code tables for this equipment exist publicly
+                and are findable. The Sundance 880 series documentation the tool
+                retrieves is real, and so is the family match.
+              </li>
+              <li>
+                A competing tool in the adjacent workflow is free at one property
+                and pays the cleaner. Anything that asks a vendor to do more work
+                for no money is competing against that.
+              </li>
+            </ul>
+          </div>
+
+          <div class="evidence">
+            <p><strong>Inferred, and worth saying so.</strong></p>
+            <ul>
+              <li>
+                That a cited brief reduces second visits. This is the thesis. It
+                is not measured, and the whole build exists to test it.
+              </li>
+              <li>
+                That owners will photograph a data plate. It takes ten seconds,
+                but nobody has been asked to do it yet.
+              </li>
+            </ul>
+          </div>
+
+          <div class="evidence">
+            <p><strong>Not known.</strong></p>
+            <ul>
+              <li>
+                Whether a technician changes what they load in the van because a
+                brief told them to. That is the question. One tradesperson
+                answering it converts this from a build into a finding.
+              </li>
+            </ul>
+          </div>
+
+          <p class="callout callout-notice">
+            The demand signal I found while researching pointed somewhere
+            slightly different from where I started: local forums are full of
+            owners asking <em>who to call</em>, not what is wrong. Discovery, not
+            dispatch. I noted it, kept building the narrower thing, and left the
+            larger question open rather than quietly redefining the product to
+            match the evidence I happened to find.
+          </p>
+        </section>
+
+        <section id="refusal">
+          <p class="section-kicker">Part 3</p>
+          <h2>The decision that shapes the rest</h2>
+          <p>
+            Every other decision in this build follows from one: <strong>the
+            tool is allowed to say it does not know, and that is a success
+            state, not an error.</strong>
+          </p>
+          <p>
+            The reasoning is about where the cost of being wrong lands. A search
+            engine that returns a bad result wastes a few seconds. A maintenance
+            tool that returns a confident, wrong, plausible looking repair
+            instruction sends someone to open an equipment bay on live
+            electrical, or to order a part that was never the problem. The
+            asymmetry is not close.
+          </p>
+          <p>
+            So the product has a NO RELIABLE ANSWER state, and it is not a
+            fallback for when things break. It is a first class output with its
+            own layout, showing what was searched, what was found, and why that
+            was not enough. In the demo you can trigger it deliberately, because
+            a guarantee you cannot watch fail is not a guarantee.
+          </p>
+          <p class="pullquote">
+            A tool that is right most of the time and silent about which times is
+            not a tool a technician can use.
+          </p>
+        </section>
+
+        <section id="built">
+          <p class="section-kicker">Part 4</p>
+          <h2>What I built</h2>
+          <p>
+            Photograph the plate, confirm what was read, get a brief. Two model
+            calls and no database. The decisions worth defending are below.
+          </p>
+
+          <div class="decision">
+            <span class="decision-num">Decision 1</span>
+            <h3>The refusal lives in code, not in the prompt</h3>
+            <p class="decision-risk">Risk addressed: trust</p>
+            <p>
+              I could have written "refuse when sources are insufficient" in the
+              instructions and trusted it. Instead the response passes through
+              validation that clears any candidates and any suggested steps when
+              the state is NO RELIABLE ANSWER, whatever the model returned.
+              Seventeen tests hold that behavior with no API key and no network,
+              so the guarantee is testable on a laptop offline.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Cost</span><span>More code, and a schema the model must satisfy exactly.</span></li>
+              <li><span class="k">Bought</span><span>The promise holds on a bad day, when the model is having one.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Decision 2</span>
+            <h3>Label every source honestly, including when the honest label is weak</h3>
+            <p class="decision-risk">Risk addressed: trust, and usefulness</p>
+            <p>
+              Sources are tiered manufacturer, dealer, or forum, and the rule is
+              that a dealer blog stays labeled dealer even when it is the best
+              source found. If everything located is forum content, the brief
+              says so at the top rather than burying it. A reader who cannot
+              tell an owner's manual from a stranger's guess is not better off
+              for having both.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Cost</span><span>Some briefs look thinner than a tool that quietly promoted its sources.</span></li>
+              <li><span class="k">Bought</span><span>The label means something, so a technician can weigh it.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Decision 3</span>
+            <h3>An observed code stops the search from widening</h3>
+            <p class="decision-risk">Risk addressed: usefulness</p>
+            <p>
+              If the reported symptom includes a code visible on the panel, that
+              code overrides symptom matching and the tool returns one confirmed
+              candidate instead of a list. Same equipment, same model: the vague
+              symptom returns six documented possibilities, and the observed code
+              returns one. A list of six is research. One is a part number.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Cost</span><span>A misread code produces a confident single answer, so the brief tells the reader to confirm it on the unit.</span></li>
+              <li><span class="k">Bought</span><span>The difference between a technician researching and a technician packing.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Decision 4</span>
+            <h3>Search at the moment of the question, instead of building a corpus first</h3>
+            <p class="decision-risk">Risk addressed: feasibility</p>
+            <p>
+              The earlier design pre parsed manuals into a knowledge pack, and
+              its own notes concluded that acquiring primary sources at scale was
+              the open problem. That is a warehouse to build before answering a
+              single question. Searching live at request time inverted it: the
+              corpus becomes a byproduct of questions people actually asked, and
+              every lookup is logged for exactly that purpose.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Cost</span><span>Each brief costs money and takes a minute or two, and quality depends on what is public.</span></li>
+              <li><span class="k">Bought</span><span>A working product in a day instead of a data acquisition project with no end date.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Decision 5</span>
+            <h3>Never diagnose. Carry documentation instead.</h3>
+            <p class="decision-risk">Risk addressed: safety, and liability</p>
+            <p>
+              The brief never states a cause. It lists documented candidates,
+              each with the documented meaning, the documented action, who should
+              do it, and why it surfaced. Suggested first steps must be
+              documented, safe for an untrained person, and actually actionable,
+              which rules out "call a professional" as a step. Anything
+              electrical or heat related is flagged and sorted to the top.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Cost</span><span>Reads as less impressive than a tool that names the fault.</span></li>
+              <li><span class="k">Bought</span><span>It stays inside what the sources support, which is the only place it has any authority.</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="results">
+          <p class="section-kicker">Part 5</p>
+          <h2>What the run showed</h2>
+          <p>
+            Six acceptance cases, defined in the spec before the build. All six
+            passed on content. One criterion did not.
+          </p>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Case</th><th>Expected</th><th>Result</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Legible plate</td><td>Read all four fields</td><td class="yes">All four, high confidence</td></tr>
+                <tr><td>Illegible plate</td><td>Return empty, not guesses</td><td class="yes">Model, serial and date all empty</td></tr>
+                <tr><td>Hot tub, vague symptom</td><td>Cited candidates, filter and water level checks</td><td class="yes">Six candidates, seven sources</td></tr>
+                <tr><td>Hot tub, code on panel</td><td>One confirmed candidate, not a list</td><td class="yes">Exactly one</td></tr>
+                <tr><td>HVAC, different category</td><td>Grounded, or a clean partial</td><td class="yes">Grounded, and invented no error codes for a category that does not display them</td></tr>
+                <tr><td>A model that does not exist</td><td>NO RELIABLE ANSWER</td><td class="yes">Refused, with its search trail</td></tr>
+                <tr><td>Any brief, under sixty seconds</td><td>Under 60s</td><td class="no">57 to 117 seconds. Missed on three of four</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The fabricated model case is the one I care about, and it passed for
+            the right reason rather than by luck. The search established that the
+            brand is real and has real manuals, that the model designation does
+            not fit that brand's documented naming, and that generic
+            troubleshooting advice for the brand <em>was available</em>. It
+            declined to use it. Refusing when there is nothing to find is easy.
+            Refusing when there is something adjacent and tempting is the actual
+            behavior under test.
+          </p>
+
+          <p class="callout callout-warning">
+            <strong>On the criterion I missed.</strong> Briefs took fifty seven
+            to one hundred seventeen seconds against a sixty second target. One
+            settings change would have made the number by reducing how much
+            reasoning each brief gets. I did not make it, because that setting is
+            also what buys the refusal behavior, and a brief that arrives in
+            fifty seconds and occasionally invents a repair is a worse product
+            than one that takes ninety and says it does not know. The honest
+            record is that the criterion was wrong, or the product is too slow,
+            and I have not yet earned the right to say which.
+          </p>
+        </section>
+
+        <section id="next">
+          <p class="section-kicker">Part 6</p>
+          <h2>What I would do next</h2>
+          <ol>
+            <li>
+              <strong>Put one brief in front of one technician</strong> and ask a
+              single question: did this change what you would bring. Everything
+              above is process quality. That question is the only one that turns
+              it into evidence, and it needs one tradesperson and an afternoon.
+            </li>
+            <li>
+              <strong>Settle what a tier label describes.</strong> Running it
+              live surfaced a real ambiguity: a manufacturer's manual rehosted on
+              a third party archive currently gets labeled manufacturer, because
+              the document is genuinely the manufacturer's. But a reader scanning
+              badges sees that label next to an unfamiliar host. Document origin
+              or publisher identity, and I have to pick one.
+            </li>
+            <li>
+              <strong>Measure the latency question properly</strong> rather than
+              arguing it from principle. Run the suite at reduced reasoning and
+              see whether the fabricated model case still refuses. If it does,
+              the criterion was right and I was being precious. If it does not, I
+              have a number that justifies the criterion being wrong.
+            </li>
+          </ol>
+        </section>
+
+        <section id="cut">
+          <p class="section-kicker">Part 7</p>
+          <h2>What I cut</h2>
+          <p>
+            The spec named these as out of scope before the build started, which
+            is the only time a cut list is honest:
+          </p>
+          <ul>
+            <li><strong>Accounts, and anything resembling a funnel.</strong> This is a validation instrument. Email capture would have told me nothing about the question.</li>
+            <li><strong>Multi property, and integration with existing operations tools.</strong> Both are real, both are the business rather than the test.</li>
+            <li><strong>Warranty deadline tracking and prevention scheduling.</strong> The most requested adjacent feature, and the one most likely to hide whether the core idea works.</li>
+            <li><strong>The cleaner capture workflow.</strong> The right long term entry point, and a second unproven assumption stacked on the first.</li>
+            <li><strong>A name and any branding.</strong> Deliberately unbranded during the test so nothing rode on presentation.</li>
+          </ul>
+        </section>
+
+        <section id="method">
+          <p class="section-kicker">Appendix</p>
+          <h2>Method made visible</h2>
+
+          <h3>Reviewing my own build adversarially</h3>
+          <p>
+            Before shipping I ran a structured review of the build against its
+            own spec, across three independent lenses: does it match the
+            specification, does it use the platform correctly, and what breaks.
+            Every finding was then checked by a separate pass whose instruction
+            was to refute it. Thirty five claims, thirty one confirmed, four
+            refuted and dropped.
+          </p>
+          <p>The four that mattered:</p>
+          <ul>
+            <li>
+              <strong>An intermittent failure on exactly the cases the product
+              exists for.</strong> A long running search can pause and expect to
+              be resumed. Unhandled, the request would fail after paying for
+              every search, and only on the search heavy briefs, which are the
+              real ones.
+            </li>
+            <li>
+              <strong>Output budgets that ignored how the model actually
+              behaves</strong> and would have truncated a brief mid sentence.
+            </li>
+            <li>
+              <strong>A reassembly bug</strong> where citations split the
+              response into pieces and rejoining them incorrectly corrupted the
+              result.
+            </li>
+            <li>
+              <strong>A script injection hole in the shared brief</strong>, which
+              is the file handed to a third party, and therefore the worst place
+              in the system to have one.
+            </li>
+          </ul>
+          <p>
+            I am including this because the review found things I would not have
+            found by testing the happy path, and because the four refuted claims
+            matter as much as the thirty one confirmed. A review that confirms
+            everything it suspects is not reviewing.
+          </p>
+
+          <h3>What I got wrong</h3>
+          <ul>
+            <li>
+              <strong>I pinned a dependency version from memory instead of
+              checking</strong>, and the build failed on the first compile
+              because the feature I needed did not exist in it.
+            </li>
+            <li>
+              <strong>I ran a production build while the dev server was
+              running</strong>, which corrupted its cache and made every route
+              fail until I cleared it.
+            </li>
+            <li>
+              <strong>One of my own tests was wrong.</strong> It asserted a
+              string never appears, when that string legitimately appears in
+              correctly escaped output. I checked the actual behavior in a
+              browser before changing the assertion, because the tempting move is
+              to edit the test until it goes green.
+            </li>
+          </ul>
+
+          <h3>Honest limits of this write up</h3>
+          <ul>
+            <li>Zero real users. Every number here describes how carefully it was built, not whether it works for anyone.</li>
+            <li>The demo is recorded, not live, so you are seeing real output but not exercising the system.</li>
+            <li>The property, the owner, and the commercial detail are genericized. The equipment and the retrieved documentation are real and unaltered.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <footer class="wrap">
+      <p>
+        Roanuk Zaman. See the <a href="tool.html">recorded demo</a> or the
+        <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">source</a>.
+      </p>
+    </footer>
+  </body>
+</html>

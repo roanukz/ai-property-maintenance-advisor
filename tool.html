@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Property Maintenance Advisor: Recorded Demo</title>
+    <meta
+      name="description"
+      content="A recorded walkthrough of a tool that reads an equipment data plate, searches documentation live, and returns a cited service brief or refuses to answer. Every result here was captured from a real run."
+    />
+    <link rel="stylesheet" href="src/tokens.css" />
+    <link rel="stylesheet" href="src/demo.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231f6379'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='sans-serif'%3E%3F%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <nav class="topbar" aria-label="Site">
+      <div class="wrap">
+        <a href="index.html">&larr; Read the teardown</a>
+        <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">View source</a>
+      </div>
+    </nav>
+
+    <header class="demo-head">
+      <div class="wrap">
+        <p class="eyebrow">Recorded demo</p>
+        <h1>AI Property Maintenance Advisor</h1>
+        <p class="lede">
+          Photograph the data plate on a piece of equipment, say what is wrong,
+          and get back a brief a technician can act on, in which every claim
+          carries a citation and an honest label saying how good the source is.
+          Or get a clear statement that there is no reliable answer.
+        </p>
+
+        <div class="banner" role="note">
+          <p>
+            <strong>Nothing on this page calls an API.</strong> Every result
+            below is the verbatim output of a real run on 18 August 2026,
+            recorded and replayed. That keeps the demo free to visit and free to
+            host, and it means the case that matters most, the one where the
+            tool refuses to answer, is always reachable instead of being
+            something you would have to get lucky to see.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap">
+      <section class="picker" aria-label="Choose a case">
+        <h2 class="picker-title">Pick a case</h2>
+        <div class="case-buttons" role="tablist" id="caseButtons"></div>
+      </section>
+
+      <section class="flow" id="flow" aria-live="polite">
+        <!-- rendered by demo.js -->
+      </section>
+    </main>
+
+    <footer class="demo-foot">
+      <div class="wrap">
+        <p>
+          Roanuk Zaman. The full product reasoning, including the decisions this
+          demo is the evidence for, is in the
+          <a href="index.html">teardown</a>.
+        </p>
+      </div>
+    </footer>
+
+    <script src="src/fixtures.js"></script>
+    <script src="src/demo.js"></script>
+  </body>
+</html>

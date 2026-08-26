@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.DS_Store
+
+# Claude Code local dev config
+.claude/
+
+# Never publish: the running app's key, its request log, or generated briefs
+# from any run other than the recorded demo set.
+.env
+.env.local
+data/

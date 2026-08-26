@@ -1,0 +1,198 @@
+/* ===========================================================================
+   AI Property Maintenance Advisor, recorded demo page.
+
+   Shares tokens.css with the teardown, unchanged, so the essay and the thing
+   it describes read as one product. Role tokens only, never a raw ramp value.
+   =========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.wrap { width: min(72rem, 100% - 2.5rem); margin-inline: auto; }
+
+.skip {
+  position: absolute; left: -9999px;
+  background: var(--surface); color: var(--link);
+  padding: var(--space-8); border-radius: var(--radius);
+}
+.skip:focus { left: var(--space-8); top: var(--space-8); z-index: 10; }
+
+.topbar {
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+  padding: var(--space-12) 0;
+}
+.topbar .wrap { display: flex; gap: var(--space-24); font-size: 0.9375rem; }
+a { color: var(--link); }
+a:hover { color: var(--link-hover); }
+
+/* --- head ---------------------------------------------------------------- */
+
+.demo-head { padding: var(--space-48) 0 var(--space-32); }
+.eyebrow {
+  margin: 0 0 var(--space-8);
+  font-size: 0.8125rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+h1 {
+  margin: 0 0 var(--space-16);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.15; color: var(--text-heading);
+}
+.lede {
+  margin: 0 0 var(--space-24);
+  font-size: 1.1875rem; max-width: 46rem; color: var(--text-body);
+}
+
+.banner {
+  border: 1px solid var(--info-line);
+  border-left: 4px solid var(--info-bar);
+  background: var(--info-tint);
+  color: var(--info-text);
+  border-radius: var(--radius);
+  padding: var(--space-16);
+  max-width: 46rem;
+}
+.banner p { margin: 0; font-size: 0.9375rem; }
+
+/* --- case picker --------------------------------------------------------- */
+
+.picker { margin-bottom: var(--space-32); }
+.picker-title {
+  font-size: 0.8125rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted); margin: 0 0 var(--space-12);
+}
+.case-buttons { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.case-btn {
+  font: inherit; font-size: 0.9375rem;
+  padding: var(--space-12) var(--space-16);
+  min-height: 2.75rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-body);
+  cursor: pointer;
+}
+.case-btn:hover { border-color: var(--border-strong); }
+.case-btn[aria-selected="true"] {
+  background: var(--info-tint);
+  border-color: var(--info-bar);
+  color: var(--info-text);
+  font-weight: 600;
+}
+
+/* --- the replayed flow --------------------------------------------------- */
+
+.flow { padding-bottom: var(--space-64); }
+
+.step {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-24);
+  margin-bottom: var(--space-24);
+}
+.step-label {
+  font-size: 0.8125rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-12);
+}
+.step h3 {
+  margin: 0 0 var(--space-12);
+  font-size: 1.25rem; color: var(--text-heading);
+}
+
+.plate-img {
+  max-width: 100%; width: 28rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  display: block;
+}
+.symptom-quote {
+  margin: var(--space-16) 0 0;
+  padding: var(--space-12) var(--space-16);
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  font-size: 1.0625rem;
+}
+.symptom-quote strong { color: var(--text-heading); }
+
+/* extraction table */
+.fields { width: 100%; border-collapse: collapse; margin-top: var(--space-8); }
+.fields th, .fields td {
+  text-align: left; padding: var(--space-8) var(--space-12);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+.fields th { font-size: 0.875rem; color: var(--text-muted); font-weight: 600; width: 12rem; }
+.fields td { font-family: var(--font-mono); font-size: 0.9375rem; }
+.null-val { color: var(--text-muted); font-family: var(--font-sans); font-style: italic; }
+
+.badge {
+  display: inline-block; font-family: var(--font-sans);
+  font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.1rem var(--space-8); border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+.badge-high { background: var(--success-tint); color: var(--success-text); border-color: var(--success-line); }
+.badge-low { background: var(--warning-tint); color: var(--warning-text); border-color: var(--warning-line); }
+.badge-unreadable { background: var(--notice-tint); color: var(--notice-text); border-color: var(--notice-line); }
+
+.step-note {
+  margin: var(--space-16) 0 0; font-size: 0.9375rem; color: var(--text-muted);
+}
+
+/* the brief itself */
+.brief-frame {
+  width: 100%; height: 40rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  background: var(--white, #fff);
+}
+.brief-actions {
+  display: flex; flex-wrap: wrap; gap: var(--space-12);
+  margin-top: var(--space-12); font-size: 0.9375rem;
+}
+
+.verdict {
+  display: inline-block; font-weight: 700; font-size: 0.8125rem;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.15rem var(--space-8); border-radius: var(--radius);
+  margin-left: var(--space-8);
+}
+.verdict-ok { background: var(--success-tint); color: var(--success-text); }
+.verdict-nra { background: var(--notice-tint); color: var(--notice-text); }
+
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: var(--space-24);
+  margin: var(--space-16) 0 0; padding-top: var(--space-16);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.875rem; color: var(--text-muted);
+}
+.meta-row b { color: var(--text-body); font-weight: 600; }
+
+.demo-foot {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface);
+  padding: var(--space-24) 0;
+  font-size: 0.9375rem; color: var(--text-muted);
+}
+.demo-foot p { margin: 0; }
+
+@media (max-width: 40rem) {
+  .fields th { width: auto; display: block; border: none; padding-bottom: 0; }
+  .fields td { display: block; padding-top: 0; }
+  .brief-frame { height: 32rem; }
+}
