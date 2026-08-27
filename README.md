@@ -1,5 +1,7 @@
 # AI Property Maintenance Advisor
 
+### [Read the product teardown](https://roanukz.github.io/ai-property-maintenance-advisor/) &nbsp;·&nbsp; [See the recorded demo](https://roanukz.github.io/ai-property-maintenance-advisor/tool.html)
+
 **Photograph a data plate, get a cited service brief for that exact model.**
 
 When a short term rental owner lives ninety miles from the property and the hot
@@ -30,9 +32,9 @@ in validation code rather than requested in a prompt.
 | `index.html` | The **product teardown**, the essay documenting the job, the evidence, five decisions, the acceptance run including the criterion it missed, and what I cut. This is the front door. |
 | `tool.html` | The **recorded demo**. Five cases replayed from a real run. |
 
-Deployed: `roanukz.github.io/ai-property-maintenance-advisor/` (teardown) and
-`.../tool.html` (demo). Both pages share `src/tokens.css`, so the essay and the
-thing it describes read as one product.
+Live: **[the teardown](https://roanukz.github.io/ai-property-maintenance-advisor/)** and **[the demo](https://roanukz.github.io/ai-property-maintenance-advisor/tool.html)**. Both pages
+share `src/tokens.css`, so the essay and the thing it describes read as one
+product.
 
 ## The demo makes no API call
 
