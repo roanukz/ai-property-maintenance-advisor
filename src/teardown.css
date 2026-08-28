@@ -6,8 +6,8 @@
    which is the same rule the tool's stylesheet follows.
 
    This page is a long-form essay: no cards, no widgets, no hero image. Every
-   size, space and colour below comes from the token file; the only additions
-   are two roles the core system does not name (a kicker colour and a list
+   size, space and color below comes from the token file; the only additions
+   are two roles the core system does not name (a kicker color and a list
    marker), mapped once here.
    =========================================================================== */
 
@@ -644,7 +644,7 @@ caption {
 }
 
 /* The positioning matrix reads as a grid of verdicts, so the cell values are
-   short words. Colour is never the only signal: the word is the signal. */
+   short words. Color is never the only signal: the word is the signal. */
 .yes {
   color: var(--success-text);
   font-weight: 600;
