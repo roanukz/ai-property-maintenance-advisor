@@ -55,6 +55,20 @@ self contained with no external dependencies. That is not a demo convenience: it
 is the product requirement, since a technician has to open one with no app and
 no login.
 
+## The share card
+
+`og-image.svg` is the source; `og-image.png` is what the meta tags point at.
+Edit the SVG, then re-render at 2x:
+
+```bash
+node -e 'const s=require("sharp"),f=require("fs");s(f.readFileSync("og-image.svg"),{density:288}).resize(2400,1254).png({compressionLevel:9}).toFile("og-image.png")'
+```
+
+The layout is centered on purpose. LinkedIn's profile Featured section ignores
+the 1.91:1 ratio and center crops to roughly a square, so every element sits
+inside a 540px wide center column and survives that crop. Same rule as
+`agent-answer` and `save-the-dates`.
+
 ## Repository
 
 ```

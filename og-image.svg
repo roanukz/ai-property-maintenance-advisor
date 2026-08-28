@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Share card for the TEARDOWN page. The coordinate space is 1200x627 (the Open
+  Graph large-summary ratio); og-image.png is rendered from this file at 2x,
+  2400x1254, because a 1x asset gets scaled up on high-DPI screens and softens.
+  Edit here, not there. Render command is in the README.
+
+  LAYOUT IS CENTERED ON PURPOSE. LinkedIn's profile "Featured" section does not
+  honor the 1.91:1 ratio: it center-crops into a roughly square frame, which
+  throws away half the width. Every element lives inside a 540px-wide center
+  column (x 330..870) so it survives that crop and still reads as a deliberate
+  centered card at full width. Same rule as agent-answer and save-the-dates.
+
+  The illustration is the product's whole argument in one picture: three claims
+  carrying honest source tiers, and a fourth the tool refuses to answer. The
+  refusal is the point, so it gets the same visual weight as the answers.
+
+  Colors are literal values from tokens.css. An SVG cannot read a stylesheet,
+  and this file must not fetch anything. Fonts are a plain system stack.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627">
+
+  <rect width="1200" height="627" fill="#10141a"/>
+
+  <!-- ============ a brief: three cited claims, one refusal ============ -->
+
+  <rect x="450" y="58" width="300" height="222" rx="14" fill="#1b2028" stroke="#3f4653" stroke-width="2"/>
+
+  <!-- unit identity, the line the photo produces -->
+  <rect x="470" y="80" width="150" height="11" rx="5.5" fill="#6f7887"/>
+  <rect x="470" y="99" width="96" height="7" rx="3.5" fill="#2b313b"/>
+
+  <line x1="470" y1="120" x2="730" y2="120" stroke="#2b313b" stroke-width="2"/>
+
+  <!-- claim 1, manufacturer tier -->
+  <rect x="470" y="136" width="132" height="9" rx="4.5" fill="#c8ced7"/>
+  <rect x="614" y="133" width="116" height="15" rx="7.5" fill="#4aa576"/>
+
+  <!-- claim 2, dealer tier -->
+  <rect x="470" y="166" width="150" height="9" rx="4.5" fill="#c8ced7"/>
+  <rect x="632" y="163" width="98" height="15" rx="7.5" fill="#6285e6"/>
+
+  <!-- claim 3, forum tier, honestly labeled even though it is the weakest -->
+  <rect x="470" y="196" width="118" height="9" rx="4.5" fill="#c8ced7"/>
+  <rect x="646" y="193" width="84" height="15" rx="7.5" fill="#cf9722"/>
+
+  <!-- the fourth claim is refused: struck through, no tier, no answer -->
+  <rect x="470" y="234" width="78" height="9" rx="4.5" fill="#3f4653"/>
+  <line x1="464" y1="238.5" x2="554" y2="238.5" stroke="#d96450" stroke-width="3" stroke-linecap="round"/>
+  <text x="730" y="243" text-anchor="end"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="13" font-weight="700" letter-spacing="0.6" fill="#d96450">NO RELIABLE ANSWER</text>
+
+  <!-- ============ type ============ -->
+
+  <text x="600" y="330" text-anchor="middle"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="21" font-weight="700" letter-spacing="3.4" fill="#4c9bb0">PRODUCT TEARDOWN</text>
+
+  <text x="600" y="404" text-anchor="middle"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="700" fill="#f7f8f9">AI Property</text>
+  <text x="600" y="456" text-anchor="middle"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="700" fill="#f7f8f9">Maintenance Advisor</text>
+
+  <rect x="545" y="484" width="110" height="5" rx="2.5" fill="#4c9bb0"/>
+
+  <text x="600" y="535" text-anchor="middle"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="25" font-weight="400" fill="#c8ced7">Every claim cited to a fetched document,</text>
+  <text x="600" y="570" text-anchor="middle"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="25" font-weight="400" fill="#c8ced7">or a plain statement that there is none</text>
+
+</svg>
