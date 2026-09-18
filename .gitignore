@@ -7,6 +7,31 @@ node_modules/
 
 # Never publish: the running app's key, its request log, or generated briefs
 # from any run other than the recorded demo set.
+# v2: data/ is runtime only and never tracked. Replay cassettes are tracked
+# only after Roanuk approves the privacy diff, and only their allowlisted,
+# already public fields.
 .env
 .env.local
 data/
+
+# Python virtualenv and caches for the v2 agent
+.venv/
+__pycache__/
+.pytest_cache/
+.hypothesis/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+*.sqlite
+*.sqlite3
+*.db
+*-wal
+*-shm
+*-journal
+.env.*
+!.env.example

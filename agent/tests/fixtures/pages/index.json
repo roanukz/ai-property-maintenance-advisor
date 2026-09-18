@@ -1,0 +1,30 @@
+{
+  "_about": "Synthetic page texts for Phase 3 tests (PLAN decision 15). Every file here is hand written and synthetic, served only at the example.com URL named below; none is attached to a real URL. Snippet files (.md) stand for Tavily search snippets of the same page.",
+  "pages": [
+    {
+      "file": "optima_880_synthetic_manual.txt",
+      "url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "sha256": "f5543e3fa3d4b35472d5a3dda9cb310c2ca09818f287824131f59e3c6ac095b3",
+      "synthetic": true
+    },
+    {
+      "file": "xr16_synthetic_overview.txt",
+      "url": "https://example.com/synthetic/trane/xr16-overview",
+      "sha256": "6ee0d147937b0a002df10918ba695ffc33e8f55b691303e0c23c7942b7ff2f5d",
+      "synthetic": true
+    },
+    {
+      "file": "flo_raw_synthetic.txt",
+      "url": "https://example.com/synthetic/spa/flo-formatting",
+      "sha256": "9cce051dca359da6a3ad31922d6b7392465fb56ccc516feb97be82f03a6b3ddc",
+      "synthetic": true
+    }
+  ],
+  "snippets": [
+    {
+      "file": "flo_snippet_synthetic.md",
+      "url": "https://example.com/synthetic/spa/flo-formatting",
+      "synthetic": true
+    }
+  ]
+}

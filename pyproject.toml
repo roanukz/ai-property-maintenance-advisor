@@ -1,0 +1,45 @@
+[project]
+name = "property-maintenance-advisor"
+version = "2.0.0.dev0"
+description = "Property Maintenance Advisor v2: a LangGraph agent that turns a data plate and a symptom into a cited service brief, or an explicit NO RELIABLE ANSWER."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Roanuk Zaman" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "langchain==1.4.1",
+    "langchain-core==1.6.3",
+    "langgraph==1.2.11",
+    "langgraph-checkpoint==4.2.0",
+    "langgraph-checkpoint-sqlite==3.1.1",
+    "langgraph-prebuilt==1.1.0",
+    "langchain-anthropic==1.7.2",
+    "anthropic==1.6.0",
+    "langchain-tavily==0.2.18",
+    "langsmith==0.12.6",
+    "networkx==3.6.1",
+    "pydantic==2.13.5",
+]
+
+[project.scripts]
+advisor = "agent.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "pytest-socket==0.8.1",
+    "hypothesis==6.168.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "agent"
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["agent/tests"]
+addopts = "--disable-socket --allow-unix-socket -p pytester -p no:langsmith_plugin"
+pythonpath = ["."]

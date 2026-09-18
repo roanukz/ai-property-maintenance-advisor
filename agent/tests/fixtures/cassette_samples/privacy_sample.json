@@ -1,0 +1,97 @@
+{
+  "_label": "synthetic privacy scanner sample for test_cassettes.py; every value is invented",
+  "planted": [
+    [
+      "email",
+      "Reach the synthetic owner at owner.synthetic@example.com today."
+    ],
+    [
+      "phone",
+      "Call (555) 010-4477 for the synthetic unit."
+    ],
+    [
+      "phone",
+      "Call 5550104477 for the synthetic owner."
+    ],
+    [
+      "phone",
+      "Text +15550104477 after checkout."
+    ],
+    [
+      "street address",
+      "The synthetic unit sits at 123 Example Street near the pool."
+    ],
+    [
+      "street address",
+      "The synthetic guest is at 123 example street this week."
+    ],
+    [
+      "street address",
+      "House 12B, Lakeview Dr is the synthetic rental."
+    ],
+    [
+      "5 digit number",
+      "Synthetic ZIP 90210 next to the gate."
+    ],
+    [
+      "denylist",
+      "Maintained for Synthetic Owner Name by the cleaner."
+    ]
+  ],
+  "planted_values": [
+    {
+      "kind": "number of 5 or more digits",
+      "path": "address.zip",
+      "value": {
+        "address": {
+          "zip": 90210
+        }
+      }
+    },
+    {
+      "kind": "denylist",
+      "path": "Synthetic Owner Name (key)",
+      "value": {
+        "Synthetic Owner Name": {
+          "visits": 3
+        }
+      }
+    }
+  ],
+  "clean": [
+    "Check the filter and the water level before calling a technician.",
+    "https://example.com/item/12345?page=80",
+    "https://example.com/p/5550104477",
+    "AquaRest HU2 Spa Owner's Manual, PN 378100-2 Rev S (Domestic)",
+    "Error 432 means the synthetic plan limit was reached.",
+    "Serial 100915742 is on the synthetic plate.",
+    "Leave the 2 filters in place while the pump runs.",
+    "sha256 3a142b5612345678901ab"
+  ],
+  "clean_values": [
+    {
+      "usage": {
+        "input_tokens": 44250,
+        "output_tokens": 1500
+      }
+    },
+    {
+      "synthesize": [
+        {
+          "usage": {
+            "input_tokens": 13000
+          }
+        }
+      ],
+      "credits": 1,
+      "attempt": 2
+    },
+    {
+      "message": {
+        "usage": {
+          "output_tokens": 30000
+        }
+      }
+    }
+  ]
+}

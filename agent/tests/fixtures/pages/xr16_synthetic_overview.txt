@@ -1,0 +1,8 @@
+SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).
+Served only at https://example.com/synthetic/trane/xr16-overview
+
+Split system outdoor units (synthetic overview)
+
+The XR16 4TTR6036 belongs to the XR16 family of split system outdoor units.
+This synthetic page lists no diagnostic codes for it.
+If the outdoor fan does not spin, have a technician check the capacitor and the contactor.

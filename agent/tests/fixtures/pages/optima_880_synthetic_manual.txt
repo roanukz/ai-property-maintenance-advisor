@@ -1,0 +1,17 @@
+SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).
+Served only at https://example.com/synthetic/sundance/optima-880-manual
+
+Optima 880   Owner Guide (synthetic)
+
+Model overview
+The Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.
+Every 880 Series model shares the same heater and control panel.
+
+Panel messages
+FLO:  The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs.
+If FLO returns after cleaning, call a technician. Do not bypass the flow switch.
+COOL: Water is 20 degrees below the set point.
+ICE:	Water is near freezing; the pumps run to protect the plumbing.
+
+Filter care
+Rinse the filter cartridge every 2 weeks and replace it every 12 months.

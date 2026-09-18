@@ -1,0 +1,136 @@
+{
+  "_about": "Synthetic registry seed for Property Maintenance Advisor v2 (PLAN section 8.12). Every row is synthetic: property labels, serials, dates, warranty terms, service records and maintenance entries are invented for testing. Manufacturer and model names are real only where a row's notes say so; everything else about those rows is synthetic. Citation ids (appliance:<id>, service:<id>, maintenance:<id>) are derived by agent/registry.py at load time.",
+  "properties": [
+    {
+      "id": "prop-a",
+      "label": "Synthetic property A",
+      "synthetic": true
+    },
+    {
+      "id": "prop-b",
+      "label": "Synthetic property B",
+      "synthetic": true
+    }
+  ],
+  "appliances": [
+    {
+      "id": "appl-optima880",
+      "property_id": "prop-a",
+      "category": "hot_tub",
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "SYN-OPT-000001",
+      "purchase_date": "2021-05-28",
+      "install_date": "2021-06-10",
+      "warranty_terms": "Synthetic warranty terms for testing, not the maker's: shell 5 years, equipment 2 years, labor 1 year, all from the install date.",
+      "warranty_source": "synthetic seed entry",
+      "status": "active",
+      "notes": "Real model name; serial, dates and warranty terms are synthetic. Used by SC8 and G3.",
+      "synthetic": true
+    },
+    {
+      "id": "appl-xr16",
+      "property_id": "prop-a",
+      "category": "air_conditioner",
+      "manufacturer": "Trane",
+      "model": "XR16 4TTR6036",
+      "serial": "SYN-TRN-000002",
+      "purchase_date": "2019-04-02",
+      "install_date": "2019-04-15",
+      "warranty_terms": null,
+      "warranty_source": null,
+      "status": "active",
+      "notes": "Real model name (split system AC outdoor unit); serial and dates are synthetic.",
+      "synthetic": true
+    },
+    {
+      "id": "appl-waterheater",
+      "property_id": "prop-b",
+      "category": "water_heater",
+      "manufacturer": "Rheem",
+      "model": "PRO+E50 M2 RH92 CL",
+      "serial": "SYN-RHM-000003",
+      "purchase_date": "2023-08-20",
+      "install_date": "2023-09-01",
+      "warranty_terms": null,
+      "warranty_source": null,
+      "status": "active",
+      "notes": "Proposed third real model, pending the owner's choice (decision 13). Rheem Professional Classic Plus with LeakSense, 50 gallon electric, model PRO+E50 M2 RH92 CL. Checked on 18 September 2026: the maker's product page https://www.rheem.com/product/rheem-professional-classic-plus-with-leaksense-pro-e50-m2-rh92-cl/ lists this model number, capacity and fuel type. Serial and dates are synthetic.",
+      "pending_owner_choice": true,
+      "synthetic": true
+    },
+    {
+      "id": "appl-sx100",
+      "property_id": "prop-b",
+      "category": "dehumidifier",
+      "manufacturer": "Synthetic Appliance Co.",
+      "model": "SX-100 (synthetic)",
+      "serial": "SYN-SX-000004",
+      "purchase_date": "2014-03-11",
+      "install_date": "2014-03-11",
+      "warranty_terms": null,
+      "warranty_source": null,
+      "status": "discontinued",
+      "notes": "Invented maker and model, discontinued, used by SC9. Upgrade options come only from a lookup.",
+      "synthetic": true
+    },
+    {
+      "id": "appl-dishwasher",
+      "property_id": "prop-a",
+      "category": "dishwasher",
+      "manufacturer": "Synthetic Dishware Co.",
+      "model": "SD-200 (synthetic)",
+      "serial": "SYN-SD-000005",
+      "purchase_date": "2022-01-09",
+      "install_date": "2022-01-15",
+      "warranty_terms": null,
+      "warranty_source": null,
+      "status": "active",
+      "notes": "Invented maker and model.",
+      "synthetic": true
+    },
+    {
+      "id": "appl-washer",
+      "property_id": "prop-b",
+      "category": "clothes_washer",
+      "manufacturer": "Synthetic Laundry Co.",
+      "model": "SW-300 (synthetic)",
+      "serial": "SYN-SW-000006",
+      "purchase_date": "2020-10-02",
+      "install_date": "2020-10-05",
+      "warranty_terms": null,
+      "warranty_source": null,
+      "status": "active",
+      "notes": "Invented maker and model.",
+      "synthetic": true
+    }
+  ],
+  "service_records": [
+    {
+      "id": "svc-0001",
+      "appliance_id": "appl-optima880",
+      "date": "2025-11-14",
+      "symptom": "Panel showed FLO and the heater would not run.",
+      "observed_code": "FLO",
+      "work_done": "Cleaned the filter cartridges and topped up the water level; FLO cleared.",
+      "performed_by": "Synthetic technician",
+      "synthetic": true
+    }
+  ],
+  "maintenance_log": [
+    {
+      "id": "mnt-0001",
+      "appliance_id": "appl-dishwasher",
+      "task": "Cleaned the filter assembly",
+      "done_on": "2026-03-01",
+      "synthetic": true
+    },
+    {
+      "id": "mnt-0002",
+      "appliance_id": "appl-washer",
+      "task": "Ran the tub clean cycle",
+      "done_on": "2026-02-15",
+      "synthetic": true
+    }
+  ]
+}

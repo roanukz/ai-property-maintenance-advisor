@@ -1,0 +1,212 @@
+{
+  "cassette_version": 1,
+  "case": "hvac_invented_code",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "SC2 HVAC grounding variant: both drafts carry the invented code HX9, which neither synthetic page prints, so rule 4 fails both and the run ends a forced NO RELIABLE ANSWER; scripted usage is small so the retry is affordable under REPLAY_RUN_CAP_USD; no query, title or page text contains HX9"
+    ],
+    "built_by": "hand written for the Phase 3 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Trane",
+      "model": "XR16 4TTR6036",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "AC not cooling upstairs",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Trane XR16 not cooling"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Trane XR16 outdoor unit troubleshooting"
+              },
+              "id": "call_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 250,
+            "total_tokens": 1250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic Trane XR16 not cooling",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/trane/xr16-overview",
+            "title": "Synthetic XR16 overview",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/trane/xr16-overview\n\nSplit system outdoor units (synthetic overview)\n\nThe XR16 4TTR6036 belongs to the XR16 family of split system outdoor units.\nThis synthetic page lists no d",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/trane/xr16-overview\n\nSplit system outdoor units (synthetic overview)\n\nThe XR16 4TTR6036 belongs to the XR16 family of split system outdoor units.\nThis synthetic page lists no diagnostic codes for it.\nIf the outdoor fan does not spin, have a technician check the capacitor and the contactor.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/hvac_invented_code/decoy-01",
+            "title": "Synthetic decoy 01 (hvac_invented_code)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic Trane XR16 outdoor unit troubleshooting",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/trane/xr16-troubleshooting",
+            "title": "Synthetic XR16 troubleshooting",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document).\nOutdoor unit troubleshooting (synthetic). If the outdoor fan does not spin, have a technician check the capacitor and the contactor. This synthetic page prints no diagnostic codes.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document).\nOutdoor unit troubleshooting (synthetic). If the outdoor fan does not spin, have a technician check the capacitor and the contactor. This synthetic page prints no diagnostic codes.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 6000,
+        "output_tokens": 1200,
+        "total_tokens": 7200
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [
+          {
+            "code": "HX9",
+            "documented_meaning": "Outdoor fan fault.",
+            "documented_action": "Call for service.",
+            "who": "technician",
+            "why_shown": "The AC is not cooling.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "usage": {
+        "input_tokens": 7000,
+        "output_tokens": 1200,
+        "total_tokens": 8200
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [
+          {
+            "code": "HX9",
+            "documented_meaning": "Outdoor fan fault.",
+            "documented_action": "Call for service.",
+            "who": "technician",
+            "why_shown": "The AC is not cooling.",
+            "source_index": 2,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 2,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "no_reliable_answer",
+    "refusal_origin": "forced",
+    "invented_code": "HX9"
+  }
+}

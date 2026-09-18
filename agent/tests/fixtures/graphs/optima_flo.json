@@ -1,0 +1,98 @@
+{
+  "edges": [
+    {
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "code:sundance-spas:880series:FLO",
+      "evidence": "FLO: The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs.",
+      "evidence_sha256": "624e186d0c81c5c44335a901cf257425ac7a2a00323849af99c2f8d45e6b7d34",
+      "kind": "HAS_CODE",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "src": "family:sundance-spas:880series",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    },
+    {
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "family:sundance-spas:880series",
+      "evidence": "The Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.",
+      "evidence_sha256": "8e656b0026d763a2c1d0e720ad8edf4b8dd5cebeaa68fabf9b68e4d4c8863762",
+      "kind": "IN_FAMILY",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "src": "model:sundance-spas:optima880",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    },
+    {
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "family:trane:xr16",
+      "evidence": "The XR16 4TTR6036 belongs to the XR16 family of split system outdoor units.",
+      "evidence_sha256": "dd7c733fb831ca35a89caa137dbf763d5ac8c3defc46d1513ebd7bae34941a8e",
+      "kind": "IN_FAMILY",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/trane/xr16-overview",
+      "src": "model:trane:xr164ttr6036",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    }
+  ],
+  "graph_version": 1,
+  "meta": {
+    "_about": "Synthetic graph fixture for Phase 3 tests (SC7a, route rows 1 to 5). Every edge's evidence is a verbatim span of a synthetic page text in agent/tests/fixtures/pages, served only at an example.com URL; no fact here comes from a real document. The Optima 880 and its 880 Series family carry a HAS_CODE edge for FLO; the Trane XR16 4TTR6036 has a verified IN_FAMILY edge and no code edge, for the top up rows.",
+    "synthetic": true
+  },
+  "nodes": [
+    {
+      "code": "FLO",
+      "code_norm": "FLO",
+      "key": "code:sundance-spas:880series:FLO",
+      "maker": "Sundance Spas",
+      "scope": "880 Series",
+      "type": "code"
+    },
+    {
+      "family": "880 Series",
+      "key": "family:sundance-spas:880series",
+      "maker": "Sundance Spas",
+      "type": "family"
+    },
+    {
+      "family": "XR16",
+      "key": "family:trane:xr16",
+      "maker": "Trane",
+      "type": "family"
+    },
+    {
+      "display_name": "Sundance Spas Optima 880",
+      "key": "model:sundance-spas:optima880",
+      "maker": "Sundance Spas",
+      "model": "Optima 880",
+      "type": "model"
+    },
+    {
+      "display_name": "Trane XR16 4TTR6036",
+      "key": "model:trane:xr164ttr6036",
+      "maker": "Trane",
+      "model": "XR16 4TTR6036",
+      "type": "model"
+    },
+    {
+      "host": "example.com",
+      "key": "source:256ae4b4e398",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "text_sha256": "6ee0d147937b0a002df10918ba695ffc33e8f55b691303e0c23c7942b7ff2f5d",
+      "tier": "dealer",
+      "title": "Synthetic XR16 overview",
+      "type": "source",
+      "url": "https://example.com/synthetic/trane/xr16-overview"
+    },
+    {
+      "host": "example.com",
+      "key": "source:c44472f25c1a",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "text_sha256": "f5543e3fa3d4b35472d5a3dda9cb310c2ca09818f287824131f59e3c6ac095b3",
+      "tier": "dealer",
+      "title": "Synthetic Optima 880 owner guide",
+      "type": "source",
+      "url": "https://example.com/synthetic/sundance/optima-880-manual"
+    }
+  ]
+}

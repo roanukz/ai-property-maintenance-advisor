@@ -1,0 +1,39 @@
+{
+  "_label": "synthetic sample shaped like a v1 lookup, for test_cassettes.py; not a v1 recording",
+  "id": "synthetic0001",
+  "kind": "brief",
+  "input": {
+    "identity": {"manufacturer": "Synthetic Appliance Co.", "model": "SX-100 (synthetic)", "serial": "", "manufacture_date": ""},
+    "symptom": "synthetic symptom: no heat",
+    "prior_notes": "synthetic owner note that must never be copied"
+  },
+  "sources_found": [{"url": "https://maker.example/uncited", "title": "Uncited synthetic result"}],
+  "brief": {
+    "status": "ok",
+    "matched_identity": "Synthetic Appliance Co. SX-100",
+    "observed_code": null,
+    "warranty_caution": {"text": "Synthetic caution about rental use.", "source_index": 2},
+    "happened_before": null,
+    "try_first": [
+      {"step": "Synthetic step citing source 0", "detail": "Synthetic detail.", "safety_flag": true, "source_index": 0},
+      {"step": "Synthetic step citing source 1", "safety_flag": false, "source_index": 1}
+    ],
+    "candidates": [
+      {"code": null, "documented_meaning": "Synthetic meaning citing source 2", "documented_action": "Synthetic action", "who": "anyone", "why_shown": "Synthetic reason", "source_index": 2, "confirmed": false},
+      {"code": "E1", "documented_meaning": "Synthetic meaning citing source 1", "documented_action": "Synthetic action", "who": "technician", "why_shown": "Synthetic reason", "source_index": 1, "confirmed": false}
+    ],
+    "warranty": {
+      "age_statement": "Synthetic age statement.",
+      "cautions": [{"text": "Synthetic cited caution.", "source_index": 0}, {"text": "Synthetic uncited caution.", "source_index": null}],
+      "verify": ["Synthetic item to verify"]
+    },
+    "no_reliable_answer": null,
+    "sources": [
+      {"title": "Synthetic maker manual", "url": "https://maker.example/manual?page=4&utm_source=synthetic", "tier": "manufacturer"},
+      {"title": "Synthetic dealer guide", "url": "https://dealer.example/guide", "tier": "dealer"},
+      {"title": "Synthetic forum thread", "url": "https://forum.example/thread", "tier": "forum"}
+    ]
+  },
+  "share_path": "/synthetic/local/path/never-copied.html",
+  "usage": {"input_tokens": 1000, "output_tokens": 100, "web_searches": 2}
+}

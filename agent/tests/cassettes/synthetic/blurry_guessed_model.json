@@ -1,0 +1,53 @@
+{
+  "cassette_version": 1,
+  "case": "blurry_guessed_model",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "variant of the blurry case: the model guessed text for fields it marked unreadable; only the plate photo hash points at a public file (demo-assets/plate-blurry.jpg)"
+    ],
+    "built_by": "hand written for the Phase 2 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": null,
+    "symptom": "not heating",
+    "plate_sha256": "02a3b463dd0f5dec01227081b49a83aa5cf1915917c463c6fd9881e82e565483"
+  },
+  "read_plate": {
+    "extraction": {
+      "manufacturer": "SUNDANCE SPAS",
+      "model": "OPT1MA 88O",
+      "serial": "1OO9",
+      "manufacture_date": "0?/2014",
+      "confidence": {
+        "manufacturer": "low",
+        "model": "unreadable",
+        "serial": "unreadable",
+        "manufacture_date": "unreadable"
+      }
+    },
+    "usage": {
+      "input_tokens": 2798,
+      "output_tokens": 91,
+      "total_tokens": 2889
+    }
+  },
+  "resume": null,
+  "research": {
+    "script": [],
+    "tool_results": []
+  },
+  "synthesize": [],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "halts_at": "confirm_identity",
+    "extraction_model": null,
+    "research_calls": 0,
+    "synthesize_calls": 0,
+    "search_calls": 0
+  }
+}

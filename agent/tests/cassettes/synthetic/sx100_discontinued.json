@@ -1,0 +1,164 @@
+{
+  "cassette_version": 1,
+  "case": "sx100_discontinued",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the maker Synthetic Appliance Co., the model SX-100 (synthetic), successors, part numbers, prices, queries, example.org/example.com URLs, page text, drafts, usage",
+      "SC9 and maintenance: research route (the graph is empty); one search finds the maker notice (index 0, manufacturer tier through its verified authorship quote), a dealer guide (index 1) and a forum thread (index 2); the draft proposes two successors, SX-200 with a verbatim quote from the notice and SX-300 with a reworded quote from the dealer page; tests edit the draft for their variants"
+    ],
+    "built_by": "hand written for the Phase 4 upgrade and maintenance tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Synthetic Appliance Co.",
+      "model": "SX-100 (synthetic)",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "dehumidifier runs but collects little water",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SX-100 replacement and care"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic SX-100 replacement and care",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/sx/discontinued-notice",
+            "title": "Synthetic SX-100 discontinuation notice",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sx/discontinued-notice\n\nThis synthetic notice is published by Synthetic Appliance Co. for its SX-100 (synthetic) dehumidifier.\nThe SX-100 (synthetic) is discontinued and is rep",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sx/discontinued-notice\n\nThis synthetic notice is published by Synthetic Appliance Co. for its SX-100 (synthetic) dehumidifier.\nThe SX-100 (synthetic) is discontinued and is replaced by the SX-200.\nOwners who want more capacity can also look at the SX-300 in the same synthetic line.\n\nCare schedule\nClean the bucket filter every 3 months.\nReplace the drain hose every 2 years.\nThe SX-200 lists at $349 in this synthetic notice.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://dealer.example.org/synthetic/sx/upgrade-guide",
+            "title": "Synthetic dealer upgrade guide",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/sx/upgrade-guide\n\nDealer notes: we recommend the SX-300 as a replacement for the SX-100 (synthetic).\nClean the bucket filter every 6 months.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/sx/upgrade-guide\n\nDealer notes: we recommend the SX-300 as a replacement for the SX-100 (synthetic).\nClean the bucket filter every 6 months.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://forum.example.org/synthetic/sx/thread-42",
+            "title": "Synthetic forum thread",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://forum.example.org/synthetic/sx/thread-42\n\nA forum member wrote: I clean the bucket filter every month and it runs fine.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://forum.example.org/synthetic/sx/thread-42\n\nA forum member wrote: I clean the bucket filter every month and it runs fine.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 8000,
+        "output_tokens": 1500,
+        "total_tokens": 9500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Clean the bucket filter",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [
+          {
+            "successor_manufacturer": "Synthetic Appliance Co.",
+            "successor_model": "SX-200",
+            "reason": "discontinued",
+            "summary": "The maker names the SX-200 as the replacement.",
+            "source_index": 0,
+            "evidence": "The SX-100 (synthetic) is discontinued and is replaced by the SX-200."
+          },
+          {
+            "successor_manufacturer": "",
+            "successor_model": "SX-300",
+            "reason": "discontinued",
+            "summary": "A dealer recommends the SX-300.",
+            "source_index": 1,
+            "evidence": "The dealer says the SX-300 replaces the SX-100 (synthetic)."
+          }
+        ],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "manufacturer",
+            "authorship_quote": "This synthetic notice is published by Synthetic Appliance Co."
+          },
+          {
+            "source_index": 1,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 2,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "research"
+    ],
+    "upgrade_successors": [
+      "SX-200"
+    ]
+  }
+}

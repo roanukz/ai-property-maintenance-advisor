@@ -1,0 +1,185 @@
+[
+  {
+    "v1_test": 1,
+    "name": "NRA renders no candidates and no try first steps",
+    "verdict": "port",
+    "phase": 4,
+    "node_ids": [
+      "test_validate.py::test_nra_with_empty_lists_is_accepted",
+      "test_render.py::test_nra_renders_banner_without_candidates_or_steps"
+    ],
+    "node_phases": {
+      "test_validate.py::test_nra_with_empty_lists_is_accepted": 2
+    },
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 2,
+    "name": "Misbehaving model's candidates stripped under NRA",
+    "verdict": "port",
+    "phase": 4,
+    "node_ids": [
+      "test_validate.py::test_refusal_clears_candidates_and_steps",
+      "test_render.py::test_refusal_html_omits_invented_candidate_text"
+    ],
+    "node_phases": {
+      "test_validate.py::test_refusal_clears_candidates_and_steps": 2
+    },
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 3,
+    "name": "NRA with malformed searched rejected",
+    "verdict": "port_with_changes",
+    "phase": 2,
+    "node_ids": [
+      "test_schemas.py::test_nra_with_non_list_searched_is_rejected"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 4,
+    "name": "NRA with no explanation block rejected",
+    "verdict": "port",
+    "phase": 2,
+    "node_ids": [
+      "test_validate.py::test_nra_without_explanation_block_is_rejected"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 5,
+    "name": "ok with empty bibliography rejected",
+    "verdict": "port",
+    "phase": 2,
+    "node_ids": [
+      "test_validate.py::test_ok_with_empty_sources_is_rejected"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 6,
+    "name": "Candidate citing a nonexistent source rejected",
+    "verdict": "port",
+    "phase": 2,
+    "node_ids": [
+      "test_citations.py::test_candidate_index_out_of_range_is_rejected"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 7,
+    "name": "Try first step citing a nonexistent source rejected",
+    "verdict": "port",
+    "phase": 2,
+    "node_ids": [
+      "test_citations.py::test_step_index_out_of_range_is_rejected"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 8,
+    "name": "Invalid tier label rejected",
+    "verdict": "port_with_changes",
+    "phase": 2,
+    "node_ids": [
+      "test_schemas.py::test_invalid_tier_label_is_rejected",
+      "test_tiers.py::test_host_ceiling_table"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 9,
+    "name": "javascript: source URL rejected before render",
+    "verdict": "port_with_changes",
+    "phase": 4,
+    "node_ids": [
+      "test_sources.py::test_non_http_retrieved_url_is_not_registered",
+      "test_render.py::test_non_web_url_renders_as_text"
+    ],
+    "node_phases": {
+      "test_sources.py::test_non_http_retrieved_url_is_not_registered": 2
+    },
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 10,
+    "name": "HTML in model output escaped",
+    "verdict": "port",
+    "phase": 4,
+    "node_ids": [
+      "test_render.py::test_all_model_text_escaped"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 11,
+    "name": "JSON recovered from a fenced block",
+    "verdict": "obsolete",
+    "phase": 2,
+    "node_ids": [],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 12,
+    "name": "JSON recovered with no fence",
+    "verdict": "obsolete",
+    "phase": 2,
+    "node_ids": [],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 13,
+    "name": "Response with no JSON fails loudly",
+    "verdict": "port_with_changes",
+    "phase": 2,
+    "node_ids": [
+      "test_graph_retry.py::test_unparseable_synthesis_counts_as_validation_failure"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 14,
+    "name": "Citation split text reassembles",
+    "verdict": "obsolete",
+    "phase": 2,
+    "node_ids": [],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 15,
+    "name": "Confirmed observed code candidate renders as confirmed",
+    "verdict": "port",
+    "phase": 4,
+    "node_ids": [
+      "test_render.py::test_observed_code_confirmed_candidate_renders_confirmed",
+      "test_observed_code.py::test_narrowing_rule",
+      "test_graph_retry.py::test_zero_match_twice_ends_forced_refusal"
+    ],
+    "node_phases": {
+      "test_observed_code.py::test_narrowing_rule": 2,
+      "test_graph_retry.py::test_zero_match_twice_ends_forced_refusal": 2
+    },
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 16,
+    "name": "Warranty cautions keep their citation",
+    "verdict": "port",
+    "phase": 4,
+    "node_ids": [
+      "test_render.py::test_warranty_caution_keeps_citation"
+    ],
+    "approved_obsolete_on": null
+  },
+  {
+    "v1_test": 17,
+    "name": "Bare string warranty caution normalized",
+    "verdict": "port_with_changes",
+    "phase": 2,
+    "node_ids": [
+      "test_schemas.py::test_bare_string_caution_becomes_uncited"
+    ],
+    "approved_obsolete_on": null
+  }
+]

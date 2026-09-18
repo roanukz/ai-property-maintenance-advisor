@@ -1,0 +1,234 @@
+{
+  "cassette_version": 1,
+  "case": "fanout_top_up",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "Parallel branches: run with appliance appl-optima880 against the synthetic graph fixture agent/tests/fixtures/graphs/optima_flo.json; no code is confirmed and the classifier says no_match, so route row 4 runs history, graph_lookup and research (top up limits) in one superstep; the research script asks for three searches, one more than the top up allows; the second search finds the manual the graph already cites, which must be registered once"
+    ],
+    "built_by": "hand written for the Phase 3 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "heater runs but the water stays lukewarm",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Optima 880 lukewarm water"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Optima 880 owner guide"
+              },
+              "id": "call_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Optima 880 heater set point"
+              },
+              "id": "call_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic Optima 880 lukewarm water",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/spa/lukewarm-water",
+            "title": "Synthetic lukewarm water page",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document).\nIf the water stays lukewarm while the heater runs, check that the cover is closed and that the set point is where you expect it.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document).\nIf the water stays lukewarm while the heater runs, check that the cover is closed and that the set point is where you expect it.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/fanout_top_up/decoy-01",
+            "title": "Synthetic decoy 01 (fanout_top_up)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic Optima 880 owner guide",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/sundance/optima-880-manual",
+            "title": "Synthetic Optima 880 owner guide (search copy)",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sundance/optima-880-manual\n\nOptima 880   Owner Guide (synthetic)\n\nModel overview\nThe Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.\nEvery 880 Series ",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sundance/optima-880-manual\n\nOptima 880   Owner Guide (synthetic)\n\nModel overview\nThe Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.\nEvery 880 Series model shares the same heater and control panel.\n\nPanel messages\nFLO:  The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs.\nIf FLO returns after cleaning, call a technician. Do not bypass the flow switch.\nCOOL: Water is 20 degrees below the set point.\nICE:\tWater is near freezing; the pumps run to protect the plumbing.\n\nFilter care\nRinse the filter cartridge every 2 weeks and replace it every 12 months.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic Optima 880 heater set point",
+        "results": [
+          {
+            "url": "https://example.org/replay/fanout_top_up/decoy-02",
+            "title": "Synthetic decoy 02 (fanout_top_up)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 9000,
+        "output_tokens": 1500,
+        "total_tokens": 10500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Check that the cover is closed and the set point is where you expect it",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 1
+          },
+          {
+            "step": "Rinse the filter cartridge",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": null,
+            "documented_meaning": "Heat escapes or the set point is low.",
+            "documented_action": "Close the cover and check the set point.",
+            "who": "anyone",
+            "why_shown": "The water stays lukewarm.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "history",
+      "graph",
+      "research"
+    ],
+    "research_limits": "top_up",
+    "sources": [
+      "https://example.com/synthetic/sundance/optima-880-manual",
+      "https://example.com/synthetic/spa/lukewarm-water"
+    ]
+  },
+  "classifier": [
+    {
+      "structured": {
+        "verdict": "no_match"
+      },
+      "usage": {
+        "input_tokens": 600,
+        "output_tokens": 10,
+        "total_tokens": 610
+      }
+    }
+  ]
+}

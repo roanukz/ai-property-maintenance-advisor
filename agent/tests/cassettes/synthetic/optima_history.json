@@ -1,0 +1,172 @@
+{
+  "cassette_version": 1,
+  "case": "optima_history",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "SC8 and G3: run with appliance appl-optima880, whose seeded synthetic service record service:svc-0001 (2025-11-14) the draft cites in happened_before; the draft's warranty carries its own age_statement, which the schema drops so code writes the age from the registry; the manual page text is the synthetic fixture agent/tests/fixtures/pages/optima_880_synthetic_manual.txt at its example.com URL"
+    ],
+    "built_by": "hand written for the Phase 3 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "panel shows FLO",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "observed_code": "FLO"
+  },
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic Optima 880 FLO panel message"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic Optima 880 FLO panel message",
+        "results": [
+          {
+            "url": "https://example.org/replay/optima_history/decoy-01",
+            "title": "Synthetic decoy 01 (optima_history)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          },
+          {
+            "url": "https://example.com/synthetic/sundance/optima-880-manual",
+            "title": "Synthetic Optima 880 owner guide",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sundance/optima-880-manual\n\nOptima 880   Owner Guide (synthetic)\n\nModel overview\nThe Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.\nEvery 880 Series ",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/sundance/optima-880-manual\n\nOptima 880   Owner Guide (synthetic)\n\nModel overview\nThe Optima 880 is part of the 880 Series of hot tubs in this synthetic guide.\nEvery 880 Series model shares the same heater and control panel.\n\nPanel messages\nFLO:  The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs.\nIf FLO returns after cleaning, call a technician. Do not bypass the flow switch.\nCOOL: Water is 20 degrees below the set point.\nICE:\tWater is near freezing; the pumps run to protect the plumbing.\n\nFilter care\nRinse the filter cartridge every 2 weeks and replace it every 12 months.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/optima_history/decoy-02",
+            "title": "Synthetic decoy 02 (optima_history)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 8000,
+        "output_tokens": 1500,
+        "total_tokens": 9500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": {
+          "matches": true,
+          "record_id": "service:svc-0001",
+          "summary": "The same panel message appeared before, and cleaning the filter cleared it."
+        },
+        "try_first": [
+          {
+            "step": "Clean or replace the filter cartridge",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 1
+          }
+        ],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "The heater senses no water flow.",
+            "documented_action": "Clean or replace the filter cartridge, then check that the circulation pump runs.",
+            "who": "anyone",
+            "why_shown": "The owner confirmed FLO on the panel.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": "FLO: The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs."
+          }
+        ],
+        "warranty": {
+          "cautions": [],
+          "verify": [
+            "Check the terms against your own warranty document."
+          ],
+          "age_statement": "SCRIPTED AGE: the model says this unit is 11 years old."
+        },
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "history",
+      "research"
+    ],
+    "happened_before_record_id": "service:svc-0001",
+    "edges": [
+      {
+        "kind": "HAS_CODE",
+        "code": "FLO",
+        "source_url": "https://example.com/synthetic/sundance/optima-880-manual"
+      }
+    ]
+  }
+}

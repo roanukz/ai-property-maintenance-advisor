@@ -1,0 +1,126 @@
+{
+  "cassette_version": 1,
+  "case": "sx100_graph_top_up",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the maker Synthetic Appliance Co., the model SX-100 (synthetic), successors, part numbers, prices, queries, example.org/example.com URLs, page text, drafts, usage",
+      "SC9 graph half: run against a graph built from agent/tests/fixtures/discontinued.json holding a verified SUPERSEDED_BY edge (SX-100 (synthetic) to SX-200, from the maker notice) and a verified PART_DISCONTINUED edge (FK-10, from the parts notice); the graph documents no code, so route row 4 tops up with research, which finds only the dealer guide; graph_lookup registers the notice first (index 0) and the dealer guide is index 1; the draft cites only the dealer guide and proposes no upgrade, so every upgrade option in the brief comes from upgrade_check"
+    ],
+    "built_by": "hand written for the Phase 4 upgrade and maintenance tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Synthetic Appliance Co.",
+      "model": "SX-100 (synthetic)",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "dehumidifier runs but collects little water",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SX-100 low water collection"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic SX-100 low water collection",
+        "results": [
+          {
+            "url": "https://dealer.example.org/synthetic/sx/upgrade-guide",
+            "title": "Synthetic dealer upgrade guide",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/sx/upgrade-guide\n\nDealer notes: we recommend the SX-300 as a replacement for the SX-100 (synthetic).\nClean the bucket filter every 6 months.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/sx/upgrade-guide\n\nDealer notes: we recommend the SX-300 as a replacement for the SX-100 (synthetic).\nClean the bucket filter every 6 months.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 8000,
+        "output_tokens": 1500,
+        "total_tokens": 9500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Clean the bucket filter",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 1
+          }
+        ],
+        "candidates": [],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "history",
+      "graph",
+      "research"
+    ],
+    "upgrade_successors": [
+      "SX-200",
+      "SX-200"
+    ]
+  }
+}

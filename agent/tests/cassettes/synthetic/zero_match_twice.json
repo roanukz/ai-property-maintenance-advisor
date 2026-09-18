@@ -1,0 +1,513 @@
+{
+  "cassette_version": 1,
+  "case": "zero_match_twice",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "the symptom reports FLO and neither draft has a FLO candidate",
+      "resume (synthetic): the typed identity pauses because the symptom's FLO is only a guess until the owner confirms it; the owner confirms FLO"
+    ],
+    "built_by": "hand written for the Phase 2 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Examplecorp",
+      "model": "EX-100",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "panel shows FLO",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": {
+    "identity": {
+      "manufacturer": "Examplecorp",
+      "model": "EX-100",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "observed_code": "FLO"
+  },
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 heater search 1"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 heater search 2"
+              },
+              "id": "call_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 heater search 3"
+              },
+              "id": "call_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 heater search 4"
+              },
+              "id": "call_search_4"
+            }
+          ],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 heater search 5"
+              },
+              "id": "call_search_5"
+            }
+          ],
+          "usage": {
+            "input_tokens": 10600,
+            "output_tokens": 250,
+            "total_tokens": 10850
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 12750,
+            "output_tokens": 250,
+            "total_tokens": 13000
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 retry search 1"
+              },
+              "id": "call_search_10"
+            }
+          ],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 100,
+            "total_tokens": 1100
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 retry search 2"
+              },
+              "id": "call_search_11"
+            }
+          ],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 100,
+            "total_tokens": 1100
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic EX-100 retry search 3"
+              },
+              "id": "call_search_12"
+            }
+          ],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 100,
+            "total_tokens": 1100
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "fetch",
+              "args": {
+                "url": "https://example.com/synthetic/zero_match_twice/retry-page"
+              },
+              "id": "call_fetch_13"
+            }
+          ],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 100,
+            "total_tokens": 1100
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 1000,
+            "output_tokens": 100,
+            "total_tokens": 1100
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 heater search 1",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/doc-1",
+            "title": "Synthetic doc 1",
+            "content": "Synthetic EX-100 service page 1. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 1. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/zero_match_twice/decoy-01",
+            "title": "Synthetic decoy 01 (zero_match_twice)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 heater search 2",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/doc-2",
+            "title": "Synthetic doc 2",
+            "content": "Synthetic EX-100 service page 2. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 2. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/zero_match_twice/decoy-02",
+            "title": "Synthetic decoy 02 (zero_match_twice)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 heater search 3",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/doc-3",
+            "title": "Synthetic doc 3",
+            "content": "Synthetic EX-100 service page 3. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 3. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/zero_match_twice/decoy-03",
+            "title": "Synthetic decoy 03 (zero_match_twice)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 heater search 4",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/doc-4",
+            "title": "Synthetic doc 4",
+            "content": "Synthetic EX-100 service page 4. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 4. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/zero_match_twice/decoy-04",
+            "title": "Synthetic decoy 04 (zero_match_twice)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 heater search 5",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/doc-5",
+            "title": "Synthetic doc 5",
+            "content": "Synthetic EX-100 service page 5. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 5. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/zero_match_twice/decoy-05",
+            "title": "Synthetic decoy 05 (zero_match_twice)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 retry search 1",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/retry-1",
+            "title": "Synthetic retry doc 1",
+            "content": "Synthetic EX-100 service page 50. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 50. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 retry search 2",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/retry-2",
+            "title": "Synthetic retry doc 2",
+            "content": "Synthetic EX-100 service page 51. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 51. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic EX-100 retry search 3",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/retry-3",
+            "title": "Synthetic retry doc 3",
+            "content": "Synthetic EX-100 service page 52. The heater will not start when the high limit has tripped; press the reset.",
+            "raw_content": "Synthetic EX-100 service page 52. The heater will not start when the high limit has tripped; press the reset.",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "fetch",
+        "url": "https://example.com/synthetic/zero_match_twice/retry-page",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/zero_match_twice/retry-page",
+            "raw_content": "Synthetic EX-100 service page 99. The heater will not start when the high limit has tripped; press the reset."
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Check the set point",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": "COOL",
+            "documented_meaning": "Water is well below the set point.",
+            "documented_action": "Follow the documented action for COOL.",
+            "who": "technician",
+            "why_shown": "Matches the reported symptom.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": "ICE",
+            "documented_meaning": "Water is near freezing.",
+            "documented_action": "Follow the documented action for ICE.",
+            "who": "technician",
+            "why_shown": "Matches the reported symptom.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 13000,
+        "output_tokens": 3000,
+        "total_tokens": 16000
+      }
+    },
+    {
+      "attempt": 2,
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Check the set point",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": "COOL",
+            "documented_meaning": "Water is well below the set point.",
+            "documented_action": "Follow the documented action for COOL.",
+            "who": "technician",
+            "why_shown": "Matches the reported symptom.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": "ICE",
+            "documented_meaning": "Water is near freezing.",
+            "documented_action": "Follow the documented action for ICE.",
+            "who": "technician",
+            "why_shown": "Matches the reported symptom.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100,
+        "total_tokens": 1100
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": {
+    "run_cap_usd": 0.15
+  },
+  "expect": {
+    "status": "no_reliable_answer",
+    "refusal_origin": "forced",
+    "observed_code": "FLO"
+  }
+}

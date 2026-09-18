@@ -1,0 +1,97 @@
+{
+  "cassette_version": 1,
+  "case": "flo_graph_repeat",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: identity text, queries, example.org/example.com URLs, page text, drafts, usage",
+      "SC7a and the CLI repeat question: the graph already holds a verified HAS_CODE edge for FLO on the Optima 880 (or its 880 Series family), so route row 1 sends the run to the graph with no search; the research script is empty so any research call fails the run; the draft cites the graph source, index 0, whose page text is the synthetic fixture manual"
+    ],
+    "built_by": "hand written for the Phase 3 graph tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "panel shows FLO",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "observed_code": "FLO"
+  },
+  "research": {
+    "script": [],
+    "tool_results": []
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 5000,
+        "output_tokens": 1200,
+        "total_tokens": 6200
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Clean or replace the filter cartridge",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "The heater senses no water flow.",
+            "documented_action": "Clean or replace the filter cartridge, then check that the circulation pump runs.",
+            "who": "anyone",
+            "why_shown": "The owner confirmed FLO on the panel.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "FLO: The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs."
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "graph"
+    ],
+    "searches": 0,
+    "cited_urls": [
+      "https://example.com/synthetic/sundance/optima-880-manual"
+    ]
+  }
+}

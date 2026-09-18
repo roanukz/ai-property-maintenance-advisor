@@ -1,0 +1,70 @@
+{
+  "cassette_version": 1,
+  "case": "synthetic_sample",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "public_already": null,
+    "synthetic_fields": ["everything: a hand written sample for test_cassettes.py, not a v1 recording"],
+    "built_by": "agent/tests/fixtures/cassette_samples (hand written)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": null,
+    "symptom": "synthetic symptom: unit will not start",
+    "plate_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "read_plate": {
+    "extraction": {
+      "manufacturer": "SYNTHETIC APPLIANCE CO.",
+      "model": "SX-100",
+      "serial": null,
+      "manufacture_date": null,
+      "confidence": {"manufacturer": "high", "model": "high", "serial": "unreadable", "manufacture_date": "unreadable"}
+    },
+    "usage": {"input_tokens": 1000, "output_tokens": 50}
+  },
+  "classifier": [
+    {"structured": {"route": "research"}, "usage": {"input_tokens": 800, "output_tokens": 20}}
+  ],
+  "resume": {
+    "identity": {"manufacturer": "Synthetic Appliance Co.", "model": "SX-100 (synthetic)", "serial": "", "manufacture_date": ""},
+    "observed_code": "E9"
+  },
+  "research": {
+    "script": [
+      {"message": {"content": "", "tool_calls": [{"name": "search", "args": {"query": "sx-100 e9 code"}, "id": "call_s1"}], "usage": {"input_tokens": 2000, "output_tokens": 250}}},
+      {"message": {"content": "", "tool_calls": [{"name": "fetch", "args": {"url": "https://example.com/sx100/manual"}, "id": "call_f1"}], "usage": {"input_tokens": 4150, "output_tokens": 250}}},
+      {"message": {"content": "", "tool_calls": [{"name": "search", "args": {"query": "sx-100 e9 reset"}, "id": "call_s2"}], "usage": {"input_tokens": 4550, "output_tokens": 250}}},
+      {"message": {"content": "done searching", "tool_calls": [], "usage": {"input_tokens": 4600, "output_tokens": 250}}}
+    ],
+    "tool_results": [
+      {"tool": "search", "query": "sx-100 e9 code", "credits": 1, "results": [
+        {"url": "https://example.com/sx100/manual", "title": "SX-100 manual (synthetic)", "content": "E9 means the synthetic sensor is open.", "raw_content": null, "score": 0.9},
+        {"url": "https://example.org/sx100/decoy", "title": "Decoy (synthetic)", "content": "Unrelated synthetic text.", "raw_content": null, "score": 0.5}
+      ]},
+      {"tool": "fetch", "url": "https://example.com/sx100/manual", "credits": 1, "failed_results": [], "results": [
+        {"url": "https://example.com/sx100/manual", "raw_content": "Synthetic manual text. E9 means the synthetic sensor is open."}
+      ]},
+      {"tool": "search", "query": "sx-100 e9 reset", "error": "Error 500: synthetic upstream failure"}
+    ]
+  },
+  "synthesize": [
+    {"attempt": 1, "usage": {"input_tokens": 13000, "output_tokens": 3000}, "draft": {
+      "status": "ok",
+      "matched_identity": "Synthetic Appliance Co. SX-100",
+      "warranty_caution": null,
+      "happened_before": null,
+      "try_first": [{"step": "Turn the synthetic unit off at the breaker", "detail": "", "safety_flag": true, "source_index": 0}],
+      "candidates": [{"code": "E9", "documented_meaning": "Synthetic sensor open", "documented_action": "Check the synthetic sensor", "who": "technician", "why_shown": "Observed code", "source_index": 0, "confirmed": false, "evidence": "E9 means the synthetic sensor is open."}],
+      "warranty": null,
+      "no_reliable_answer": null,
+      "upgrade_options": [],
+      "maintenance_due": [],
+      "source_tiers": [{"source_index": 0, "tier": "manufacturer", "authorship_quote": ""}]
+    }}
+  ],
+  "page_texts": {"https://example.com/sx100/manual": "Synthetic manual text. E9 means the synthetic sensor is open."},
+  "caps": {"run_cap_usd": 0.2},
+  "expect": {"status": "ok", "candidates": 1}
+}
