@@ -642,3 +642,199 @@ live runs, because a change would need new runs to measure.
 **Still waiting on Roanuk:** approval of three v1 tests as obsolete, the privacy
 review of the replay recordings, the third real model in the seed registry, and
 the design decisions listed in the plan.
+
+---
+
+## Open items settled under Roanuk's delegation, 18 September 2026
+
+Roanuk asked Claude to settle the open items itself. Each is recorded here as
+Claude's decision under that delegation, not as Roanuk's own review.
+
+**Decided:**
+- v1 tests 11, 12 and 14 are obsolete. They checked that v1 recovered its JSON
+  from a fenced block, recovered it with no fence, and reassembled text split by
+  citations. v2 receives the brief as structured output from the API, so there
+  is no free text to recover. Gate mode now passes with nothing failing.
+- The Rheem PRO+E50 M2 RH92 CL is the seed registry's third real model. The
+  maker's product page was checked again the same day.
+- The privacy review of the replay scripts built from v1's lookups. The names to
+  look for were taken from the business and place names visible in the private
+  v1 folder's file names, without opening those files, because the PRD forbids
+  reading them. The check read 391 copied strings and found no match, and Claude
+  read every capitalized word in them by hand. The five scripts and the v1 test
+  payloads moved from staging into the tracked test folders, so a fresh clone
+  runs those tests too. Their v1 model text keeps its dashes, stored as escapes,
+  because the published briefs show the same text unedited.
+- The file of API keys Roanuk supplied was moved to the Trash, not deleted. The
+  keys stay in the untracked `.env`.
+- The design questions the live evaluation raised are answered in the next
+  entry.
+
+**Cost:** a list built from file names catches only names that appear in them.
+The copied strings were typed test identities, equipment, symptoms, public URLs
+and brief text already published, so the remaining risk is low.
+
+---
+
+## Five design changes after the live evaluation, 18 September 2026
+
+Each of the first four changes is held by tests, and each test by a planted
+bug it must catch; the fifth changes nothing.
+
+1. **Routing.** A question with no confirmed code is never answered from stored
+   codes alone. The graph answers it with no search only when it holds at least
+   three verified documented causes for the model or its family and the
+   classifier matches the symptom to one of them. Otherwise the graph's facts
+   are topped up by a research pass of at most two searches. A vague symptom has
+   many causes, and one stored code is not an answer to it.
+2. **Documented causes.** The graph gains a fact linking a model to a documented
+   cause and its documented action. It is written only from a validated brief,
+   and only with a verbatim quote from the cited page that shares at least two
+   words with the cause, not counting common words. Lookups that find causes but
+   no codes, as air conditioner lookups usually do, otherwise leave nothing for a
+   repeat to reuse. This changes the graph schema the PRD specifies.
+3. **Whole words.** Page excerpts shown to the model start and end on whole
+   words, stored quotes extend to the ends of their words, and the sources block
+   given to the writer is cut at a word. Cut text had reached a brief and a
+   stored fact.
+4. **Live recordings replay offline.** In replay, grounding reads a cited page's
+   saved text by its hash. Where no text was saved, a live recording reports
+   the check as unverifiable instead of failing it.
+5. **The safety step: no prompt change.** A brief can quote only its cited
+   pages, so it carries a safety step when a cited page has one. Code puts
+   flagged steps first but cannot decide what counts as a safety step without
+   trusting the model.
+
+**Known limits:** a quote that names only a component can pass the two word
+floor for a cause. A stored cause becomes a source for the brief only when no
+code is confirmed.
+
+**Consequence:** these change the routing and what the graph stores, so the
+Phase 5 and Phase 6 results measure a build that no longer exists. The next
+entry supersedes them.
+
+---
+
+## The live evaluation, rerun on the fixed build, 18 September 2026
+
+Roanuk approved the rerun. It ran the schema check, a fresh first lookup of the
+FLO case, the invented model three times, the repeat questions, the two plates,
+and one added run with the seeded hot tub's records attached, each batch after
+its own preflight.
+
+**Superseded:** the Phase 5 and Phase 6 results above come from build
+42a27185d1e87be5, before the design changes. Its run records, graph and registry
+moved to `data/superseded/`, which is not tracked; nothing was deleted, and the
+ledger still counts their $0.2666 against the cap. The rerun started from an
+empty graph. Only the rerun is reported in the README and on the teardown.
+
+**Measured, build 839b1854a0aaf25e, Claude Haiku 4.5 with Tavily:**
+- The invented model was refused three times out of three, each time by the
+  model. Each run used 5 searches and cost $0.0353 to $0.0490.
+- Repeat questions (SC7b) pass on the letter of the bar, 2 searches or fewer,
+  but only one of the three shows memory replacing search. The FLO repeat used 0
+  searches, $0.0082 and 5.2 seconds, against 4 searches, $0.0587 and 51.3
+  seconds for its first lookup; its brief was thinner, with none of the first
+  brief's 4 steps to try first. The vague "not heating" question on the same hot
+  tub took the graph plus a top up: 2 searches, $0.0234. The model asked for 2
+  more searches and 2 more fetches, which the top up limit blocked, and the brief
+  still listed only the stored FLO code, unconfirmed. The Trane first lookup
+  ("AC not cooling upstairs") used 5 searches and stored 3 documented causes. A
+  new symptom on the same unit ("outdoor unit runs but the fan does not spin")
+  then took a top up of 2 searches for $0.0217; the classifier matched none of
+  the 3 stored causes, the limit blocked 1 more search and 2 fetches, and all 3
+  of the brief's causes came from the new searches. The top up limit is what
+  held those two repeats to 2, so they test the limit, not the memory.
+- The clear plate was read exactly. The blurry plate's model, serial and date
+  were marked unreadable instead of guessed.
+- With the seeded hot tub's synthetic records attached, the FLO question used 0
+  searches, cost $0.0065 and took 4.8 seconds. The brief cited the earlier
+  service record and gave the unit's age from its install date.
+- Every run stayed under the $0.15 cap. The most expensive cost $0.0632.
+
+**Found:** the FLO first lookup's brief lists "Turn off power at the breaker"
+as an ordinary step, with no safety flag. Under the fifth design change this is
+the model's call. Whether code should flag steps that cut power is the next
+question.
+
+**Cost:** the rerun spent $0.3241 and 29 Tavily credits. The whole build has
+spent $0.5907 of its $5 cap and 63 Tavily credits of its 150 credit cap.
+
+---
+
+## The recorded v2 demo replaces v1's, 18 September 2026
+
+Roanuk asked for a recorded v2 demo in place of the v1 demo, since the tool has
+been upgraded. The plan had promised to leave the published pages byte for
+byte; his request supersedes that promise for the demo and the teardown only.
+
+**Decided:** `tool.html` now replays eight cases from the fixed build's live
+runs, each named by its run ID and showing what that run returned, unedited:
+the brief it wrote, or for the blurry plate the pause at confirmation. The
+cases are the hot tub's first question, the same question from memory, a vague symptom,
+the air conditioner's first question and a new symptom, the invented model, the
+blurry plate, and the hot tub with its synthetic property records. The page
+still calls no API and loads nothing from another site. A script,
+`agent/replay/build_demo.py`, builds it from the run records and refuses any run
+from a build other than the current one, so the demo cannot quietly show a
+replaced build. The run records it reads are not tracked, so a reader of the
+repository can check each run ID but cannot rebuild the demo.
+
+**Kept:** v1's four published briefs stay where they were, unchanged, as the
+evidence for v1. v1's recorded fixtures, which tests still read, moved to
+`agent/tests/fixtures/v1_fixtures.js`.
+
+**Worth recording:** the review before publishing found the first draft blamed
+blocked calls on the spending cap. They were blocked by the per run limits on
+searches and fetches; every run finished far under its cap. The demo also
+called the air conditioner's second answer one "from memory" although the
+brief used none of the stored causes. Both were corrected before publishing.
+
+---
+
+## The teardown, rewritten for v2, 18 September 2026
+
+Roanuk asked the teardown to explain why he chose LangGraph and LangChain, with
+the benefits and the tradeoffs, why v2 splits the work across two services, and
+what v2 lets owners and technicians do.
+
+**Decided:** the page keeps v1's story (Parts 1 to 4) and adds a part on each
+question: why LangGraph and LangChain, and what each capability buys an owner or
+technician; the two services, with Claude for judgment at the cheapest model
+that can do each step and Tavily for search on its free tier; and seven things
+v2 lets owners and technicians do, each tied to a demo case. It reports only
+the fixed build's live results. The one exception is the build's total spend,
+which also counts the replaced build's runs and says so. The front matter
+follows the house format, now held by `agent/tests/test_teardown.py`.
+
+**Worth recording:** the review found the first draft gave memory credit for
+savings it did not make. Only the hot tub code repeat shows memory replacing
+search. The other two repeats were held to 2 searches by the top up limit. The
+repeat from memory was also thinner than the first answer. The page now says
+all three plainly. The facts strip's second box was changed from that repeat's
+cost to the 180 of 180 validator agreement, so two of four headline numbers do
+not rest on the same favorable run.
+
+---
+
+## v2, summarized on the fixed build, 18 September 2026
+
+This entry replaces "v2, summarized" above, whose results came from the
+replaced build.
+
+**What held:** every v1 guarantee is still enforced in code, and v1's own
+validator agrees with v2's on all 180 test briefs. The invented model was
+refused three times out of three by the model itself. A repeat of a coded
+question was answered from memory with no search for $0.0082, against $0.0587
+for the first lookup, though with a thinner brief. A live run with synthetic
+property records cited the earlier service record and the unit's age. Every
+live run stayed under its $0.15 cap, and the whole build spent $0.59 of its $5.
+
+**What the bar did not show:** the repeat question criterion passes, but two of
+its three repeats were held to 2 searches by the top up limit rather than by
+anything memory supplied. Whether stored causes save searches on a new symptom
+is still untested, because the classifier matched none of them.
+
+**Next:** put one brief in front of a working technician; decide whether code
+should flag steps that cut power; tighten the cause rule so a quote naming only
+a component cannot pass.

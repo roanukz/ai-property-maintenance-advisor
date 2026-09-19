@@ -8,7 +8,9 @@ reworked, and no LIVE phase starts without your typed "proceed".
 
 How to read the evidence citations below:
 
-- `PRD:n` is a line in `docs/PRD-v2.md`.
+- `PRD:n` is a line in the v2 PRD (`docs/PRD-v2.md`), which stays local and is
+  not in this repository because it names the private v1 folder (decision 19,
+  risk R14).
 - `v1 lib/x.ts:n` is a line in the private v1 source. Its location is not
   written in this repository on purpose (see risk R14). Locally it is read from
   the environment variable `V1_BRIEFCASE_DIR`.
@@ -61,7 +63,7 @@ has no row here.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| 1 | **Python environment.** Resolved during Phase 0 at your direction. The uv managed CPython 3.12.14 that the planning pass found at 22:43 was installed by Claude in this session: Homebrew started compiling OpenSSL from source for `uv` (no Intel bottle) and was stopped, then `uv` 0.12.16 was installed from its PyPI wheel into the user site (`~/Library/Python/3.9/bin/uv`), then `uv python install 3.12`, then a `.venv` in the repo. | Keep it. Phase 1 adds `pyproject.toml`, `.python-version` and `uv.lock` (tracked when you ask for a commit). Section 2.2. |
+| 1 | **Python environment.** Resolved during Phase 0 at your direction. The uv managed CPython 3.12.14 that the planning pass found at 22:43 was installed by Claude in this session: Homebrew started compiling OpenSSL from source for `uv` (no Intel bottle) and was stopped, then `uv` 0.12.16 was installed from its PyPI wheel into the user site, then `uv python install 3.12`, then a `.venv` in the repo. | Keep it. Phase 1 adds `pyproject.toml`, `.python-version` and `uv.lock` (tracked when you ask for a commit). Section 2.2. |
 | 2 | **SC1b depends on the private v1 source.** The differential test must load v1 `lib/brief-validate.ts`, which is not in this repo and should not be. | Keep v1 private. The test reads `V1_BRIEFCASE_DIR`, and on a fresh clone it skips with a stated reason. Track only the payload JSON, which uses the fabricated Aquarest model and example domains, and only after it passes the privacy diff and your approval like any cassette (section 8.10). SC1 is then reported as "passes; SC1b ran" or "passes; SC1b skipped, v1 source absent". A skipped SC1b does not meet the Phase 2 gate: the gate run must show SC1b ran on your machine against the v1 source, with the payload count and the difference list (section 10). |
 | 3 | **Three v1 guardrail tests become obsolete** (tests 11, 12 and 14: fence parsing, no fence parsing, citation split reassembly). Test 13 changes meaning. | Approve at the Phase 2 gate as listed in section 6. |
 | 4 | **Schema deltas beyond the two the PRD names.** `budget_stopped` status, source `host`, `retrieved_at`, `origin`, `proposed_tier`, `happened_before.record_id`, and verbatim `evidence` quotes on candidates, upgrade options and maintenance items. | Approve the list in section 7. Each is additive, so v1 payloads validate the same way. |
@@ -179,8 +181,8 @@ Homebrew at `/usr/local/bin/brew`.
 | python.org installer | The last 3.12 binary installer is 3.12.10 (April 2025). Later 3.12 releases are source only. Still needs a lock tool. | Reject |
 | uv standalone installer, then `uv python install 3.12` | uv 0.12.16 ships an `x86_64-apple-darwin` binary and supports macOS 13 as Tier 1. It installs CPython 3.12.14 (build 20260901), built for macOS 10.15 and later. One tool makes the venv, the hashed cross platform `uv.lock`, and runs tests. | **Recommend** |
 
-A uv managed CPython 3.12.14 already exists at
-`~/.local/share/uv/python/cpython-3.12.14-macos-x86_64-none`, created at 22:43
+A uv managed CPython 3.12.14 already exists in uv's managed Python directory,
+created at 22:43
 today by something outside Phase 0. If you installed it, Phase 1 uses it and
 only adds the `uv` binary. Phase 1 commands, for your approval:
 
@@ -192,13 +194,13 @@ only adds the `uv` binary. Phase 1 commands, for your approval:
 
 ### 2.3 Node for SC1b
 
-Node v24.19.0 is at `~/.local/node/bin/node` and is not on PATH. The v1
+Node v24.19.0 is installed in a user local directory and is not on PATH. The v1
 guardrail suite loads `.ts` files through Node's built in type stripping with no
 flags (on by default since Node 23.6.0, stable in 24.12.0, per
 nodejs.org/docs/latest-v24.x/api/typescript.html). A Phase 0 reader ran the v1
 guardrail suite under this Node: 17 PASS, exit 0 (observed); no network and no
 key (established by reading the imports, not observed). The SC1b test finds Node
-through the `NODE_BIN` setting (default `~/.local/node/bin/node`), then PATH, so
+through the `NODE_BIN` setting (default `.local/node/bin/node` under the home directory), then PATH, so
 SC1b actually runs on this machine, and skips with a stated reason if none is
 Node 23.6 or later. In gate mode (`ADVISOR_GATE=2` at the Phase 2 gate) a skip fails the session (section 5).
 
@@ -1529,9 +1531,8 @@ clients change.
 - 1,856 test cases pass offline, gate mode 5 fails only on the obsolete test
   approval, and 795 tracked mutations are all caught.
 
-Keys: on 18 September 2026 you supplied the keys; they are in `.env` (mode 600,
-gitignored). `APIKEYS.rtf` in the repo root is listed in `.git/info/exclude` so
-it cannot be committed by accident; deleting it is recommended.
+Keys: on 18 September 2026 you supplied the keys; they live only in the
+gitignored `.env`.
 
 
 ### 10.7 Phase 5 results (LIVE, 18 September 2026)
@@ -1625,6 +1626,79 @@ Found by the data:
    stored FLO edge carries the same cut text (it is verbatim page text, so the
    span rule passes). Proposed: cut excerpt windows at word boundaries and
    extend a stored span to the end of its word.
+
+### 10.9 Design changes and the fixed build rerun (18 September 2026)
+
+Roanuk delegated the open items to Claude on 18 September 2026 (DECISION-LOG,
+"Open items settled under Roanuk's delegation"): v1 tests 11, 12 and 14 marked
+obsolete, the Rheem row confirmed, the v1 derived cassettes and SC1b payloads
+promoted after a CLEAN privacy diff, and the three findings of 10.8 answered by
+five changes. Sections 8.4 (route table) and the graph schema in section 8 are
+amended by them; where they disagree with this section, this section wins.
+
+| # | Change | Where | Held by |
+|---|---|---|---|
+| D1 | A graph only answer needs a confirmed code with a verified `HAS_CODE` edge (row 1) or, with no confirmed code, at least `GRAPH_ONLY_MIN_CAUSES` (3) verified `DOCUMENTED_CAUSE` edges for the model or family and a classifier match (row 3); any other no-code question on a known model takes row 4 (graph plus a top up of at most 2 searches) | `agent/nodes/route.py`, `agent/nodes/graph_lookup.py` | `test_router.py`, `test_graph_lookup_node.py` |
+| D2 | New node kind `Cause` and edge `DOCUMENTED_CAUSE` (model or family to cause), one per validated candidate with a null code, same stored fields as other edges plus `label` and `action`; the evidence must share at least `CAUSE_MIN_SHARED_WORDS` (2) words with the cause, outside `CAUSE_STOP_WORDS` | `agent/kg.py`, `agent/nodes/persist.py`, `agent/rules/evidence.py` | `test_kg.py`, `test_persist.py`, `test_evidence.py` |
+| D3 | Excerpt windows snap to whitespace; stored spans extend to word ends; `cut_at_word` for the sources block, hard cut kept for unbroken text | `agent/research/excerpts.py`, `agent/rules/evidence.py`, `agent/nodes/synthesize.py` | `test_excerpts.py`, `test_evidence.py`, `test_nodes.py` |
+| D4 | Replay grounding reads saved page text by `text_sha256`; a live recording without saved text reports `unverifiable` | `agent/rules/grounding.py`, `agent/nodes/validate.py`, `agent/live/recorder.py` | `test_grounding.py`, `test_recorder.py`, `test_cassettes.py` |
+| D5 | No prompt change for safety steps | none | none |
+
+Also added: `agent/build_info.py` (a fingerprint of `agent/` without tests,
+written into every run record as `build_id`, so no result can be reported
+without its build), and `anchor_to_target` for table quotes that omit the code
+cell (10.7).
+
+Known limits, not changed: E2, a quote naming only a component can pass the D2
+floor (`test_cause_component_only_quote_passes_known_limit` pins it); P4, a
+stored cause becomes a brief source only when no code is confirmed.
+
+**Rerun (LIVE, build `839b1854a0aaf25e`).** Roanuk approved it. The results in
+10.7 and 10.8 came from build `42a27185d1e87be5` and are superseded (decision
+35): their run records, graph and registry are in `data/superseded/`, the ledger
+keeps their $0.2666, and the rerun started from an empty graph.
+
+| Batch | Result | Detail |
+|---|---|---|
+| Schema check | accepted | $0.0036 |
+| FLO first lookup | ok, verified | research, 4 searches, $0.0587, 51.3 s; wrote 1 `HAS_CODE` edge |
+| SC3b (B4, 3 runs) | **PASS: 3 of 3 refused by the model** | 5 searches each; $0.0490, $0.0353, $0.0487; 35.0 s, 17.0 s, 19.2 s |
+| SC7b | **PASS on the letter: repeats used 0, 2 and 2 searches** | FLO repeat: graph (row 1), 0 searches, $0.0082, 5.2 s, 0 try first steps against 4. "not heating": graph plus top up (row 4), 2 searches, $0.0234, 12.6 s; top up limit blocked 2 searches and 2 fetches; only candidate the stored FLO code, unconfirmed. Trane first lookup: research, 5 searches, $0.0632, 21.4 s, wrote 3 `DOCUMENTED_CAUSE` edges. Trane new symptom: row 4 (classifier unsure), 2 searches, $0.0217, 15.5 s; limit blocked 1 search and 2 fetches; no stored cause used. Row 4's limit of 2 guarantees the bar for any repeat that takes it, so only the FLO repeat measures memory |
+| Plates (E1, E2) | **PASS** | E1 exact, $0.0029; E2 model, serial and date unreadable, $0.0028 |
+| History (seeded hot tub) | ok, verified | history plus graph, 0 searches, $0.0065, 4.8 s; cites `service:svc-0001`; age from the install date 2021-06-10 |
+
+Rerun spend $0.3241 and 29 credits; build total $0.5907 of $5 and 63 credits
+(build cap 150; Tavily's free tier is 1,000 a month). Every run passed SC11; the most expensive cost $0.0632. The FLO first
+lookup lists "Turn off power at the breaker" with no safety flag (D5 stands;
+flagging power steps in code is the open question).
+
+### 10.10 The published pages change for v2 (18 September 2026)
+
+Roanuk asked for a recorded v2 demo replacing v1's and a teardown rewritten for
+v2. That request supersedes section 12's first two bullets for `index.html`,
+`tool.html`, `src/demo.js`, `src/demo.css`, `src/fixtures.js`,
+`src/teardown.css` (the `.brief` rules only) and the new `briefs/v2/`. v1's
+four `briefs/*.html`, `demo-assets/` and `src/tokens.css` keep their commit
+`1abffe9` hashes. `published_manifest.json` was regenerated for exactly those
+changes, and `test_published_files_unchanged` holds the new hashes.
+
+- v1's recorded fixtures moved to `agent/tests/fixtures/v1_fixtures.js`; tests
+  that read v1 data read them there.
+- `agent/replay/build_demo.py` builds `tool.html`, `src/fixtures.js` and
+  `briefs/v2/` from `agent/replay/demo_selection.json` and the run records,
+  refusing any run whose `build_id` is not the current build's (unless
+  `--stand-in`, which stamps the page). `agent/replay/check_demo.py` checks the
+  result: no off origin load, no fetch, XHR, WebSocket or sendBeacon, no key,
+  no local path, no denylisted name. Raw page text is kept out by the
+  builder's field allowlist.
+- The build the demo checks against is `build_info`'s fingerprint computed
+  without the three demo tooling files (`build_demo.DEMO_TOOLING`), which were
+  added after the rerun. The advisor code in this commit is therefore build
+  `839b1854a0aaf25e`; `build_info.build_id()` over the whole of `agent/`
+  reports a different value because it counts the demo tooling.
+- `agent/tests/test_teardown.py` holds the teardown's front matter format and
+  the no dash rule for `index.html` and `tool.html`.
+- The zero API call invariant (C10) is unchanged and still tested.
 
 ---
 
