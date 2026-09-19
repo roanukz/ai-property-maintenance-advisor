@@ -795,3 +795,44 @@ footer a {
     justify-content: center;
   }
 }
+
+/* ---------- TL;DR: the whole page in five sentences ---------- */
+.brief {
+  margin: var(--space-32) 0 0;
+  padding: var(--space-24);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 5px solid var(--fill);
+  border-radius: var(--radius-lg);
+}
+
+.brief h2 {
+  margin-top: var(--space-4);
+}
+
+.brief-definition {
+  color: var(--text-muted);
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  margin: 0 0 var(--space-12);
+}
+
+.brief-body {
+  font-size: var(--size-20);
+  line-height: var(--lh-20);
+  letter-spacing: var(--ls-20);
+  color: var(--text-heading);
+  margin: 0;
+  max-width: var(--measure-20);
+}
+
+@media (max-width: 720px) {
+  .brief {
+    padding: var(--space-16);
+  }
+
+  .brief-body {
+    font-size: var(--size-16);
+    line-height: var(--lh-16);
+  }
+}

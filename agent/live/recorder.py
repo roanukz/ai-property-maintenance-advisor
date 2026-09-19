@@ -20,6 +20,8 @@ that capture, the run's lookup log and its page files:
 - page text: decision 15 lets a cassette carry text only on example hosts,
   so for a real URL the snippet and page text are left out of the cassette
   and listed by sha256 (under config.PAGES_DIR) in `<case>.texts.json`;
+  every result whose page text was saved keeps its `text_sha256`, so a
+  replay can read that text from the local pages folder when it is there;
 - URLs lose tracking and session parameters (the privacy diff's own rule).
 
 Then it scans every string, key and long number with the privacy diff's
@@ -213,7 +215,7 @@ def _search_result(result: Mapping[str, Any], pages_dir: Path, path: str, build:
     content = result.get("content") or ""
     raw = load_page_text(pages_dir, result.get("text_sha256"))
     out = {"url": url, "title": result.get("title") or "", "content": content, "raw_content": raw,
-           "score": result.get("score")}
+           "score": result.get("score"), **_text_hash(result)}
     if not is_example_url(url) and (content or raw):
         build.withheld.append({
             "path": path, "url": url,
@@ -231,7 +233,17 @@ def _fetch_result(result: Mapping[str, Any], pages_dir: Path, path: str, build: 
         build.withheld.append({"path": path, "url": url, "content_sha256": None,
                                "raw_content_sha256": result.get("text_sha256")})
         raw = None
-    return {"url": url, "raw_content": raw}
+    return {"url": url, "raw_content": raw, **_text_hash(result)}
+
+
+def _text_hash(result: Mapping[str, Any]) -> dict[str, str]:
+    """{"text_sha256": hash} for a result whose page text the run saved, else nothing.
+
+    Replay reads the text back from the local pages folder by this hash (D4),
+    so a real page's text can be checked offline without entering the cassette.
+    """
+    sha = result.get("text_sha256")
+    return {"text_sha256": sha} if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha) else {}
 
 
 def in_call_order(lookups: Sequence[Mapping[str, Any]],

@@ -188,3 +188,152 @@ def test_status_never_claims_a_check_that_did_not_run() -> None:
     # Observed code E9 matches no candidate, so rule 3 rejects the draft before grounding.
     skipped = rules("E7", snippet=SNIPPET_WITH, mode="cheap", provenance=None, observed="E9")
     assert skipped.errors and skipped.grounding == [] and skipped.grounding_status == NOT_CHECKED
+
+
+LIVE = {"derived_from": "recorded live 2026-09-18 run t-0000000000000000", "synthetic_fields": []}
+
+
+def test_live_recording_without_page_text_is_unverifiable() -> None:
+    """Mutations: grounding_live_exemption_removed (a replayed live recording
+    with no local page text fails like any textless source);
+    grounding_live_exemption_ignores_text (a live recording whose page text is
+    present but lacks the code passes as unverifiable);
+    grounding_live_exemption_any_mode (a live run with live provenance is
+    exempt); grounding_live_prefix_any (any named provenance counts as live);
+    grounding_live_exemption_without_source (a candidate citing no source
+    passes). D4, 18 September 2026."""
+    textless = grounded("E7", page_text=None, snippet="", mode="replay", provenance=LIVE)
+    assert (textless.status, textless.reason, textless.passes) == (UNVERIFIABLE, grounding.LIVE_NO_TEXT, True)
+    # With the page text present, a live recording is checked like a live run.
+    assert grounded("E7", page_text=RAW_WITH, snippet=None, mode="replay", provenance=LIVE).status == VERIFIED
+    assert grounded("E9", page_text=RAW_WITH, snippet=None, mode="replay", provenance=LIVE).status == FAILED
+    assert grounded("E7", page_text=None, snippet="", mode="cheap", provenance=LIVE).status == FAILED
+    other = {"derived_from": "hand built from notes", "synthetic_fields": []}
+    assert grounded("E7", page_text=None, snippet="", mode="replay", provenance=other).status == FAILED
+    no_source = check_grounding("E7", None, page_text=None, snippet=None, mode="replay", provenance=LIVE)
+    assert no_source.status == FAILED
+    assert grounding.recorded_live(LIVE) and not grounding.recorded_live(V1) and not grounding.recorded_live(None)
+
+    # Through the rules: the brief passes, and the run's summary says unverifiable, not verified.
+    via_rules = rules("E7", snippet="", mode="replay", provenance=LIVE)
+    assert via_rules.errors == [] and via_rules.grounding_status == UNVERIFIABLE
+    assert [(e["status"], e["reason"]) for e in via_rules.grounding] == [(UNVERIFIABLE, grounding.LIVE_NO_TEXT)]
+    found = rules("E7", snippet="", mode="replay", provenance=LIVE, page_texts={URL: RAW_WITH})
+    assert found.errors == [] and found.grounding_status == VERIFIED
+    # A live recording with no code to ground claims nothing (unlike a v1 derived one).
+    assert grounding.summarize([], mode="replay", provenance=LIVE) == NOT_APPLICABLE
+
+
+def test_validate_reads_a_recorded_page_by_its_hash(tmp_path: Path) -> None:
+    """Mutations: validate_recorded_hash_ignored (a source with no hash of its
+    own never finds the page the recording names); validate_recorded_page_unchecked
+    (a file whose text no longer hashes to the recorded name is read). D4."""
+    import hashlib
+
+    from agent.nodes.validate import page_texts_for
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    sha = hashlib.sha256(RAW_WITH.encode("utf-8")).hexdigest()
+    (pages / f"{sha}.txt").write_text(RAW_WITH, encoding="utf-8")
+    stale = "c" * 64
+    (pages / f"{stale}.txt").write_text(RAW_WITH, encoding="utf-8")  # text that does not hash to its name
+    other = "https://example.com/synthetic/spa/stale"
+    missing = "https://example.com/synthetic/spa/missing"
+    cassette = {"research": {"tool_results": [
+        {"tool": "search", "query": "q", "results": [
+            {"url": URL, "title": "", "content": "", "raw_content": None, "score": 0.5, "text_sha256": sha},
+            {"url": other, "title": "", "content": "", "raw_content": None, "score": 0.4, "text_sha256": stale},
+            {"url": missing, "title": "", "content": "", "raw_content": None, "score": 0.3,
+             "text_sha256": "d" * 64}]}]}}
+    sources = [{"url": u, "text_sha256": None} for u in (URL, other, missing)]
+
+    def ctx(pages_dir: Path, cas: Any) -> RunContext:
+        return RunContext(run_id="run-p", mode="replay", ledger_path=tmp_path / "l.sqlite",
+                          registry_path=tmp_path / "r.sqlite", graph_path=tmp_path / "g.json",
+                          pages_dir=pages_dir, cassette=cas)
+
+    assert page_texts_for(sources, ctx(pages, cassette)) == {URL: RAW_WITH}
+    assert page_texts_for(sources, ctx(tmp_path / "no_pages", cassette)) == {}
+    assert page_texts_for(sources, ctx(pages, None)) == {}
+
+
+def test_live_replay_without_page_is_unverifiable_even_if_snippet_has_code(tmp_path: Path) -> None:
+    """Mutation: grounding_live_snippet_first (a replayed live recording whose
+    page text is missing locally is verified from its snippet, although live
+    checked the page, where a code only in the snippet fails). Review finding E4."""
+    had = grounded("E7", page_text=None, snippet=SNIPPET_WITH, provenance=LIVE, had_raw_text=True)
+    assert (had.status, had.reason) == (UNVERIFIABLE, grounding.LIVE_NO_TEXT)
+    # A source the live run saved no text for keeps the snippet rule.
+    assert grounded("E7", page_text=None, snippet=SNIPPET_WITH, provenance=LIVE).status == VERIFIED
+    # The page text, when present, still decides.
+    assert grounded("E9", page_text=RAW_WITH, snippet="code E9", provenance=LIVE, had_raw_text=True).status == FAILED
+
+    # Through the rules: the recording names the page (its URL), or the source carries its hash.
+    via_url = run_rules(draft("E7"), sources=[{**SOURCE, "retrieved_at": "2026-09-18", "text_sha256": None,
+                                               "snippet": SNIPPET_WITH}],
+                        observed_code=None, history_hits=[], registry=None, mode="replay", provenance=LIVE,
+                        pass_kind="synthesize", page_texts={}, recorded_text_urls={URL})
+    assert via_url.errors == [] and via_url.grounding_status == UNVERIFIABLE
+    assert [e["reason"] for e in via_url.grounding] == [grounding.LIVE_NO_TEXT]
+    via_hash = run_rules(draft("E7"), sources=[{**SOURCE, "retrieved_at": "2026-09-18", "text_sha256": "a" * 64,
+                                                "snippet": SNIPPET_WITH}],
+                         observed_code=None, history_hits=[], registry=None, mode="replay", provenance=LIVE,
+                         pass_kind="synthesize", page_texts={})
+    assert via_hash.grounding_status == UNVERIFIABLE
+    assert rules("E7", snippet=SNIPPET_WITH, mode="replay", provenance=LIVE).grounding_status == VERIFIED
+
+    # Through the validate node: the recording's own hash for the URL marks the
+    # page as one live had (validate_recorded_urls_not_passed).
+    from agent.nodes.validate import _validate
+
+    recording = {"provenance": LIVE, "research": {"tool_results": [{"tool": "search", "query": "q", "results": [
+        {"url": URL, "title": "", "content": SNIPPET_WITH, "raw_content": None, "score": 0.5,
+         "text_sha256": "e" * 64}]}]}}
+    ctx = RunContext(run_id="run-g", mode="replay", ledger_path=tmp_path / "l.sqlite",
+                     registry_path=tmp_path / "r.sqlite", graph_path=tmp_path / "g.json",
+                     pages_dir=tmp_path / "pages", cassette=recording)
+    state = {"draft": draft("E7"), "observed_code": None, "identity": {},
+             "sources": [{**SOURCE, "retrieved_at": "2026-09-18", "text_sha256": None, "snippet": SNIPPET_WITH}]}
+    out = _validate(state, ctx)
+    assert out["grounding_status"] == UNVERIFIABLE and out["brief"] is not None
+    assert [e["reason"] for e in out["grounding"]] == [grounding.LIVE_NO_TEXT]
+
+
+def test_recording_without_inline_hashes_finds_pages_through_its_texts_file(tmp_path: Path) -> None:
+    """Mutation: validate_sidecar_ignored (a recording made before the recorder
+    wrote text_sha256 inline, such as the Phase 5 one, never finds its pages,
+    so its grounding can only be unverifiable). Review finding P1."""
+    import hashlib
+    import json as _json
+
+    from agent.nodes.validate import page_texts_for, recorded_text_hashes
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    sha = hashlib.sha256(RAW_WITH.encode("utf-8")).hexdigest()
+    (pages / f"{sha}.txt").write_text(RAW_WITH, encoding="utf-8")
+    rec_dir = tmp_path / "recordings"
+    rec_dir.mkdir()
+    data = {"research": {"tool_results": [{"tool": "search", "query": "q", "results": [
+        {"url": URL, "title": "", "content": "", "raw_content": None, "score": 0.5}]}]}}
+    (rec_dir / "live_t_x.texts.json").write_text(_json.dumps({"pages_dir": str(pages), "withheld": [
+        {"path": "research.tool_results[0].results[0]", "url": URL, "content_sha256": None,
+         "raw_content_sha256": None},
+        {"path": "research.tool_results[1].results[0]", "url": URL, "content_sha256": None,
+         "raw_content_sha256": sha},
+        {"path": "research.tool_results[1].results[1]", "url": URL, "content_sha256": None,
+         "raw_content_sha256": "b" * 64}]}), encoding="utf-8")
+
+    class Recording:
+        path = rec_dir / "live_t_x.json"
+
+    Recording.data = data
+    assert recorded_text_hashes(Recording()) == {URL: sha}
+    ctx = RunContext(run_id="run-s", mode="replay", ledger_path=tmp_path / "l.sqlite",
+                     registry_path=tmp_path / "r.sqlite", graph_path=tmp_path / "g.json",
+                     pages_dir=pages, cassette=Recording())
+    assert page_texts_for([{"url": URL, "text_sha256": None}], ctx) == {URL: RAW_WITH}
+    # With no texts file beside it, nothing is found.
+    Recording.path = rec_dir / "other.json"
+    assert recorded_text_hashes(Recording()) == {} and page_texts_for([{"url": URL}], ctx) == {}

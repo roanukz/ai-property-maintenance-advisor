@@ -13,8 +13,8 @@ import pytest
 
 from agent import kg as kgmod
 from agent.kg import (
-    HAS_CODE, IN_FAMILY, IS_MODEL, INSTALLED_AT, EdgeRejected, KnowledgeGraph,
-    code_key, family_key, model_key, part_key, source_key,
+    DOCUMENTED_CAUSE, HAS_CODE, IN_FAMILY, IS_MODEL, INSTALLED_AT, EdgeRejected, KnowledgeGraph,
+    cause_key, code_key, family_key, model_key, part_key, source_key,
 )
 from agent.registry import open_registry
 from agent.rules.evidence import evidence_sha256
@@ -34,14 +34,24 @@ FAMILY_EVIDENCE = "The Optima 880 is part of the 880 Series of hot tubs in this 
 FLO_EVIDENCE = ("FLO: The heater senses no water flow. Clean or replace the filter cartridge, "
                 "then check that the circulation pump runs.")
 XR16_EVIDENCE = "The XR16 4TTR6036 belongs to the XR16 family of split system outdoor units."
+# Documented causes on the 880 Series (decision D2): (label, action, verbatim evidence).
+OPTIMA_CAUSES = (
+    ("The water is below the set point.", "Check the set point on the panel.",
+     "COOL: Water is 20 degrees below the set point."),
+    ("The water is near freezing.", "Keep the cover on and let the pumps run.",
+     "Water is near freezing; the pumps run to protect the plumbing."),
+    ("The filter cartridge is overdue for rinsing.", "Rinse the filter cartridge.",
+     "Rinse the filter cartridge every 2 weeks and replace it every 12 months."),
+)
 
 META = {
     "synthetic": True,
     "_about": ("Synthetic graph fixture for Phase 3 tests (SC7a, route rows 1 to 5). Every edge's evidence "
                "is a verbatim span of a synthetic page text in agent/tests/fixtures/pages, served only at "
                "an example.com URL; no fact here comes from a real document. The Optima 880 and its 880 "
-               "Series family carry a HAS_CODE edge for FLO; the Trane XR16 4TTR6036 has a verified "
-               "IN_FAMILY edge and no code edge, for the top up rows."),
+               "Series family carry a HAS_CODE edge for FLO and three DOCUMENTED_CAUSE edges (route row "
+               "3 needs config.GRAPH_ONLY_MIN_CAUSES of them); the Trane XR16 4TTR6036 has a verified "
+               "IN_FAMILY edge and no code or cause edge, for the top up rows."),
 }
 
 
@@ -68,6 +78,9 @@ def build_optima_flo() -> KnowledgeGraph:
     flo = g.add_code("Sundance Spas", "880 Series", "FLO")
     g.add_edge(IN_FAMILY, optima, series, page_text=optima_text, **fields(FAMILY_EVIDENCE, OPTIMA_URL))
     g.add_edge(HAS_CODE, series, flo, page_text=optima_text, **fields(FLO_EVIDENCE, OPTIMA_URL))
+    for label, action, evidence in OPTIMA_CAUSES:
+        g.add_edge(DOCUMENTED_CAUSE, series, g.add_cause("Sundance Spas", "880 Series", label), page_text=optima_text,
+                   label=label, action=action, **fields(evidence, OPTIMA_URL))
     xr16 = g.add_model("Trane", "XR16 4TTR6036")
     xr16_family = g.add_family("Trane", "XR16")
     g.add_edge(IN_FAMILY, xr16, xr16_family, page_text=xr16_text, **fields(XR16_EVIDENCE, XR16_URL))
@@ -102,7 +115,8 @@ def test_save_is_deterministic(tmp_path: Path) -> None:
     for key, attrs in reversed(list(built.g.nodes(data=True))):
         reverse.g.add_node(key, **attrs)
     for edge in reversed(built.edges()):
-        reverse.add_edge(edge["kind"], edge["src"], edge["dst"], **{f: edge[f] for f in kgmod.EDGE_FIELDS})
+        reverse.add_edge(edge["kind"], edge["src"], edge["dst"],
+                         **{f: edge[f] for f in (*kgmod.EDGE_FIELDS, *kgmod.CAUSE_FIELDS) if f in edge})
     assert reverse.dumps() == built.dumps()
     first, second = tmp_path / "a.json", tmp_path / "b.json"
     built.save(first)
@@ -110,8 +124,9 @@ def test_save_is_deterministic(tmp_path: Path) -> None:
     assert first.read_bytes() == second.read_bytes()
     # Adding the same edge again is an upsert, not a duplicate.
     again = build_optima_flo()
-    edge = again.edges()[0]
-    again.add_edge(edge["kind"], edge["src"], edge["dst"], **{f: edge[f] for f in kgmod.EDGE_FIELDS})
+    for edge in again.edges()[:2]:  # a cause edge, then with the next kind
+        again.add_edge(edge["kind"], edge["src"], edge["dst"],
+                       **{f: edge[f] for f in (*kgmod.EDGE_FIELDS, *kgmod.CAUSE_FIELDS) if f in edge})
     assert again.dumps() == built.dumps()
 
 
@@ -164,7 +179,7 @@ def test_registry_edges_never_persisted(tmp_path: Path) -> None:
     g.save(out)
     assert out.read_bytes() == graph_path.read_bytes()
     saved = json.loads(out.read_text(encoding="utf-8"))
-    assert {e["kind"] for e in saved["edges"]} == {IN_FAMILY, HAS_CODE}
+    assert {e["kind"] for e in saved["edges"]} == {IN_FAMILY, HAS_CODE, DOCUMENTED_CAUSE}
     assert not [n for n in saved["nodes"] if n["type"] in ("property", "appliance")]
     assert model_key("Rheem", "PRO+E50 M2 RH92 CL") not in {n["key"] for n in saved["nodes"]}
     reloaded = KnowledgeGraph.load(out)
@@ -203,7 +218,8 @@ def test_queries_return_only_verified_edges(tmp_path: Path) -> None:
                **fields("Synthetic note: the Optima 880 was replaced by the Optima 990.", OPTIMA_URL))
     [up] = g.superseded_by("Sundance Spas", "Optima 880")
     assert up["successor_model"] == "Optima 990"
-    assert g.stats()["edges"] == {"CODE_POINTS_TO_PART": 1, HAS_CODE: 1, IN_FAMILY: 2, "SUPERSEDED_BY": 1}
+    assert g.stats()["edges"] == {"CODE_POINTS_TO_PART": 1, DOCUMENTED_CAUSE: 3, HAS_CODE: 1, IN_FAMILY: 2,
+                                  "SUPERSEDED_BY": 1}
     # A model known only as another model's successor has no edge of its own.
     assert not g.has_model("Sundance Spas", "Optima 990")
 
@@ -217,7 +233,8 @@ def test_damaged_saved_edge_is_dropped_and_logged_at_load(tmp_path: Path) -> Non
     strict=True (the integrity test) still refuses the file.
     """
     tampered = json.loads(OPTIMA_FLO.read_text(encoding="utf-8"))
-    tampered["edges"][0]["evidence"] += " Edited."
+    [code_edge] = [e for e in tampered["edges"] if e["kind"] == HAS_CODE]
+    code_edge["evidence"] += " Edited."
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(EdgeRejected, match="evidence_sha256"):
@@ -294,3 +311,128 @@ def test_graph_stats_reports_load_drops(tmp_path: Path, monkeypatch: pytest.Monk
     assert "saved edges dropped at load (failed a check; see the drop log): 1" in replay_block
     assert "edges dropped for failed evidence: 1" in replay_block
     assert "by reason: evidence_sha256 1" in replay_block
+
+
+# ---------------------------------------------------------------------------
+# Cause nodes and DOCUMENTED_CAUSE edges (decision D2)
+# ---------------------------------------------------------------------------
+
+
+def test_cause_key_hashes_the_normalized_label() -> None:
+    """Mutation kg_cause_key_raw_label: the key hashes the label as printed, so
+    "The water is near freezing." and "the water is near  freezing" are two causes."""
+    import hashlib
+
+    key = cause_key("Sundance Spas", "880 Series", "The water is near freezing.")
+    digest = hashlib.sha256("the water is near freezing".encode("utf-8")).hexdigest()[:12]
+    assert key == f"cause:sundance-spas:880series:{digest}"
+    assert cause_key("SUNDANCE SPAS", "880-series", "  the Water is near\tfreezing ") == key
+    assert cause_key("Sundance Spas", "Optima 880", "The water is near freezing.") != key
+    with pytest.raises(ValueError):
+        cause_key("Sundance Spas", "880 Series", " ... ")
+
+
+def test_cause_edge_stores_label_action_and_passes_its_condition_5(tmp_path: Path) -> None:
+    """Mutations: kg_cause_condition_skipped (add_edge checks a cause's evidence
+    for conditions 3 and 4 only, so a quote about something else is stored);
+    kg_cause_label_optional (a cause edge with no action is stored);
+    kg_load_drops_cause_fields (a saved cause edge loses its label and action
+    at load, so the load refuses it)."""
+    g = build_optima_flo()
+    series = family_key("Sundance Spas", "880 Series")
+    text = page("optima_880_synthetic_manual.txt")
+    causes = g.causes_for("Sundance Spas", "Optima 880")
+    assert sorted((c["label"], c["action"], c["evidence"]) for c in causes) == sorted(OPTIMA_CAUSES)
+    assert all(c["target"] == c["label"] and c["source"]["url"] == OPTIMA_URL for c in causes)
+    assert g.causes_for("Trane", "XR16 4TTR6036") == []
+
+    label = "The heater has no water flow."
+    dst = g.add_cause("Sundance Spas", "880 Series", label)
+    good = fields("If FLO returns after cleaning, call a technician. Do not bypass the flow switch.", OPTIMA_URL)
+    # Shares only "flow" with the label: one content word, not the two condition 5 needs.
+    with pytest.raises(EdgeRejected, match="cause_words_not_in_span"):
+        g.add_edge(DOCUMENTED_CAUSE, series, dst, page_text=text, label=label, action="Call a technician.", **good)
+    with pytest.raises(EdgeRejected, match="cause_words_not_in_span"):
+        g.add_edge(DOCUMENTED_CAUSE, series, dst, label=label, action="Call a technician.", **good)
+    flow = fields("FLO: The heater senses no water flow.", OPTIMA_URL)
+    for missing in ({"label": label}, {"action": "Clean the filter."}, {"label": label, "action": "  "}):
+        with pytest.raises(EdgeRejected, match="missing_fields"):
+            g.add_edge(DOCUMENTED_CAUSE, series, dst, page_text=text, **missing, **flow)
+    with pytest.raises(EdgeRejected, match="label_mismatch"):
+        g.add_edge(DOCUMENTED_CAUSE, series, dst, page_text=text, label="The heater senses no flow.",
+                   action="Clean the filter.", **flow)
+    with pytest.raises(EdgeRejected, match="unexpected_fields"):
+        g.add_edge(IN_FAMILY, model_key("Sundance Spas", "Optima 880"), series, label=label,
+                   **fields(FAMILY_EVIDENCE, OPTIMA_URL))
+    with pytest.raises(EdgeRejected, match="not_in_page_text"):
+        g.add_edge(DOCUMENTED_CAUSE, series, dst, page_text=page("xr16_synthetic_overview.txt"), label=label,
+                   action="Clean the filter.", **flow)
+    g.add_edge(DOCUMENTED_CAUSE, series, dst, page_text=text, label=label, action="Clean the filter.", **flow)
+
+    path = tmp_path / "g.json"
+    g.save(path)
+    loaded = KnowledgeGraph.load(path, strict=True)
+    assert len(loaded.causes_for("Sundance Spas", "Optima 880")) == 4
+    [new] = [c for c in loaded.causes_for("Sundance Spas", "Optima 880") if c["label"] == label]
+    assert (new["action"], new["evidence"]) == ("Clean the filter.", "FLO: The heater senses no water flow.")
+    assert loaded.stats()["nodes"]["cause"] == 4 and loaded.stats()["edges"][DOCUMENTED_CAUSE] == 4
+
+
+def test_damaged_cause_edge_is_not_a_cause() -> None:
+    """Mutation kg_cause_hash_unchecked: a cause edge whose evidence does not hash
+    (or whose action is blank) is returned by causes_for, so it counts toward route row 3."""
+    g = build_optima_flo()
+    series = family_key("Sundance Spas", "880 Series")
+    evidence = "COOL: Water is 20 degrees below the set point."
+    # Each would be a verified cause but for its hash, or its blank action.
+    for key, label, action, sha in (
+        ("damaged", "Water sits below the set point.", "Check the set point.", "0" * 64),
+        ("blank-action", "The water is under the set point.", " ", evidence_sha256(evidence)),
+    ):
+        g.g.add_edge(series, g.add_cause("Sundance Spas", "880 Series", label), key=key, kind=DOCUMENTED_CAUSE,
+                     label=label, action=action, **{**fields(evidence, OPTIMA_URL), "evidence_sha256": sha})
+    assert len(g.causes_for("Sundance Spas", "Optima 880")) == len(OPTIMA_CAUSES)
+
+
+def test_reverify_checks_cause_and_code_edges_against_their_page(tmp_path: Path) -> None:
+    """Mutations: kg_reverify_cause_shape_only (reverify checks a cause edge
+    without its page, so evidence edited off the page passes);
+    kg_reverify_shape_only (the same for every other kind). The fixture's
+    first edge is now a cause, so the integrity test's edit reaches only the
+    cause path; the HAS_CODE edit here keeps the other path held."""
+    from agent.rules.evidence import evidence_sha256 as sha
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    for path in PAGES.glob("*.txt"):
+        (pages / path.name).write_bytes(path.read_bytes())
+    report = KnowledgeGraph.load(OPTIMA_FLO, strict=True).reverify(pages)
+    assert report["failures"] == [] and report["full"] == 6
+    data = json.loads(OPTIMA_FLO.read_text(encoding="utf-8"))
+    [cause] = [e for e in data["edges"] if e["kind"] == DOCUMENTED_CAUSE and "freezing" in e["evidence"]]
+    cause["evidence"] = "Water is near freezing; the jets run to protect the plumbing."
+    cause["evidence_sha256"] = sha(cause["evidence"])
+    edited = tmp_path / "edited.json"
+    edited.write_text(json.dumps(data), encoding="utf-8")
+    failures = KnowledgeGraph.load(edited, strict=True).reverify(pages)["failures"]
+    assert len(failures) == 1 and "DOCUMENTED_CAUSE" in failures[0] and "not_in_page_text" in failures[0]
+    data = json.loads(OPTIMA_FLO.read_text(encoding="utf-8"))
+    [code] = [e for e in data["edges"] if e["kind"] == HAS_CODE]
+    code["evidence"] = "FLO: The heater senses low water flow."
+    code["evidence_sha256"] = sha(code["evidence"])
+    edited.write_text(json.dumps(data), encoding="utf-8")
+    failures = KnowledgeGraph.load(edited, strict=True).reverify(pages)["failures"]
+    assert len(failures) == 1 and "HAS_CODE" in failures[0] and "not_in_page_text" in failures[0]
+
+
+def test_graph_stats_counts_documented_causes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mutation cli_graph_stats_hides_causes: `advisor graph stats` prints no cause count."""
+    from agent import cli, config
+
+    monkeypatch.setattr(config, "GRAPH_PATH", tmp_path / "graph.json")
+    monkeypatch.setattr(config, "REPLAY_GRAPH_PATH", OPTIMA_FLO)
+    monkeypatch.setattr(config, "REGISTRY_PATH", tmp_path / "no_registry.sqlite")
+    lines = cli.graph_stats_lines()
+    replay_block = lines[lines.index(f"replay graph (replay runs): {OPTIMA_FLO}"):]
+    assert "  documented causes: 3 edges, 3 causes" in replay_block
+    assert "  documented causes: 0 edges, 0 causes" in lines[:lines.index(f"replay graph (replay runs): {OPTIMA_FLO}")]

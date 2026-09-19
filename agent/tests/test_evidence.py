@@ -264,3 +264,158 @@ def test_persist_stores_the_widened_verbatim_span() -> None:
     assert normalize_for_span(evidence) in normalize_for_span(TABLE_PAGE)
     form, reason, _ = persist_mod._printed_target("E5", "Stands for high limit.", TABLE_PAGE, None)
     assert form is None
+
+
+# ---------------------------------------------------------------------------
+# The cause condition (DOCUMENTED_CAUSE condition 5, decision D2)
+# ---------------------------------------------------------------------------
+
+
+def test_cause_words_are_letters_long_enough_casefolded_and_stemmed() -> None:
+    """Mutations: evidence_cause_words_no_stem (a trailing s, ed or ing is kept,
+    so "slows" and "slowed" differ); evidence_cause_words_keep_stop_words (stop
+    list ignored); evidence_cause_words_short_words (words under
+    CAUSE_WORD_MIN_CHARS count)."""
+    from agent.rules.evidence import cause_words
+
+    assert config.CAUSE_WORD_MIN_CHARS == 4 and "which" in config.CAUSE_STOP_WORDS
+    words = cause_words("Filters CLOGGED; flow slowing, which the pump has")
+    assert words == {"filter", "clogg", "flow", "slow", "pump"}
+    assert cause_words("slows") == cause_words("slowed") == cause_words("slowing") == {"slow"}
+    assert cause_words("E10 the fan is off; low set 4TTR") == set()  # digits end a word; short words dropped
+    assert cause_words("that with from") == set()
+
+
+def test_cause_condition_needs_two_shared_words_or_the_whole_label() -> None:
+    """Mutations: evidence_cause_min_words_one (one shared content word is
+    enough); evidence_cause_verbatim_label_ignored (a label printed whole in
+    the span, with fewer than two content words, fails); evidence_cause_skips_page
+    (verify_cause_span never checks the page text)."""
+    from agent.rules.evidence import CAUSE_WORDS_MISSING, check_cause_shape, verify_cause_span
+
+    assert config.CAUSE_MIN_SHARED_WORDS == 2
+    span = "FLO: The heater senses no water flow."
+    for label in ("The heater has no water flow.", "Heaters sensing flow", "water flows"):
+        assert verify_cause_span(span, MANUAL, label=label).reason == OK, label
+    # One shared content word ("flow") is not enough.
+    assert check_cause_shape(span, label="Low flow alarm").reason == CAUSE_WORDS_MISSING
+    # A short label printed whole in the span passes on the verbatim path.
+    assert check_cause_shape("COOL: Water is 20 degrees below the set point.", label="set point").ok
+    assert check_cause_shape("COOL: Water is 20 degrees below the set point.",
+                             label="a set point").reason == CAUSE_WORDS_MISSING
+    # Conditions 1 to 4 still hold for a cause.
+    assert verify_cause_span(span, MANUAL.replace("water flow", "flow"), label="water flow").reason == NOT_IN_PAGE
+    assert verify_cause_span(span, None, label="water flow").reason == NO_PAGE_TEXT
+    assert check_cause_shape("water flow", label="water flow").reason == TOO_SHORT
+    assert check_cause_shape("heater water flow [...] heater water flow", label="water flow").reason == SNIPPET_JOINER
+    assert check_cause_shape(span, label="  ").ok is False
+
+
+def test_cause_label_must_match_whole_words() -> None:
+    """Mutation: cause_label_substring (the whole label path matches inside a
+    longer word, so "heat" passes on "heater heats" and "low flow" on "slow
+    flow"). Review finding E3."""
+    from agent.rules.evidence import CAUSE_WORDS_MISSING, check_cause_shape
+
+    assert check_cause_shape("The heater heats water.", label="heat").reason == CAUSE_WORDS_MISSING
+    assert check_cause_shape("It runs slow flow on the day shift here.",
+                             label="low flow").reason == CAUSE_WORDS_MISSING
+    assert check_cause_shape("at low flow the heater stops", label="low flow").ok
+
+
+def test_generic_cause_label_is_refused() -> None:
+    """Mutation: cause_stop_list_short (troubleshooting filler such as "check"
+    counts as a content word, so "Check the unit" is stored as a cause from
+    any "check ... unit" sentence). Review finding E5."""
+    from agent.rules.evidence import CAUSE_WORDS_MISSING, check_cause_shape, cause_words
+
+    for word in ("check", "ensure", "sure", "please", "contact", "call", "need"):
+        assert word in config.CAUSE_STOP_WORDS, word
+    assert cause_words("checks checking needs calls") == set()
+    assert check_cause_shape("check that the unit is plugged in and the breaker is on.",
+                             label="Check the unit").reason == CAUSE_WORDS_MISSING
+    # A real component fault keeps its content words: "display", "panel".
+    assert check_cause_shape("The display panel has failed and shows nothing.",
+                             label="Display panel failure").ok
+
+
+def test_cause_component_only_quote_passes_known_limit() -> None:
+    """Characterization of a known false positive of the D2 floor (review
+    finding E2, an open question for Roanuk): a "<component> <failure>" label
+    passes on a quote that only names the two word component, because two
+    shared content words are enough. The quote below documents no failure.
+    Mutation: evidence_cause_known_limit_min_words_three (the floor raised to
+    three words, which this test would notice as a change of the decided rule)."""
+    from agent.rules.evidence import check_cause_shape
+
+    quote = "The ozone generator can be turned off from the service menu."
+    assert check_cause_shape(quote, label="Ozone generator failure").ok
+    assert check_cause_shape("Toggle the flow switch cover to reach the jets.", label="Flow switch stuck open").ok
+
+
+# ---------------------------------------------------------------------------
+# Word boundaries of a stored span (decision D3)
+# ---------------------------------------------------------------------------
+
+# Synthetic, shaped like the Phase 5 page row whose stored edge ended "filte".
+CUT_PAGE = (
+    "SYNTHETIC PAGE TEXT for tests (not a real document).\n"
+    "| FLO | Stands for Flow Switch. The heater is deactivated and filter/circulation may stop. |\n"
+    "The pump's seal leaks. Check the drain. The unit restarts.\n"
+)
+
+
+def test_stored_span_snaps_to_word_boundaries() -> None:
+    """Mutations: evidence_snap_off (a span cut inside a word is kept as it is);
+    evidence_snap_no_trim_end and evidence_snap_no_trim_start (a span too long to
+    extend is refused instead of trimmed back); evidence_snap_ignores_max (the
+    extended span may pass EVIDENCE_MAX_CHARS); evidence_snap_accept_ignored (a
+    snapped span the caller's check refuses is returned); evidence_word_is_nonspace
+    (a cut before a slash or period counts as inside a word);
+    evidence_word_apostrophe_not_word (a cut between "pump'" and "s" is not seen);
+    evidence_snap_max_exclusive (a span extended to exactly EVIDENCE_MAX_CHARS
+    is refused)."""
+    from agent.rules.evidence import snap_span_to_words
+
+    ok = lambda span: True  # noqa: E731
+    cut = "FLO | Stands for Flow Switch. The heater is deactivated and filte"
+    assert snap_span_to_words(cut, CUT_PAGE, accept=ok) == \
+        "FLO | Stands for Flow Switch. The heater is deactivated and filter"
+    assert snap_span_to_words("ands for Flow Switch. The heater", CUT_PAGE, accept=ok) == \
+        "Stands for Flow Switch. The heater"
+    assert snap_span_to_words("The pump'", CUT_PAGE, accept=ok) == "The pump's"
+    # Whole words already: returned unchanged, raw whitespace and all.
+    for whole in ("FLO | Stands for Flow Switch.", "deactivated and filter", "Stands for  Flow\nSwitch"):
+        assert snap_span_to_words(whole, CUT_PAGE, accept=ok) == whole
+    # The caller's check refuses the extended span and the trimmed one: refused.
+    assert snap_span_to_words(cut, CUT_PAGE, accept=lambda s: s.endswith("filte")) is None
+    assert snap_span_to_words(cut, CUT_PAGE, accept=lambda s: not s.endswith("filter")) == \
+        "FLO | Stands for Flow Switch. The heater is deactivated and"
+    assert snap_span_to_words("no such text", CUT_PAGE, accept=ok) is None
+
+    # Extending past EVIDENCE_MAX_CHARS trims the cut word back instead.
+    long_word = "x" * 30
+    page = " ".join(["alpha"] * 80) + " " + long_word + " end"
+    tail_cut = page[page.index(long_word) + 5 - config.EVIDENCE_MAX_CHARS + 2: page.index(long_word) + 5]
+    assert len(tail_cut) == config.EVIDENCE_MAX_CHARS - 2
+    snapped = snap_span_to_words(tail_cut, page, accept=ok)
+    assert snapped is not None and snapped.endswith("alpha") and len(snapped) <= config.EVIDENCE_MAX_CHARS
+    assert snapped.startswith("alpha")
+    head_page = "start " + long_word + " " + " ".join(["beta"] * 100)
+    head_cut = head_page[len("start ") + 25: len("start ") + 25 + config.EVIDENCE_MAX_CHARS - 2]
+    snapped = snap_span_to_words(head_cut, head_page, accept=ok)
+    assert snapped is not None and snapped.startswith("beta") and len(snapped) <= config.EVIDENCE_MAX_CHARS
+
+    # A span that is exactly EVIDENCE_MAX_CHARS once extended is kept whole
+    # (evidence_snap_max_exclusive: a strict limit trims "valve" off, and the
+    # cause check then refuses what is left).
+    from agent.rules.evidence import verify_cause_span
+
+    label = "The drain valves stick."
+    limit_page = "Intro. " + "x" * (config.EVIDENCE_MAX_CHARS - 17) + " the drain valves stick..."
+    start = limit_page.index("x")
+    at_limit = limit_page[start: limit_page.index("valve") + len("valve")]
+    assert len(at_limit) == config.EVIDENCE_MAX_CHARS - 1
+    snapped = snap_span_to_words(at_limit, limit_page,
+                                 accept=lambda span: verify_cause_span(span, limit_page, label=label).ok)
+    assert snapped is not None and snapped.endswith("valves") and len(snapped) == config.EVIDENCE_MAX_CHARS

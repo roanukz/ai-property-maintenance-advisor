@@ -1,0 +1,60 @@
+{
+ "cassette_version": 1,
+ "case": "live_t_5a00000000000005",
+ "input": {
+  "identity": {
+   "manufacturer": "Samplecool",
+   "model": "SC-2",
+   "serial": null,
+   "manufacture_date": null
+  },
+  "symptom": "outdoor fan does not spin",
+  "plate_sha256": null
+ },
+ "read_plate": null,
+ "classifier": [
+  {
+   "structured": {
+    "verdict": "unsure"
+   }
+  }
+ ],
+ "resume": {},
+ "research": {
+  "script": [
+   {
+    "message": {
+     "content": "",
+     "tool_calls": [
+      {
+       "name": "search",
+       "args": {
+        "query": "Samplecool SC-2 fan not spinning"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "tool_results": [
+   {
+    "tool": "search",
+    "query": "Samplecool SC-2 fan not spinning",
+    "credits": 1,
+    "results": [
+     {
+      "url": "https://spa.example.com/error-codes",
+      "title": "Spa error codes (synthetic)"
+     },
+     {
+      "url": "https://spa.example.com/heater-guide",
+      "title": "Heater guide"
+     }
+    ]
+   }
+  ],
+  "blocked_calls": {}
+ },
+ "synthesize": [],
+ "page_texts": {}
+}

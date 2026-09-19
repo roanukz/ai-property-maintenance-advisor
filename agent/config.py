@@ -193,6 +193,29 @@ SNIPPET_JOINER = "[...]"
 # still a contiguous verbatim span of the page.
 EVIDENCE_ANCHOR_MAX_GAP_CHARS = 40
 
+# Documented causes (DOCUMENTED_CAUSE edges; decisions D1 and D2 of 18
+# September 2026, after the Phase 6 live evaluation).
+# Route row 3 (graph only, no search) needs at least this many distinct
+# verified causes for the model or its family, and a classifier match; a
+# question with no confirmed code is never answered from code edges alone.
+GRAPH_ONLY_MIN_CAUSES = 3
+# Condition 5 for a cause edge: its evidence holds the whole label, or at
+# least this many distinct content words of the label (letters only, at
+# least CAUSE_WORD_MIN_CHARS long, casefolded, a trailing "s", "ed" or "ing"
+# stripped, CAUSE_STOP_WORDS left out).
+CAUSE_MIN_SHARED_WORDS = 2
+CAUSE_WORD_MIN_CHARS = 4
+CAUSE_STOP_WORDS = frozenset({
+    "about", "after", "also", "been", "before", "being", "both", "could", "does", "done", "each",
+    "from", "have", "having", "into", "just", "like", "made", "make", "many", "more", "most", "much",
+    "must", "only", "other", "over", "should", "some", "such", "than", "that", "their", "them",
+    "then", "there", "these", "they", "this", "those", "very", "were", "what", "when", "where",
+    "which", "while", "will", "with", "would", "your",
+    # Troubleshooting filler that names no component and no fault (review
+    # finding E5): "Check the unit" is not a documented cause.
+    "check", "ensure", "sure", "please", "contact", "call", "need",
+})
+
 # ---------------------------------------------------------------------------
 # Tier ceiling by host (section 8.6). Extend only with Roanuk's review.
 # ---------------------------------------------------------------------------
@@ -210,7 +233,7 @@ FORUM_HOST_PREFIXES = ("forum.", "forums.")
 MAKER_DOMAINS = {
     "sundance spas": ("sundancespas.com",),
     "trane": ("trane.com",),
-    "rheem": ("rheem.com",),  # proposed third real model, pending the owner's choice
+    "rheem": ("rheem.com",),  # the third real model (seed appliance appl-waterheater)
 }
 
 # ---------------------------------------------------------------------------

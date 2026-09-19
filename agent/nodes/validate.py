@@ -21,6 +21,8 @@ report and `grounding_status` (Phase 3), plus its latency entry.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import time
 from pathlib import Path
 from typing import Any
@@ -37,9 +39,16 @@ NO_DRAFT = "no_draft: synthesize returned nothing to validate"
 
 
 def page_texts_for(sources: list[dict[str, Any]], ctx: RunContext) -> dict[str, str]:
-    """Raw page text by source URL: data/pages/<sha256>.txt, else the cassette's synthetic text."""
+    """Raw page text by source URL: data/pages/<sha256>.txt, else the cassette's synthetic text.
+
+    A source with no text hash of its own (a replayed live recording keeps
+    page text out of the cassette, decision 15) is looked up by the hash the
+    recorder wrote for its URL, and read only when the file there still
+    hashes to it (D4).
+    """
     texts: dict[str, str] = {}
     cassette_texts = _cassette_attr(ctx.cassette, "page_texts") or {}
+    recorded = recorded_text_hashes(ctx.cassette)
     for source in sources:
         url = source.get("url")
         sha = source.get("text_sha256")
@@ -52,7 +61,61 @@ def page_texts_for(sources: list[dict[str, Any]], ctx: RunContext) -> dict[str, 
                 continue
         if url in cassette_texts:
             texts[url] = cassette_texts[url]
+            continue
+        text = _recorded_page(ctx.pages_dir, recorded.get(url))
+        if text is not None:
+            texts[url] = text
     return texts
+
+
+def recorded_text_hashes(cassette: Any) -> dict[str, str]:
+    """URL to the page text hash a live recording names (first one wins).
+
+    Read from the text_sha256 of its tool results, then, for URLs still
+    missing, from the recorder's `<case>.texts.json` beside the cassette file
+    (each withheld entry's raw_content_sha256): a recording made before the
+    recorder wrote text_sha256 inline still finds its pages (D4).
+    """
+    data = cassette if isinstance(cassette, dict) else getattr(cassette, "data", None)
+    if not isinstance(data, dict):
+        return {}
+    out: dict[str, str] = {}
+    for entry in (data.get("research") or {}).get("tool_results") or []:
+        for result in entry.get("results") or []:
+            url, sha = result.get("url"), result.get("text_sha256")
+            if isinstance(url, str) and isinstance(sha, str) and sha and url not in out:
+                out[url] = sha
+    for url, sha in _sidecar_hashes(getattr(cassette, "path", None)):
+        out.setdefault(url, sha)
+    return out
+
+
+def _sidecar_hashes(path: Any) -> list[tuple[str, str]]:
+    """(url, raw_content_sha256) pairs from the `<case>.texts.json` beside a cassette, in file order."""
+    if path is None:
+        return []
+    sidecar = Path(path).with_name(f"{Path(path).stem}.texts.json")
+    if not sidecar.is_file():
+        return []
+    try:
+        withheld = json.loads(sidecar.read_text(encoding="utf-8")).get("withheld") or []
+    except (ValueError, AttributeError):
+        return []
+    return [(e["url"], e["raw_content_sha256"]) for e in withheld
+            if isinstance(e, dict) and isinstance(e.get("url"), str)
+            and isinstance(e.get("raw_content_sha256"), str) and e["raw_content_sha256"]]
+
+
+def _recorded_page(pages_dir: Path | None, sha: str | None) -> str | None:
+    # The hash came from a cassette, not from this run, so the file is checked
+    # against it: a stale or edited page must not verify a quote.
+    if not sha or pages_dir is None:
+        return None
+    path = Path(pages_dir) / f"{sha}.txt"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return text if hashlib.sha256(text.encode("utf-8")).hexdigest() == sha else None
 
 
 def _cassette_attr(cassette: Any, name: str) -> Any:
@@ -122,6 +185,7 @@ def _validate(state: AdvisorState, ctx: RunContext) -> dict:
         search_trail=list(state.get("search_trail") or []),
         page_texts=page_texts_for(sources, ctx),
         maintenance_log=load_maintenance_log(state, ctx),
+        recorded_text_urls=set(recorded_text_hashes(ctx.cassette)),
     )
     report = {"grounding": result.grounding, "grounding_status": result.grounding_status}
     if result.errors:

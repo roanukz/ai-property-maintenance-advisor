@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,7 @@ from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
     live_env,
     ran,
     run_flo_live,
+    run_record,
     thread_of,
 )
 
@@ -95,10 +97,11 @@ def test_recording_holds_no_key_photo_bytes_or_real_page_text(live_env: Path, mo
     text = path.read_text(encoding="utf-8")
 
     recorded = cassette["research"]["tool_results"][0]["results"][0]
-    assert recorded == {"url": REAL_URL_CLEAN, "title": recorded["title"], "content": "", "raw_content": None,
-                        "score": recorded["score"]}
-    assert REAL_SNIPPET not in text and REAL_BODY not in text
     [withheld] = texts["withheld"]
+    # The page text stays out; only its hash is kept, so a replay can read it locally (D4).
+    assert recorded == {"url": REAL_URL_CLEAN, "title": recorded["title"], "content": "", "raw_content": None,
+                        "score": recorded["score"], "text_sha256": withheld["raw_content_sha256"]}
+    assert REAL_SNIPPET not in text and REAL_BODY not in text
     assert withheld["url"] == REAL_URL_CLEAN
     pages = Path(texts["pages_dir"])
     assert (pages / f"{withheld['content_sha256']}.txt").read_text(encoding="utf-8") == REAL_SNIPPET
@@ -227,3 +230,160 @@ def test_parallel_calls_are_recorded_in_the_order_the_model_issued_them() -> Non
     ordered = cli.recorder_in_call_order(log, script)
     assert [(line, e["query"]) for line, e in ordered] == [
         (3, "a"), (4, "b"), (1, "c"), (2, "https://example.com/x"), (5, "unclaimed")]
+
+
+REAL_FETCH_URL = "https://www.sundancespas.com/owners/manuals/optima-880-heater"
+REAL_FETCH_BODY = "Optima 880 heater page. The flow switch opens when the filter is clogged."
+
+
+def test_recorded_fetch_keeps_its_page_text_hash(live_env: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 capsys: pytest.CaptureFixture[str]) -> None:
+    """Mutation: recorder_fetch_text_hash_dropped (a fetch result loses its
+    text_sha256, so a page only fetched, never searched, cannot be read back
+    by replay). D4 asks the recorder to keep the hash on every result whose
+    page text was saved; review finding T1."""
+    data = flo_data()
+    data["research"]["script"][1]["message"]["tool_calls"].append(
+        {"name": "fetch", "args": {"url": REAL_FETCH_URL}})
+    data["research"]["tool_results"].append(
+        {"tool": "fetch", "url": REAL_FETCH_URL, "results": [{"url": REAL_FETCH_URL, "raw_content": REAL_FETCH_BODY}]})
+    fakes = LiveFakes(data).install(monkeypatch)
+    run_flo_live(monkeypatch, capsys, fakes)
+    path, cassette, _, texts = recording_files(live_env)
+    load_cassette(path)
+    [fetched] = [e for e in cassette["research"]["tool_results"] if e["tool"] == "fetch"]
+    [result] = fetched["results"]
+    [withheld] = [w for w in texts["withheld"] if w["url"] == REAL_FETCH_URL]
+    assert result["raw_content"] is None and REAL_FETCH_BODY not in path.read_text(encoding="utf-8")
+    assert withheld["raw_content_sha256"] and result["text_sha256"] == withheld["raw_content_sha256"]
+    page = Path(texts["pages_dir"]) / f"{result['text_sha256']}.txt"
+    assert page.read_text(encoding="utf-8") == REAL_FETCH_BODY
+
+
+def test_live_recording_replays_grounding_from_local_page_text(live_env: Path, monkeypatch: pytest.MonkeyPatch,
+                                                                capsys: pytest.CaptureFixture[str]) -> None:
+    """Mutations: recorder_text_hash_dropped (results lose their text_sha256, so a
+    replay of the recording cannot find the cited page and reports unverifiable
+    even with the page text on disk); persist_edge_page_hash_dropped (the
+    replayed edge stores no hash of the page it was checked against). D4: the cited page is on a real URL, so its
+    text stays out of the cassette; replay reads it from the pages folder by
+    hash (grounding verified), and without it reports unverifiable and still
+    reaches ok."""
+    data = flo_data()
+    cited_url = "https://www.sundancespas.com/owners/manuals/optima-880-flo"
+    for entry in data["research"]["tool_results"]:
+        for result in entry.get("results") or []:
+            if result["url"] == "https://example.com/synthetic/spa/flo-code":
+                result["url"] = cited_url
+    # A verbatim quote of the cited page, so replay has an edge to write.
+    data["synthesize"][0]["draft"]["candidates"][1]["evidence"] = "Error FLO means the heater senses no water flow."
+    fakes = LiveFakes(data).install(monkeypatch)
+    thread_id, live_out = run_flo_live(monkeypatch, capsys, fakes)
+    assert run_record(thread_id)["grounding_status"] == "verified"
+    path, cassette, _, texts = recording_files(live_env)
+    recorded = next(r for e in cassette["research"]["tool_results"] for r in e.get("results") or []
+                    if r["url"] == cited_url)
+    assert recorded["raw_content"] is None and recorded["content"] == ""
+    assert recorded["text_sha256"] in {w["raw_content_sha256"] for w in texts["withheld"]}
+    assert (live_env / "pages" / f"{recorded['text_sha256']}.txt").is_file()
+
+    def replay() -> dict[str, Any]:
+        assert cli.main(["ask", "--symptom", SYMPTOM, "--photo", str(PLATE), "--cassette", str(path)]) == cli.EXIT_OK
+        out = capsys.readouterr().out
+        thread = thread_of(out)
+        assert cli.main(["resume", thread, *RESUME_FLAGS, "--cassette", str(path)]) == cli.EXIT_OK
+        out += capsys.readouterr().out
+        assert "status: ok" in out and ran(out) == ran(live_out)
+        return run_record(thread)
+
+    monkeypatch.setenv(config.ENV_MODE, "replay")
+    # Without the page text (a fresh clone): ok, and the record says why grounding was not checked.
+    monkeypatch.setattr(config, "PAGES_DIR", live_env / "no_pages")
+    without = replay()
+    assert without["status"] == "ok" and without["grounding_status"] == "unverifiable"
+    assert [(g["source_url"], g["reason"]) for g in without["grounding"]] == [
+        (cited_url, "replay of a live recording: the cited page's text is not in the local pages folder")]
+    # With the page text in the local pages folder: grounding is checked and verified.
+    monkeypatch.setattr(config, "PAGES_DIR", live_env / "pages")
+    with_pages = replay()
+    assert with_pages["status"] == "ok" and with_pages["grounding_status"] == "verified"
+    assert [(g["source_url"], g["status"]) for g in with_pages["grounding"]] == [(cited_url, "verified")]
+    # The edge names the page its evidence was checked against, though the
+    # replayed source had no text hash of its own (persist_edge_page_hash_dropped).
+    edges = json.loads(Path(with_pages["graph_edges"]["target"]).read_text(encoding="utf-8"))["edges"]
+    assert [e["text_sha256"] for e in edges if e["source_url"] == cited_url] == [recorded["text_sha256"]]
+
+
+# The fixed build's hot tub first lookup (run t-267045726dd04118), as its
+# live recording sits, untracked, in the local data folder (or the one
+# ADVISOR_PHASE5_DATA_DIR names, which the mutation gate sets, since its repo
+# copies leave data out). It is read only here and not copied into the tests;
+# these tests skip on a checkout without it. The Phase 5 recording these tests
+# first used belonged to a build that was superseded, so it is no longer read.
+PHASE5_DATA = Path(os.environ.get("ADVISOR_PHASE5_DATA_DIR") or config.REPO_ROOT / "data")
+PHASE5 = PHASE5_DATA / "recordings" / "live_t_267045726dd04118.json"
+PHASE5_TEXTS = PHASE5.with_name(f"{PHASE5.stem}.texts.json")
+PHASE5_CITED = "https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information"
+PHASE5_PAGE_SHA = "b926708a0f7ed0534707b1ed63e7730b1663e47f0252ef7713888758f15c4e9d"
+PHASE5_PAGES = PHASE5_DATA / "pages"
+
+
+def _phase5_without_inline_hashes(dest: Path) -> Path:
+    """A copy of the recording under dest with every inline text_sha256 removed
+    and its texts file beside it, as a recording made before the recorder wrote
+    hashes inline would be: the texts file is then the only way to its pages."""
+    data = json.loads(PHASE5.read_text(encoding="utf-8"))
+    for entry in (data.get("research") or {}).get("tool_results") or []:
+        for result in entry.get("results") or []:
+            result.pop("text_sha256", None)
+    dest.mkdir(parents=True, exist_ok=True)
+    out = dest / PHASE5.name
+    out.write_text(json.dumps(data), encoding="utf-8")
+    (dest / PHASE5_TEXTS.name).write_text(PHASE5_TEXTS.read_text(encoding="utf-8"), encoding="utf-8")
+    return out
+
+
+def _replay_phase5(capsys: pytest.CaptureFixture[str], cassette: Path) -> dict[str, Any]:
+    assert cli.main(["ask", "--symptom", SYMPTOM, "--photo", str(PLATE), "--cassette", str(cassette)]) == cli.EXIT_OK
+    thread = thread_of(capsys.readouterr().out)
+    assert cli.main(["resume", thread, *RESUME_FLAGS, "--cassette", str(cassette)]) == cli.EXIT_OK
+    assert "status: ok" in capsys.readouterr().out
+    return run_record(thread)
+
+
+@pytest.mark.skipif(not (PHASE5.is_file() and PHASE5_TEXTS.is_file()),
+                    reason="the fixed build's hot tub recording is not in this checkout's data folder")
+@pytest.mark.parametrize("with_pages", [False, True], ids=["without_page_text", "with_page_text"])
+def test_phase5_recording_replays_to_ok(live_env: Path, monkeypatch: pytest.MonkeyPatch,
+                                        capsys: pytest.CaptureFixture[str], with_pages: bool) -> None:
+    """D4 acceptance on a real live recording (review findings T5, P1), the
+    fixed build's hot tub first lookup with its inline page hashes removed:
+    status ok both ways; without its page text, grounding unverifiable with
+    the live recording reason; with data/pages linked in (read only), grounding
+    verified from the cited page, found through the recording's texts file,
+    and the stored FLO evidence ends on a whole word. Everything the replay
+    writes goes under tmp_path. Mutation: validate_sidecar_ignored (with page
+    text the grounding stays unverifiable)."""
+    cassette = _phase5_without_inline_hashes(live_env / "phase5_recording")
+    assert "text_sha256" not in json.dumps(json.loads(cassette.read_text(encoding="utf-8"))["research"])
+    pages = live_env / "pages"
+    pages.mkdir(parents=True, exist_ok=True)
+    if with_pages:
+        if not (PHASE5_PAGES / f"{PHASE5_PAGE_SHA}.txt").is_file():
+            pytest.skip("the cited page is not in this checkout's data/pages")
+        for page in PHASE5_PAGES.glob("*.txt"):
+            (pages / page.name).symlink_to(page)
+    monkeypatch.setenv(config.ENV_MODE, "replay")
+    record = _replay_phase5(capsys, cassette)
+    assert record["status"] == "ok"
+    [entry] = record["grounding"]
+    assert entry["source_url"] == PHASE5_CITED
+    if not with_pages:
+        assert record["grounding_status"] == "unverifiable"
+        assert entry["reason"] == "replay of a live recording: the cited page's text is not in the local pages folder"
+        return
+    assert record["grounding_status"] == "verified" and entry["status"] == "verified"
+    edges = json.loads(Path(record["graph_edges"]["target"]).read_text(encoding="utf-8"))["edges"]
+    [flo] = [e for e in edges if e["kind"] == "HAS_CODE"]
+    assert flo["source_url"] == PHASE5_CITED and flo["text_sha256"] == PHASE5_PAGE_SHA
+    assert flo["evidence"].endswith("The heater is deactivated and")

@@ -110,12 +110,15 @@ def drop_uncited_non_web(shaped: dict[str, Any]) -> None:
 
 def check_grounding(brief: dict[str, Any], *, sources: list[dict[str, Any]], mode: str,
                     provenance: dict | None, page_texts: dict[str, str],
-                    report: list[dict[str, Any]] | None = None) -> list[str]:
+                    report: list[dict[str, Any]] | None = None,
+                    recorded_text_urls: set[str] | frozenset[str] = frozenset()) -> list[str]:
     """Rule 4, code grounding (decision 25): errors for codes that fail.
 
     Each candidate's cited source is looked up by URL in the run's registry
-    for its snippet, and in `page_texts` for its raw text. One entry per
-    candidate with a code is appended to `report` when one is given.
+    for its snippet, and in `page_texts` for its raw text. A source had raw
+    text when it carries a text_sha256 or its URL is in `recorded_text_urls`
+    (the pages a replayed recording names). One entry per candidate with a
+    code is appended to `report` when one is given.
     """
     by_url = {s.get("url"): s for s in sources}
     brief_sources = brief.get("sources") or []
@@ -131,6 +134,7 @@ def check_grounding(brief: dict[str, Any], *, sources: list[dict[str, Any]], mod
             str(code), cited, page_text=page_texts.get(url), snippet=(by_url.get(url) or {}).get("snippet"),
             mode=mode, provenance=provenance, evidence=cand.get("evidence"),
             observed_code=brief.get("observed_code"),
+            had_raw_text=url in recorded_text_urls or bool((by_url.get(url) or {}).get("text_sha256")),
         )
         if report is not None:
             report.append({"candidate": i, "code": str(code), "source_url": url,
@@ -182,6 +186,7 @@ def run_rules(
     page_texts: dict[str, str] | None = None,
     today: date | None = None,
     maintenance_log: list[dict] | None = None,
+    recorded_text_urls: set[str] | None = None,
 ) -> RulesResult:
     """Run every v2 rule over one model draft.
 
@@ -192,7 +197,8 @@ def run_rules(
     `search_trail` gives the refusal block's `searched`; `page_texts` maps a
     source URL to its fetched raw text; `maintenance_log` is the appliance's
     registry maintenance rows (`Registry.maintenance_log`), from which rule 9
-    writes due dates. `pass_kind` is "synthesize", or "upgrade" for the pass
+    writes due dates; `recorded_text_urls` names the URLs whose page text a
+    replayed recording says was saved (rule 4). `pass_kind` is "synthesize", or "upgrade" for the pass
     after upgrade_check added graph derived options to the draft: the same
     rules run on both, so a graph option is checked like a model option and
     pruning and renumbering come after it is in (decision 27).
@@ -228,7 +234,8 @@ def run_rules(
     grounding_checked = not errors
     if grounding_checked:  # a rule 3 failure already rejects the draft; its candidates were not narrowed
         errors += check_grounding(brief, sources=sources, mode=mode, provenance=provenance,
-                                  page_texts=page_texts, report=grounding_report)
+                                  page_texts=page_texts, report=grounding_report,
+                                  recorded_text_urls=frozenset(recorded_text_urls or ()))
     safety.apply_safety_order(brief)
     clearing.clear_on_refusal(brief)
     citations.check_happened_before(brief, history_hits, (registry or {}).get("id"))

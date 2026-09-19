@@ -1,0 +1,62 @@
+{
+ "cassette_version": 1,
+ "case": "live_t_5a0000000000000a",
+ "input": {
+  "identity": {
+   "manufacturer": "Nomaker",
+   "model": "ZZ-1",
+   "serial": null,
+   "manufacture_date": null
+  },
+  "symptom": "not heating",
+  "plate_sha256": null
+ },
+ "read_plate": null,
+ "classifier": [],
+ "resume": {},
+ "research": {
+  "script": [
+   {
+    "message": {
+     "content": "",
+     "tool_calls": [
+      {
+       "name": "search",
+       "args": {
+        "query": "Nomaker ZZ-1 manual"
+       }
+      },
+      {
+       "name": "search",
+       "args": {
+        "query": "Nomaker ZZ-1 error codes"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "tool_results": [
+   {
+    "tool": "search",
+    "query": "Nomaker ZZ-1 manual",
+    "credits": 1,
+    "results": [
+     {
+      "url": "https://spa.example.com/error-codes",
+      "title": "Spa error codes (synthetic)"
+     },
+     {
+      "url": "https://spa.example.com/heater-guide",
+      "title": "Heater guide"
+     }
+    ]
+   }
+  ],
+  "blocked_calls": {
+   "search": 1
+  }
+ },
+ "synthesize": [],
+ "page_texts": {}
+}

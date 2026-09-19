@@ -12,7 +12,7 @@ node_modules/
 # already public fields.
 .env
 .env.local
-data/
+/data/
 
 # Python virtualenv and caches for the v2 agent
 .venv/

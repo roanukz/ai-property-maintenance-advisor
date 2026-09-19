@@ -5,7 +5,8 @@ Raw dash characters and their escapes (JSON or Python \\u2013 and \\u2014,
 Escapes are allowed in cassette text under agent/tests/cassettes/, which
 keeps v1 model output verbatim (decision 17). A file that mentions an escape
 or a spelling in order to check for it or plant it is on MENTION_ALLOWLIST
-with its reason. A raw dash character is allowed nowhere.
+with its reason. A raw dash character is allowed nowhere but in the one file on
+VERBATIM_V1_FILES: v1's published recorded briefs, kept byte for byte.
 """
 
 from __future__ import annotations
@@ -61,11 +62,18 @@ def _rel(path: Path) -> str:
     return path.relative_to(config.REPO_ROOT).as_posix()
 
 
+# v1's recorded briefs, published as src/fixtures.js before the house style and
+# moved here unchanged when the v2 demo replaced that file. The legacy renderer
+# must still reproduce v1's published briefs/*.html from them byte for byte, so
+# their dashes stay. Raw dashes only; every other check still applies.
+VERBATIM_V1_FILES = {"agent/tests/fixtures/v1_fixtures.js"}
+
+
 def dash_hits(path: Path) -> list[str]:
     rel = _rel(path)
     hits = []
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        if DASH_CHARS.search(line):
+        if DASH_CHARS.search(line) and rel not in VERBATIM_V1_FILES:
             hits.append(f"{rel}:{n}: dash character")
         if DASH_ESCAPES.search(line) and not rel.startswith(ESCAPE_EXEMPT_DIRS) \
                 and rel not in MENTION_ALLOWLIST:

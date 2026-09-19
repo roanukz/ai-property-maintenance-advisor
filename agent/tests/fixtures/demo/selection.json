@@ -1,0 +1,27 @@
+{
+ "format": 1,
+ "data_status": "rerun",
+ "build_id": "0123456789abcdef",
+ "recorded_on": "2026-09-20",
+ "roles": {
+  "hot_tub_code_first": "t-5a00000000000001",
+  "hot_tub_code_repeat": "t-5a00000000000002",
+  "hot_tub_vague": "t-5a00000000000003",
+  "ac_first": "t-5a00000000000004",
+  "ac_new_symptom": "t-5a00000000000005",
+  "no_such_model": "t-5a00000000000006",
+  "blurry_plate": "t-5a00000000000007",
+  "hot_tub_with_history": "t-5a00000000000008"
+ },
+ "also_count": {
+  "no_such_model": [
+   "t-5a00000000000009",
+   "t-5a0000000000000a"
+  ]
+ },
+ "compare": {
+  "hot_tub_code_repeat": "hot_tub_code_first",
+  "hot_tub_vague": "hot_tub_code_first",
+  "ac_new_symptom": "ac_first"
+ }
+}

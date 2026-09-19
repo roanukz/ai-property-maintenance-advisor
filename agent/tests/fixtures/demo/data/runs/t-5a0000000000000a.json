@@ -1,0 +1,51 @@
+{
+ "run_id": "t-5a0000000000000a",
+ "thread_id": "t-5a0000000000000a",
+ "build_id": "0123456789abcdef",
+ "mode": "cheap",
+ "status": "no_reliable_answer",
+ "refusal_origin": "model",
+ "stop_reason": null,
+ "route": [
+  "research"
+ ],
+ "route_reason": "Route table row 5: the graph has nothing verified for this synthetic unit, so research runs.",
+ "research_limits": "main",
+ "searches": 1,
+ "fetches": 0,
+ "tavily_credits": 1,
+ "cost_usd": 0.01,
+ "latency_s": 7.0,
+ "generated_at": "2026-09-20T10:11:00+00:00",
+ "grounding": [],
+ "grounding_status": "not_applicable",
+ "brief": {
+  "status": "no_reliable_answer",
+  "matched_identity": null,
+  "observed_code": null,
+  "candidates": [],
+  "sources": [],
+  "no_reliable_answer": {
+   "found": [
+    "Nothing names this model (synthetic)."
+   ],
+   "why_insufficient": "No page names the ZZ-1 (synthetic).",
+   "searched": [
+    "Nomaker ZZ-1 manual",
+    "Nomaker ZZ-1 error codes"
+   ]
+  }
+ },
+ "graph_edges": {
+  "written": 0,
+  "already_present": 0,
+  "dropped": [],
+  "skipped": null
+ },
+ "html_path": "data/briefs/t-5a0000000000000a.html",
+ "sc11": {
+  "result": "pass",
+  "run_cap_usd": 0.15,
+  "run_total_usd": 0.01
+ }
+}

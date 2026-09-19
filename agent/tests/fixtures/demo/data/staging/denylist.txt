@@ -1,0 +1,2 @@
+# Synthetic denylist for test_build_demo.py
+quillfeather lodge

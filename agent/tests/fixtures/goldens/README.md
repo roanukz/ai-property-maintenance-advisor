@@ -9,7 +9,7 @@ shows up as a failing test until the golden is regenerated and reviewed again.
 
 | File | Brief | How it was made |
 |---|---|---|
-| `v2_flo.html` | recorded FLO brief (`src/fixtures.js`, case `flo`) | through validate (`run_rules`, replay mode, v1 provenance), then `render_brief` |
+| `v2_flo.html` | recorded FLO brief (`fixtures/v1_fixtures.js`, v1's published `src/fixtures.js`, case `flo`) | through validate (`run_rules`, replay mode, v1 provenance), then `render_brief` |
 | `v2_notheating.html` | recorded vague symptom brief (case `notheating`) | same |
 | `v2_hvac.html` | recorded Trane brief (case `hvac`) | same |
 | `v2_unknown.html` | recorded fabricated model refusal (case `unknown`) | same; the recorded search list is the search trail |
@@ -19,7 +19,8 @@ shows up as a failing test until the golden is regenerated and reviewed again.
 | `v2_maintenance_due.html` | synthetic brief with one maintenance item | through validate (rules 9 and 10), with a synthetic maintenance_log row. As on a live run, the item carries no `last_done_record_id`: code finds the log row by its task, copies its date into `last_done_on` and computes the due date. Rendered with the run context the render node builds (history_hits only), so the page shows what production shows |
 | `v2_all_forum.html` | synthetic brief whose sources are all forum hosts | through validate |
 
-The recorded briefs are public (`src/fixtures.js`, `briefs/`). Everything else
+The recorded briefs are public (`fixtures/v1_fixtures.js`, which was v1's
+published `src/fixtures.js`, and `briefs/`). Everything else
 is synthetic: an invented maker and model, example.com URLs, and text labeled
 "(synthetic)". Every recorded case is rendered with generated_at and
 retrieval dates of 2026-08-18, the date of the recorded run, and validate is

@@ -6,10 +6,12 @@ Mutations that turn these red:
 - editing one byte of any published file, or adding or deleting a file in
   those paths: test_published_files_unchanged fails.
 - adding an absolute or protocol relative load to a published page (for
-  example <img src="https://example.com/x.png"> in a brief, or
+  example <img src="https://example.com/x.png"> in a brief, at any depth
+  under briefs/ such as the v2 demo's briefs/v2/, or
   <link rel="stylesheet" href="//cdn.example.com/a.css"> in tool.html), a CSS
   url() or @import to another origin, or a fetch(), XMLHttpRequest, WebSocket
-  or sendBeacon call in src/demo.js: the demo test lists it.
+  or sendBeacon call in src/demo.js or src/fixtures.js, or an off origin load
+  in src/demo.css: the demo test lists it.
 - the tag, CSS or script checks removed from the scanner:
   test_scanner_catches_each_kind fails.
 """
@@ -171,13 +173,17 @@ def stylesheet_problems(path: Path, seen: set[Path] | None = None) -> list[str]:
 
 
 def test_demo_makes_no_off_origin_or_script_requests() -> None:
-    pages = [ROOT / "tool.html", ROOT / "index.html", *sorted((ROOT / "briefs").glob("*.html"))]
+    # briefs/**: v1's four briefs sit in briefs/, the v2 demo's in briefs/v2/.
+    pages = [ROOT / "tool.html", ROOT / "index.html", *sorted((ROOT / "briefs").rglob("*.html"))]
+    assert any(p.parent.name == "v2" for p in pages), "expected the v2 demo's briefs in briefs/v2/"
     problems: list[str] = []
     for page in pages:
         problems += page_problems(page)
-    # demo.js is loaded by tool.html, but scan it directly too so a change to
-    # the script tag cannot hide it.
-    problems += [f"src/demo.js: {p}" for p in script_problems((ROOT / "src" / "demo.js").read_text(encoding="utf-8"))]
+    # The demo's script, data and styles are loaded by tool.html, but scan them
+    # directly too so a change to a script or link tag cannot hide them.
+    for rel in ("src/demo.js", "src/fixtures.js"):
+        problems += [f"{rel}: {p}" for p in script_problems((ROOT / rel).read_text(encoding="utf-8"))]
+    problems += [f"src/demo.css: {p}" for p in stylesheet_problems(ROOT / "src" / "demo.css")]
     assert not problems, "\n".join(problems)
 
     # The demo sets img.src and iframe.src from the fixtures; both must be local.

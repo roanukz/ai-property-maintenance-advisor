@@ -1,0 +1,32 @@
+{
+ "nodes": [
+  {
+   "key": "model:sundance-spas:optima880",
+   "type": "model"
+  },
+  {
+   "key": "code:sundance-spas:optima880:FLO",
+   "type": "code",
+   "code": "FLO"
+  },
+  {
+   "key": "source:spa-codes",
+   "type": "source",
+   "url": "https://spa.example.com/error-codes",
+   "title": "Spa error codes (synthetic)",
+   "tier": "dealer"
+  }
+ ],
+ "edges": [
+  {
+   "kind": "HAS_CODE",
+   "src": "model:sundance-spas:optima880",
+   "dst": "code:sundance-spas:optima880:FLO",
+   "source_url": "https://spa.example.com/error-codes",
+   "evidence": "FLO | Flow is restricted (synthetic test text).",
+   "retrieved_at": "2026-09-20T10:01:00+00:00",
+   "validated_at": "2026-09-20T10:01:00+00:00",
+   "brief_run_id": "t-5a00000000000001"
+  }
+ ]
+}

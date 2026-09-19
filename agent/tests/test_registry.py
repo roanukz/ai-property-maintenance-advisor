@@ -53,16 +53,17 @@ def test_seed_rejects_a_row_not_marked_synthetic(tmp_path: Path) -> None:
 def test_seed_has_one_discontinued_synthetic_model_and_flags_third_real_model(
     registry: Registry,
 ) -> None:
-    # Mutation: seed status "active" on the SC9 model, or drop pending_owner_choice,
-    # or drop the dated record of the check of the maker's page (the check itself is
-    # also recorded in the Phase 1 DECISION-LOG entry).
+    # Mutation: seed status "active" on the SC9 model, or load pending_owner_choice
+    # as set on every row, or drop the dated record of the check of the maker's
+    # page (the check itself is also recorded in the Phase 1 DECISION-LOG entry).
     discontinued = [a for a in registry.list_appliances() if a["status"] == "discontinued"]
     assert len(discontinued) == 1
     assert "(synthetic)" in discontinued[0]["model"]
-    pending = [a for a in registry.list_appliances() if a["pending_owner_choice"]]
-    assert [a["category"] for a in pending] == ["water_heater"]
-    assert "rheem.com" in pending[0]["notes"]
-    assert "Checked on 18 September 2026: the maker's product page" in pending[0]["notes"]
+    # The third real model was confirmed on 18 September 2026, so nothing is pending.
+    assert [a["id"] for a in registry.list_appliances() if a["pending_owner_choice"]] == []
+    [heater] = [a for a in registry.list_appliances() if a["category"] == "water_heater"]
+    assert "rheem.com" in heater["notes"] and "confirmed on 18 September 2026" in heater["notes"]
+    assert "Checked on 18 September 2026: the maker's product page" in heater["notes"]
 
 
 def test_optima_has_one_flo_service_record_with_citation_id(registry: Registry) -> None:

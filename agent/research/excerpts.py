@@ -126,30 +126,64 @@ def _cost(spans: list[tuple[int, int]]) -> int:
     return sum(end - start for start, end in spans) + len(JOIN) * (len(spans) - 1)
 
 
+def _boundary(text: str, i: int) -> bool:
+    """True when position i does not sit inside a word (whitespace or a text edge on one side)."""
+    return i <= 0 or i >= len(text) or text[i - 1].isspace() or text[i].isspace()
+
+
+def _prev_boundary(text: str, i: int) -> int:
+    while not _boundary(text, i):
+        i -= 1
+    return i
+
+
+def _next_boundary(text: str, i: int) -> int:
+    while not _boundary(text, i):
+        i += 1
+    return i
+
+
 def _snap(text: str, start: int, end: int, anchor: tuple[int, int]) -> tuple[int, int]:
-    """Move window edges to whitespace so excerpts do not start or end mid word."""
-    if start > 0:
-        gap = re.search(r"\s", text[start:anchor[0]])
-        if gap:
-            start += gap.end()
-    if end < len(text):
-        tail = text[anchor[1]:end]
-        last = max(tail.rfind(" "), tail.rfind("\n"))
-        if last >= 0:
-            end = anchor[1] + last
-    return start, end
+    """Window edges moved to word boundaries, so no excerpt starts or ends mid word (Phase 6 finding 3).
+
+    Each edge moves inward to the nearest boundary, or outward when moving
+    inward would cut into the anchor; edge whitespace is then trimmed. The
+    caller checks the budget on the result, since an outward move can grow it.
+    """
+    s = _next_boundary(text, start)
+    if s > anchor[0]:
+        s = _prev_boundary(text, min(start, anchor[0]))
+    e = _prev_boundary(text, end)
+    if e < anchor[1]:
+        e = _next_boundary(text, max(end, anchor[1]))
+    while s < e and text[s].isspace():
+        s += 1
+    while e > s and text[e - 1].isspace():
+        e -= 1
+    return s, e
 
 
-def cut_excerpts(text: str | None, terms: Terms, max_chars: int, *,
-                 window: int = config.EXCERPT_WINDOW_CHARS) -> list[str]:
-    """Verbatim windows of `text` whose rendered length is at most max_chars.
+def _opening(text: str, max_chars: int) -> list[tuple[int, int]]:
+    """The page's opening in whole words within max_chars, or nothing when its first word is longer."""
+    s = _next_boundary(text, 0)
+    while s < len(text) and text[s].isspace():
+        s += 1
+    e = _prev_boundary(text, min(len(text), s + max_chars))
+    while e > s and text[e - 1].isspace():
+        e -= 1
+    return [(s, e)] if e > s else []
+
+
+def cut_spans(text: str | None, terms: Terms, max_chars: int, *,
+              window: int = config.EXCERPT_WINDOW_CHARS) -> list[tuple[int, int]]:
+    """(start, end) of each excerpt in page order; each starts and ends at a word boundary.
 
     With no anchor in the text, the page's opening is used instead.
     """
     if not text or max_chars <= 0:
         return []
     if len(text) <= max_chars:
-        return [text]
+        return [(0, len(text))]
     chosen: list[tuple[int, int]] = []
     for anchor in _anchors(text, terms):
         start, end = anchor
@@ -162,14 +196,27 @@ def cut_excerpts(text: str | None, terms: Terms, max_chars: int, *,
             if spare < 0:
                 continue
             pad = spare // 2
-            candidate = _merge(chosen + [(max(0, start - pad), min(len(text), end + pad))])
+            narrow = _snap(text, max(0, start - pad), min(len(text), end + pad), anchor)
+            candidate = _merge(chosen + [narrow])
+            if _cost(candidate) > max_chars:
+                # Snapping one edge outward can overrun; the anchor's own words may still fit.
+                candidate = _merge(chosen + [_snap(text, start, end, anchor)])
             if _cost(candidate) > max_chars:
                 continue
         chosen = candidate
         if _cost(chosen) >= max_chars - len(JOIN):
             break
     if not chosen:
-        return [text[:max_chars]]
+        return _opening(text, max_chars)
+    return chosen
+
+
+def cut_excerpts(text: str | None, terms: Terms, max_chars: int, *,
+                 window: int = config.EXCERPT_WINDOW_CHARS) -> list[str]:
+    """Verbatim windows of `text`, whole words only, whose rendered length is at most max_chars."""
+    if not text:
+        return []
+    chosen = cut_spans(text, terms, max_chars, window=window)
     return [text[s:e] for s, e in chosen]
 
 

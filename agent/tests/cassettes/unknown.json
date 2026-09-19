@@ -1,0 +1,460 @@
+{
+  "cassette_version": 1,
+  "case": "unknown",
+  "provenance": {
+    "derived_from": "v1 lookup a601fd524225",
+    "copied_fields": [
+      "input.symptom",
+      "research.tool_results[*].results[*].url",
+      "research.tool_results[*].results[*].title",
+      "synthesize[*].draft.status",
+      "synthesize[*].draft.matched_identity",
+      "synthesize[*].draft.no_reliable_answer.found[*]",
+      "synthesize[*].draft.no_reliable_answer.why_insufficient",
+      "synthesize[*].draft.source_tiers[*].tier",
+      "input.identity.manufacturer",
+      "input.identity.model",
+      "input.identity.serial",
+      "input.identity.manufacture_date",
+      "expect.v1_searched[*]"
+    ],
+    "public_already": "src/fixtures.js case unknown; briefs/a601fd524225.html",
+    "synthetic_fields": [
+      "research.script (one search per turn, then a final message)",
+      "research.tool_results[*].query (differ from v1's recorded searched strings)",
+      "research.tool_results[*].results on example hosts (decoys, interleaved between cited sources)",
+      "research.tool_results[*].results[*].score and credits",
+      "research.tool_results[*].results[*].content (empty on real URLs; v1 recorded no text)",
+      "research.script[*].message.usage and synthesize[*].usage (PLAN section 9 typical split)",
+      "synthesize[*].draft evidence, authorship_quote (empty), upgrade_options and maintenance_due (empty)",
+      "synthesize[*].draft source_index values (remapped by URL into the code built registry)",
+      "expect"
+    ],
+    "built_by": "agent/replay/build_cassettes.py",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Aquarest",
+      "model": "ZX-9000 Pro",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "not heating",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Aquarest ZX-9000 Pro spa service manual"
+              },
+              "id": "call_unknown_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Aquarest spa ZX-9000 Pro heater fault"
+              },
+              "id": "call_unknown_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "AquaRest spas current model list"
+              },
+              "id": "call_unknown_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "AquaRest spa control pack owner manual"
+              },
+              "id": "call_unknown_search_4"
+            }
+          ],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "ZX-9000 Pro hot tub manufacturer"
+              },
+              "id": "call_unknown_search_5"
+            }
+          ],
+          "usage": {
+            "input_tokens": 10600,
+            "output_tokens": 250,
+            "total_tokens": 10850
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research finished after 5 searches; the results above are what I found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 12750,
+            "output_tokens": 250,
+            "total_tokens": 13000
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Aquarest ZX-9000 Pro spa service manual",
+        "results": [
+          {
+            "url": "https://example.org/replay/unknown/decoy-01",
+            "title": "Synthetic decoy result 01 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.95
+          },
+          {
+            "url": "https://www.homedepot.com/b/Outdoors-Home-Spas-Hot-Tubs/AquaRest-Spas/N-5yc1vZcfz2Ze48",
+            "title": "AquaRest Spas \u2014 Hot Tubs at The Home Depot (retail model listings)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.94
+          },
+          {
+            "url": "https://example.net/replay/unknown/decoy-02",
+            "title": "Synthetic decoy result 02 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.93
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-03",
+            "title": "Synthetic decoy result 03 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.92
+          },
+          {
+            "url": "https://example.org/replay/unknown/decoy-04",
+            "title": "Synthetic decoy result 04 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.91
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Aquarest spa ZX-9000 Pro heater fault",
+        "results": [
+          {
+            "url": "https://www.manualslib.com/brand/aquarest-spas/",
+            "title": "AquaRest Spas User Manuals Download \u2014 brand index (AR-300 TRI, AR-400 X4H, AR-500 X5H, AR-600 EZB)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.948
+          },
+          {
+            "url": "https://example.net/replay/unknown/decoy-05",
+            "title": "Synthetic decoy result 05 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.938
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-06",
+            "title": "Synthetic decoy result 06 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.928
+          },
+          {
+            "url": "https://example.org/replay/unknown/decoy-07",
+            "title": "Synthetic decoy result 07 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.918
+          },
+          {
+            "url": "https://aquarestspas.com/spa-showroom/",
+            "title": "AquaRest Spas \u2014 Spa Showroom (current model lineup)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.908
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "AquaRest spas current model list",
+        "results": [
+          {
+            "url": "https://example.net/replay/unknown/decoy-08",
+            "title": "Synthetic decoy result 08 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.946
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-09",
+            "title": "Synthetic decoy result 09 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.936
+          },
+          {
+            "url": "https://example.org/replay/unknown/decoy-10",
+            "title": "Synthetic decoy result 10 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.926
+          },
+          {
+            "url": "https://example.net/replay/unknown/decoy-11",
+            "title": "Synthetic decoy result 11 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.916
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-12",
+            "title": "Synthetic decoy result 12 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.906
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "AquaRest spa control pack owner manual",
+        "results": [
+          {
+            "url": "https://aquarestspas.com/wp-content/uploads/2016/12/AR-2017-OWNERS-MANUAL-DOMESTIC-ENGLISH-UHS-378100-1-REV-O-.pdf",
+            "title": "AquaRest UHS Spa Owner's Manual, PN 378100-1 Rev O (Domestic)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.944
+          },
+          {
+            "url": "https://example.org/replay/unknown/decoy-13",
+            "title": "Synthetic decoy result 13 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.934
+          },
+          {
+            "url": "https://example.net/replay/unknown/decoy-14",
+            "title": "Synthetic decoy result 14 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.924
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-15",
+            "title": "Synthetic decoy result 15 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.914
+          },
+          {
+            "url": "https://aquarestspas.com/wp-content/uploads/2019/02/AR-OWNERS-MANUAL-DOMESTIC-ENGLISH-HU2-378100-2-REV-S-.pdf",
+            "title": "AquaRest HU2 Spa Owner's Manual, PN 378100-2 Rev S (Domestic)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.904
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "ZX-9000 Pro hot tub manufacturer",
+        "results": [
+          {
+            "url": "https://example.org/replay/unknown/decoy-16",
+            "title": "Synthetic decoy result 16 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.942
+          },
+          {
+            "url": "https://example.net/replay/unknown/decoy-17",
+            "title": "Synthetic decoy result 17 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.932
+          },
+          {
+            "url": "https://example.com/replay/unknown/decoy-18",
+            "title": "Synthetic decoy result 18 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.922
+          },
+          {
+            "url": "https://aquarestspas.com/owners/",
+            "title": "AquaRest Spas \u2014 Owners (support and manuals hub)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.912
+          },
+          {
+            "url": "https://example.org/replay/unknown/decoy-19",
+            "title": "Synthetic decoy result 19 (unknown)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.902
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "draft": {
+        "status": "no_reliable_answer",
+        "matched_identity": null,
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [],
+        "warranty": null,
+        "no_reliable_answer": {
+          "found": [
+            "Official AquaRest owner's manuals exist for the UHS and HU2 spa control platforms (PN 378100 series) hosted on aquarestspas.com, but none reference a ZX-9000 or ZX series.",
+            "The manufacturer's own owners/support and showroom pages list AquaRest's product lineup under names such as AR-300, AR-400, AR-500, AR-600, Select 300, Elite 500/600, and Day Dream \u2014 no ZX-prefixed model appears.",
+            "ManualsLib's AquaRest Spas brand page indexes owner's manuals only for AR-300 TRI, AR-400 X4H, AR-500 X5H, and AR-600 EZB.",
+            "Retailer listings (Home Depot, Wayfair, Amazon, AquaRest Outlet) for AquaRest spas likewise show only AR-/Select/Elite naming.",
+            "Every search for the literal string \"ZX-9000\" returned unrelated products (Adidas ZX 9000 sneakers, Master Spas LSX 900, Pinnacle Spas LX 9000) \u2014 no hot tub by AquaRest with this designation.",
+            "General AquaRest 'not heating' troubleshooting content exists on third-party Q&A and blog sites (JustAnswer, tpa10.com, troubleshootinglab.com), but none is tied to a ZX-9000 Pro or any documented family containing it."
+          ],
+          "why_insufficient": "No manufacturer, dealer, or retailer source found in this session documents an AquaRest 'ZX-9000 Pro', and the designation does not fit AquaRest's documented model naming (AR-###, Select, Elite, Day Dream) or its documented control-pack families (UHS, HU2). Because the model cannot be matched to any documented family, there is no source-backed error-code table, documented cause list, or documented action for a 'not heating' symptom on this unit. Applying generic hot-tub or generic AquaRest troubleshooting here would be a guess, not documentation. Next step for the owner: re-read the data plate (the plate on AquaRest spas typically shows a model code such as X5H-UHS-BB or AR-500, plus the control pack designation) and photograph it, including the topside control panel and any code currently displayed; with that exact model/pack code the correct manual and error-code table can be identified."
+        },
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 23,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 19,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 15,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 9,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 5,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 13000,
+        "output_tokens": 3000,
+        "total_tokens": 16000
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "no_reliable_answer",
+    "budget_stopped": false,
+    "candidates": 0,
+    "try_first": 0,
+    "confirmed": 0,
+    "searched": [
+      "Aquarest ZX-9000 Pro spa service manual",
+      "Aquarest spa ZX-9000 Pro heater fault",
+      "AquaRest spas current model list",
+      "AquaRest spa control pack owner manual",
+      "ZX-9000 Pro hot tub manufacturer"
+    ],
+    "v1_searched": [
+      "Aquarest ZX-9000 Pro manual",
+      "Aquarest ZX-9000 spa",
+      "Aquarest spa ZX-9000 Pro not heating error codes",
+      "\"ZX-9000\" Aquarest",
+      "\"ZX-9000 Pro\" hot tub",
+      "AquaRest spa model list / lineup (Select, Elite, AR- series)",
+      "aquarestspas.com owners manuals model lineup AR-300 AR-500 Day Dream"
+    ],
+    "refusal_origin": "model"
+  }
+}

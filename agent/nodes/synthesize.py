@@ -186,8 +186,29 @@ def _fair_shares(lengths: list[int], budget: int) -> list[int]:
     return shares
 
 
+def cut_at_word(text: str, limit: int) -> str:
+    """At most `limit` characters of `text`, never ending inside a word.
+
+    The model is told to copy quotes exactly, so a text cut mid word reaches
+    the brief cut mid word (the Phase 6 "deactivated and filte"). A cut that
+    would split a word backs off to the whitespace before it.
+    """
+    if limit <= 0:
+        return ""
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    if cut[-1].isalnum() and text[limit].isalnum():
+        space = max(cut.rfind(" "), cut.rfind("\n"), cut.rfind("\t"))
+        cut = cut[:space] if space > 0 else cut  # one unbroken token: no boundary to use
+    return cut.rstrip()
+
+
 def build_sources_block(sources: Sequence[dict[str, Any]], pages_dir: Path | None) -> str:
-    """Numbered sources, headers included, within SYNTH_SOURCE_TOKEN_BUDGET tokens."""
+    """Numbered sources, headers included, within SYNTH_SOURCE_TOKEN_BUDGET tokens.
+
+    Every cut to fit the budget ends on a word boundary (cut_at_word).
+    """
     if not sources:
         return ""
     budget = config.SYNTH_SOURCE_TOKEN_BUDGET * config.CHARS_PER_TOKEN_ESTIMATE
@@ -195,8 +216,8 @@ def build_sources_block(sources: Sequence[dict[str, Any]], pages_dir: Path | Non
     separators = 2 * (len(sources) - 1)
     texts = [source_text(s, pages_dir) for s in sources]
     shares = _fair_shares([len(t) for t in texts], budget - sum(map(len, headers)) - separators)
-    blocks = [h + t[:n] for h, t, n in zip(headers, texts, shares)]
-    return "\n\n".join(blocks)[:budget]
+    blocks = [h + cut_at_word(t, n) for h, t, n in zip(headers, texts, shares)]
+    return cut_at_word("\n\n".join(blocks), budget)
 
 
 # ---------------------------------------------------------------------------

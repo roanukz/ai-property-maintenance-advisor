@@ -87,3 +87,40 @@ def test_fetch_source_keeps_extract_origin_and_text(tmp_path: Path) -> None:
     (source,) = out["sources"]
     assert source["origin"] == "extract" and source["snippet"] is None and source["title"] is None
     assert load_page_text(ctx.pages_dir, source["text_sha256"]) == page(url)["results"][0]["raw_content"]
+
+
+def test_sources_follow_the_call_order_not_the_finish_order(tmp_path: Path, monkeypatch) -> None:
+    """Mutation research_sources_in_finish_order: sources are built in the order
+    parallel calls finished, so a replayed draft's source_index names a
+    different page from run to run (decision D4 finding)."""
+    import threading
+    import time
+
+    from agent.replay.tool_stubs import StubInner
+
+    first, second = "https://example.com/called-first", "https://example.com/called-second"
+    finished = threading.Event()
+    real_invoke = StubInner.invoke
+
+    def invoke(self, input):  # the first call finishes only after the second has
+        if input.get("query") == "slow":
+            finished.wait(timeout=5)
+            time.sleep(0.2)
+            return real_invoke(self, input)
+        try:
+            return real_invoke(self, input)
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(StubInner, "invoke", invoke)
+    both = {"message": {"content": "", "usage": {"input_tokens": 1_000, "output_tokens": 100},
+                        "tool_calls": [{"name": "search", "args": {"query": "slow"}},
+                                       {"name": "search", "args": {"query": "fast"}}]}}
+    searches = [{"query": "slow", "results": [result(first, "AR-500 page one.")], "credits": 1},
+                {"query": "fast", "results": [result(second, "AR-500 page two.")], "credits": 1}]
+    ctx = make_ctx(tmp_path, FakeCassette([both, answer("done")], search=searches))
+
+    out = run_node(ctx)
+
+    assert [a["query"] for a in ctx.collector] == ["fast", "slow"]  # they did finish out of order
+    assert [s["url"] for s in out["sources"]] == [first, second]

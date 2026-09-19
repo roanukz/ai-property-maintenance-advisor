@@ -12,7 +12,9 @@
   through validate, must equal the goldens in fixtures/goldens/ (pending
   Roanuk's review at the Phase 4 gate; see the README there).
 
-Recorded briefs come from src/fixtures.js (public). Everything else here is
+Recorded briefs come from v1's recorded fixtures, published as src/fixtures.js
+until the v2 demo replaced it and kept unchanged in fixtures/v1_fixtures.js
+(public: the same bytes were on the published site). Everything else here is
 synthetic, labeled as such, on example.com style URLs.
 
 Regenerate the v2 goldens (only after a reviewed format change):
@@ -49,7 +51,9 @@ from agent.tests.helpers import split_sc1b_payload
 
 REPO = config.REPO_ROOT
 GOLDENS = Path(__file__).resolve().parent / "fixtures" / "goldens"
-FIXTURES_JS = REPO / "src" / "fixtures.js"
+# v1's recorded briefs. The file is already public (it was src/fixtures.js on the
+# published site until the v2 demo replaced it); moved here byte for byte.
+FIXTURES_JS = Path(__file__).resolve().parent / "fixtures" / "v1_fixtures.js"
 RECORDED_DATE = "2026-08-18"
 TODAY = date(2026, 8, 18)
 V1_PROVENANCE = {"derived_from": "v1 lookup (src/fixtures.js recorded brief)"}
@@ -170,7 +174,7 @@ def assert_self_contained(page: str, *, v2: bool = True) -> Tree:
 
 
 # ---------------------------------------------------------------------------
-# Recorded briefs (public, src/fixtures.js) and the synthetic fixtures
+# Recorded briefs (public, fixtures/v1_fixtures.js) and the synthetic fixtures
 # ---------------------------------------------------------------------------
 
 

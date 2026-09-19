@@ -17,13 +17,15 @@ from pathlib import Path
 import pytest
 
 from agent import config
-from agent.kg import HAS_CODE, IN_FAMILY, KnowledgeGraph, code_key, drops_path, family_key, model_key
+from agent.kg import (
+    DOCUMENTED_CAUSE, HAS_CODE, IN_FAMILY, KnowledgeGraph, cause_key, code_key, drops_path, family_key, model_key,
+)
 from agent.ledger import Ledger
 from agent.nodes import persist as persist_mod
 from agent.nodes.persist import persist_edges, persist_run, run_record_path
 from agent.registry import Registry
 from agent.research.tools import save_page_text
-from agent.rules.evidence import NOT_IN_PAGE, TARGET_NOT_TOKEN, evidence_sha256
+from agent.rules.evidence import NOT_IN_PAGE, TARGET_NOT_TOKEN, evidence_sha256, normalize_for_span
 from agent.state import RunContext
 from agent.tests.helpers import GUARD_MARKER, SYNTHETIC_CASSETTE_DIR, load_case, spawn_offline_child
 from agent.tests.test_sc8_history import FIXTURE_GRAPH, FIXTURE_PAGES, final_state, run_phase3_case, variant
@@ -195,7 +197,9 @@ def test_cli_replay_leaves_runtime_graph_unchanged(tmp_path: Path) -> None:
     replay_block = stats.stdout.split("replay graph (replay runs):", 1)[1]
     assert "edges: HAS_CODE 1" in replay_block
     assert "edges dropped for failed evidence: 0" in replay_block
-    assert "edges: HAS_CODE 1, IN_FAMILY 2" in stats.stdout.split("replay graph (replay runs):", 1)[0]
+    runtime_block = stats.stdout.split("replay graph (replay runs):", 1)[0]
+    assert "edges: DOCUMENTED_CAUSE 3, HAS_CODE 1, IN_FAMILY 2" in runtime_block
+    assert "documented causes: 3 edges, 3 causes" in runtime_block
     assert runtime_graph.read_bytes() == before
 
 
@@ -344,8 +348,10 @@ def test_persist_writes_phase4_edge_kinds_only_when_verified(tmp_path: Path) -> 
     assert report["written_by_kind"] == {SUPERSEDED_BY: 1, PART_DISCONTINUED: 1, CODE_POINTS_TO_PART: 1,
                                          IN_FAMILY: 1}
     assert report["written"] == 5  # plus the HAS_CODE edge for E4
+    # The code-less candidate is also a cause candidate (decision D2); this hand
+    # built one has no documented_meaning, so it is dropped, not stored.
     assert [(d["kind"], d["target"], d["reason"]) for d in report["dropped"]] == [
-        (SUPERSEDED_BY, "SX-300", NOT_IN_PAGE)]
+        (DOCUMENTED_CAUSE, None, persist_mod.DROP_NO_LABEL), (SUPERSEDED_BY, "SX-300", NOT_IN_PAGE)]
 
     g = KnowledgeGraph.load(ctx.graph_path, strict=True)
     assert g.reverify(ctx.pages_dir)["failures"] == []
@@ -403,3 +409,199 @@ def test_phase4_target_cut_inside_a_longer_name_is_dropped(tmp_path: Path) -> No
                         page_text=page(url))
         assert exc.value.reason == TARGET_NOT_TOKEN, kind
     assert kg.edges() == []
+
+
+# ---------------------------------------------------------------------------
+# DOCUMENTED_CAUSE edges (decision D2) from a hand built ok brief (synthetic
+# page text on an example.com URL, decision 15)
+# ---------------------------------------------------------------------------
+
+LUKEWARM_URL = "https://example.com/synthetic/sundance/optima-880-lukewarm"
+LUKEWARM_TEXT = ("SYNTHETIC PAGE TEXT for tests (not a real document).\n"
+                 "Lukewarm water: an open cover lets heat escape from the spa.\n"
+                 "A heater set point below 100 degrees keeps the water lukewarm.\n"
+                 "If the circulation pump is weak, the heater cycles off early.\n")
+COVER_LABEL, COVER_ACTION = "The cover is open and heat escapes.", "Close the cover."
+COVER_EVIDENCE = "an open cover lets heat escape from the spa."
+
+
+def cause_state(ctx: RunContext, candidates: list[dict], *, graph_urls: tuple[str, ...] = ()) -> dict:
+    """An ok state for the Optima 880 citing the lukewarm page (found by search this run) and,
+    at the indexes after it, `graph_urls` loaded from the graph."""
+    sha = save_page_text(Path(ctx.pages_dir), LUKEWARM_TEXT)
+    sources = [{"url": LUKEWARM_URL, "origin": "search", "host": "example.com",
+                "retrieved_at": "2026-09-18T10:00:00+00:00", "text_sha256": sha}]
+    sources += [{"url": url, "origin": "graph", "host": "example.com", "retrieved_at": "2026-09-01T00:00:00+00:00",
+                 "text_sha256": sha} for url in graph_urls]
+    brief_sources = [{"url": s["url"], "host": "example.com", "title": "Synthetic page", "tier": "dealer"}
+                     for s in sources]
+    brief = {"status": "ok", "observed_code": None, "sources": brief_sources, "candidates": candidates}
+    return {"status": "ok", "brief": brief, "run_id": ctx.run_id, "sources": sources,
+            "identity": {"manufacturer": "Sundance Spas", "model": "Optima 880"}}
+
+
+def _cause(meaning: str, action: str, evidence: str, index: int = 0, code: str | None = None) -> dict:
+    return {"code": code, "documented_meaning": meaning, "documented_action": action, "source_index": index,
+            "evidence": evidence}
+
+
+def test_persist_writes_only_verified_cause_edges(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    """Mutations: persist_causes_off (no cause edge is written);
+    persist_cause_no_span_check (persist checks each quote against itself, so
+    the reworded quote and the one sharing a single word with its label reach
+    the graph, which refuses them but keeps their Cause nodes);
+    persist_cause_without_action (a cause
+    with a blank documented_action is stored); persist_cause_keyed_on_model (a
+    cause of a model whose family the graph knows is stored under the model);
+    persist_cause_not_idempotent (a second persist of the same thread writes
+    the cause edge again under the model key).
+
+    One verified cause is written, from the family, with its label and action;
+    every other code-less candidate is dropped with its reason and logged, and a
+    coded candidate is never a cause.
+    """
+    ctx = unit_ctx(tmp_path, graph=FIXTURE_GRAPH)
+    candidates = [
+        _cause(COVER_LABEL, COVER_ACTION, COVER_EVIDENCE),
+        # Shares only "point" with its label, and the label is not printed whole.
+        _cause("The set point is too low.", "Raise the set point.",
+               "A heater set point below 100 degrees keeps the water lukewarm."),
+        _cause("The pump is weak.", "Have the pump checked.", "When the pump is weak the heater cycles off."),
+        _cause("The water is lukewarm.", "Check the heater.", ""),
+        _cause("Weak circulation pump.", "  ", "If the circulation pump is weak, the heater cycles off early."),
+        _cause("The water is lukewarm.", "Check the heater.", "Lukewarm water: an open cover lets heat escape",
+               code="LUKE"),
+    ]
+    state = cause_state(ctx, candidates)
+    with caplog.at_level(logging.INFO, logger="agent.nodes.persist"):
+        report = persist_edges(state, ctx, "thread-cause")
+    assert report["written_by_kind"] == {DOCUMENTED_CAUSE: 1}
+    drops = [(d["kind"], d.get("target"), d["reason"]) for d in report["dropped"]]
+    assert sorted(d for d in drops if d[0] == DOCUMENTED_CAUSE) == sorted([
+        (DOCUMENTED_CAUSE, "The set point is too low.", "cause_words_not_in_span"),
+        (DOCUMENTED_CAUSE, "The pump is weak.", NOT_IN_PAGE),
+        (DOCUMENTED_CAUSE, "The water is lukewarm.", persist_mod.DROP_NO_EVIDENCE),
+        (DOCUMENTED_CAUSE, "Weak circulation pump.", persist_mod.DROP_NO_ACTION),
+    ])
+    assert "edge dropped: DOCUMENTED_CAUSE The pump is weak." in caplog.text
+
+    g = KnowledgeGraph.load(ctx.graph_path, strict=True)
+    series = family_key("Sundance Spas", "880 Series")
+    [edge] = [e for e in g.edges() if e["kind"] == DOCUMENTED_CAUSE and e["source_url"] == LUKEWARM_URL]
+    assert (edge["src"], edge["dst"]) == (series, cause_key("Sundance Spas", "880 Series", COVER_LABEL))
+    assert (edge["label"], edge["action"], edge["evidence"]) == (COVER_LABEL, COVER_ACTION, COVER_EVIDENCE)
+    assert edge["brief_run_id"] == ctx.run_id and edge["retrieved_at"] == "2026-09-18T10:00:00+00:00"
+    assert edge["text_sha256"] == evidence_sha256(LUKEWARM_TEXT)
+    assert g.reverify(ctx.pages_dir)["failures"] == []
+    assert len(g.causes_for("Sundance Spas", "Optima 880")) == 4  # the fixture's three, and this one
+    assert g.stats()["nodes"]["cause"] == 4, "a dropped cause leaves no node behind"
+    logged = [json.loads(line) for line in drops_path(ctx.graph_path).read_text(encoding="utf-8").splitlines()]
+    assert sum(1 for d in logged if d["kind"] == DOCUMENTED_CAUSE) == 4
+
+    graph_bytes = Path(ctx.graph_path).read_bytes()
+    again = persist_edges(state, ctx, "thread-cause")
+    assert again["written"] == 0 and again["already_present"] == 1
+    assert Path(ctx.graph_path).read_bytes() == graph_bytes
+
+
+def test_cause_edge_goes_under_the_model_without_a_family_and_never_from_a_graph_source(tmp_path: Path) -> None:
+    """Mutations: persist_cause_graph_source_readded (a cause cited from a graph
+    source is taken as this run's candidate); persist_ok_check_off (a refused
+    brief writes cause edges)."""
+    ctx = unit_ctx(tmp_path)
+    state = cause_state(ctx, [_cause(COVER_LABEL, COVER_ACTION, COVER_EVIDENCE),
+                              _cause(COVER_LABEL, COVER_ACTION, COVER_EVIDENCE, index=1)],
+                        graph_urls=(MANUAL_URL,))
+    refused = {**state, "status": "no_reliable_answer", "brief": {**state["brief"], "status": "no_reliable_answer"}}
+    assert persist_edges(refused, ctx, "thread-refused")["written"] == 0
+    assert not Path(ctx.graph_path).exists()
+    report = persist_edges(state, ctx, "thread-cause")
+    assert (report["written"], report["dropped"]) == (1, [])
+    [edge] = KnowledgeGraph.load(ctx.graph_path, strict=True).edges()
+    model = model_key("Sundance Spas", "Optima 880")
+    assert (edge["kind"], edge["src"], edge["source_url"]) == (DOCUMENTED_CAUSE, model, LUKEWARM_URL)
+    assert edge["dst"] == cause_key("Sundance Spas", "Optima 880", COVER_LABEL)
+
+
+# ---------------------------------------------------------------------------
+# Stored spans end on word boundaries (decision D3)
+# ---------------------------------------------------------------------------
+
+FLOW_URL = "https://example.com/synthetic/sundance/optima-880-flow-switch"
+# Synthetic, shaped like the Phase 5 page row whose stored FLO edge ended "filte".
+FLOW_TEXT = ("SYNTHETIC PAGE TEXT for tests (not a real document).\n"
+             "| FLO | Stands for Flow Switch. The heater is deactivated and filter/circulation may stop. |\n"
+             "The pump's seal leaks. Check the drain. The unit restarts.\n")
+
+
+def test_stored_spans_are_extended_to_whole_words(tmp_path: Path) -> None:
+    """Mutations: persist_code_snap_off (the HAS_CODE edge is stored ending
+    "filte", as the Phase 5 edge was); persist_cause_snap_off (a cause edge is
+    stored ending inside "drain"); persist_phase4_snap_off (an IN_FAMILY edge is
+    stored ending inside "tubs")."""
+    from agent.rules.evidence import cuts_word
+
+    ctx = unit_ctx(tmp_path)
+    state = unit_state(ctx, {FLOW_URL: FLOW_TEXT, MANUAL_URL: MANUAL_TEXT},
+                       [("FLO", 0, "FLO | Stands for Flow Switch. The heater is deactivated and filte")])
+    brief = state["brief"]
+    brief["candidates"].append({"code": None, "documented_meaning": "The pump seal leaks.",
+                                "documented_action": "Check the seal.", "source_index": 0,
+                                "evidence": "The pump's seal leaks. Check the dra"})
+    brief["maintenance_due"] = [{"source_index": 1, "evidence": "The Optima 880 is part of the 880 Series of hot tu"}]
+    report = persist_edges(state, ctx, "thread-words")
+    assert report["dropped"] == []
+    assert report["written_by_kind"] == {DOCUMENTED_CAUSE: 1, IN_FAMILY: 1}
+    g = KnowledgeGraph.load(ctx.graph_path, strict=True)
+    stored = {e["kind"]: e["evidence"] for e in g.edges()}
+    assert stored == {
+        HAS_CODE: "FLO | Stands for Flow Switch. The heater is deactivated and filter",
+        DOCUMENTED_CAUSE: "The pump's seal leaks. Check the drain",
+        IN_FAMILY: "The Optima 880 is part of the 880 Series of hot tubs",
+    }
+    for edge in g.edges():
+        page = normalize_for_span(FLOW_TEXT if edge["source_url"] == FLOW_URL else MANUAL_TEXT)
+        at = page.find(edge["evidence"])
+        assert at >= 0 and not cuts_word(page, at) and not cuts_word(page, at + len(edge["evidence"]))
+        assert edge["evidence_sha256"] == evidence_sha256(edge["evidence"])
+    assert g.reverify(ctx.pages_dir)["failures"] == []
+    # Idempotent: the same quotes snap to the same spans, so nothing is written again.
+    again = persist_edges(state, ctx, "thread-words")
+    assert (again["written"], again["already_present"]) == (0, 3)
+
+
+def test_snapped_span_that_fails_its_check_again_is_dropped(tmp_path: Path) -> None:
+    """Mutation: persist_cause_snap_accept_ignored (persist takes any snapped
+    span, so a cause quote cut inside its last word at EVIDENCE_MAX_CHARS is
+    trimmed to a span that no longer names the cause; the graph refuses it
+    with the wrong reason and keeps an orphan Cause node). Review finding T2."""
+    from agent.rules.evidence import CUT_INSIDE_WORD, verify_cause_span
+
+    url = "https://example.com/synthetic/spa/drain-valves"
+    label = "The drain valves stick."
+    page = "Intro. " + "x" * (config.EVIDENCE_MAX_CHARS - 16) + " the drain valves stick..."
+    start = page.index("x")
+    evidence = page[start: start + config.EVIDENCE_MAX_CHARS]
+    assert evidence.endswith("the drain valve") and verify_cause_span(evidence, page, label=label).ok
+    ctx = unit_ctx(tmp_path)
+    state = unit_state(ctx, {url: page}, [])
+    state["brief"]["candidates"].append(_cause(label, "Free the drain valves.", evidence))
+    report = persist_edges(state, ctx, "thread-snap")
+    assert report["written"] == 0
+    assert [(d["kind"], d.get("target"), d["reason"]) for d in report["dropped"]] == [
+        (DOCUMENTED_CAUSE, label, CUT_INSIDE_WORD)]
+    assert KnowledgeGraph.load(ctx.graph_path).stats()["nodes"].get("cause", 0) == 0
+
+
+def test_run_record_names_the_build_that_produced_it(tmp_path: Path) -> None:
+    """Mutation persist_run_record_no_build_id: a run record without its build
+    fingerprint, so a published number cannot be traced to its code and a
+    superseded build's result could be reported as a finding (decision 35)."""
+    from agent.build_info import build_id
+
+    cassette = load_case("synthetic/optima_history")
+    _, ctx, outcomes = run_phase3_case(cassette, tmp_path / "run")
+    state = final_state(outcomes)
+    record = json.loads(run_record_path(ctx, state["run_id"]).read_text(encoding="utf-8"))
+    assert record["build_id"] == build_id()
+    assert re.fullmatch(r"[0-9a-f]{16}", record["build_id"])

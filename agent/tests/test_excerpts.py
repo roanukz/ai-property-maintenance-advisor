@@ -13,6 +13,7 @@ from agent.research.excerpts import (
     JOIN,
     Terms,
     cut_excerpts,
+    cut_spans,
     excerpt_terms,
     model_family,
     render_excerpts,
@@ -119,3 +120,71 @@ def test_model_family() -> None:
     assert model_family("Optima 880") == "Optima"
     assert model_family("XR16") == "XR"
     assert model_family("880") is None and model_family("") is None
+
+
+GLUED = ["Code:FLO/flow-switch", "filter/circulation", "(FLO)", "FLO,", "deactivated.", "880-series", "1.",
+         "intake.When", "fault-code-display:FLO"]
+
+
+@st.composite
+def glued_pages(draw: st.DrawFn) -> str:
+    rng = random.Random(draw(st.integers(min_value=0, max_value=2**32)))
+    n = draw(st.integers(min_value=0, max_value=400))
+    return "".join(rng.choice(WORDS + GLUED) + rng.choice(SPACES) for _ in range(n)).lstrip(" ")
+
+
+def at_word_edges(text: str, start: int, end: int) -> bool:
+    """Neither edge of text[start:end] sits between two non whitespace characters."""
+    def edge(i: int) -> bool:
+        return i <= 0 or i >= len(text) or text[i - 1].isspace() or text[i].isspace()
+    return edge(start) and edge(end)
+
+
+@settings(max_examples=200, deadline=None)
+@given(
+    text=glued_pages(),
+    ids=st.lists(st.sampled_from(WORDS + ["Optima 880", "absent"]), max_size=3),
+    symptom=st.lists(st.sampled_from(WORDS), max_size=3),
+    budget=st.integers(min_value=0, max_value=config.FETCH_EXCERPT_MAX_CHARS),
+)
+@example(text="Opening words of a page with no anchor in it at all. " * 40, ids=[], symptom=[], budget=103)
+def test_excerpts_never_start_or_end_inside_a_word(text: str, ids: list[str], symptom: list[str],
+                                                  budget: int) -> None:
+    """Mutations: excerpts_snap_off (window edges are never moved to a word
+    boundary); excerpts_narrow_window_unsnapped (the window cut to fit the
+    remaining budget keeps its raw edges); excerpts_opening_mid_word (a page
+    with no anchor is cut at the budget, mid word). Phase 6 finding 3."""
+    spans = cut_spans(text, Terms(ids=tuple(ids), symptom=tuple(symptom)), budget)
+    for start, end in spans:
+        assert 0 <= start < end <= len(text)
+        assert at_word_edges(text, start, end), (text[max(0, start - 10):start], text[end:end + 10])
+    excerpts = cut_excerpts(text, Terms(ids=tuple(ids), symptom=tuple(symptom)), budget)
+    assert excerpts == [text[s:e] for s, e in spans]
+    assert len(render_excerpts(excerpts)) <= budget
+
+
+def test_excerpt_keeps_the_whole_word_the_phase6_edge_cut() -> None:
+    """Mutations: excerpts_narrow_window_unsnapped (the excerpt ends "and filte",
+    the Phase 6 cut); excerpts_snap_cuts_anchor_end and
+    excerpts_snap_cuts_anchor_start (moving an edge inward past the anchor
+    drops the code the window was cut for)."""
+    filler = "General notes on water care and cover storage for the season. " * 30
+    line = ("FLO stands for flow switch. The heater is deactivated and filter/circulation "
+            "may be deactivated, also.")
+    page = filler + line + " " + filler
+    terms = excerpt_terms({"model": "Optima 880"}, "FLO", "panel shows FLO")
+    for budget in range(60, 200, 7):
+        spans = cut_spans(page, terms, budget)
+        rendered = render_excerpts([page[s:e] for s, e in spans])
+        assert len(rendered) <= budget
+        assert all(at_word_edges(page, s, e) for s, e in spans)
+        assert "FLO" in rendered
+        assert "filte" not in rendered or "filter/circulation" in rendered
+
+    # The code glued to its neighbors on both sides is kept whole, not cut out.
+    for token, budgets in (("fault-code-display:FLO/flow-switch-fault-indicator", (50, 52, 55, 58)),
+                           ("fault-code-display-panel-reading:FLO", (40, 45, 50))):
+        glued = filler + token + " shows on the panel. " + filler
+        for budget in budgets:
+            [(s, e)] = cut_spans(glued, Terms(ids=("FLO",)), budget)
+            assert token in glued[s:e], (budget, glued[s:e])

@@ -1,0 +1,107 @@
+{
+ "cassette_version": 1,
+ "case": "live_t_5a00000000000001",
+ "input": {
+  "identity": null,
+  "symptom": "panel shows FLO",
+  "plate_sha256": "3a142b569054d3ba8688a2bca946bd9e180d0eb075e45e2127cc553a40a5b79b"
+ },
+ "read_plate": {
+  "extraction": {
+   "manufacturer": "SUNDANCE SPAS",
+   "model": "OPTIMA 880",
+   "serial": "SYN-TEST-0001",
+   "manufacture_date": "01/2020",
+   "confidence": {
+    "manufacturer": "high",
+    "model": "high",
+    "serial": "high",
+    "manufacture_date": "high"
+   }
+  }
+ },
+ "classifier": [],
+ "resume": {
+  "identity": {
+   "manufacturer": "Sundance Spas",
+   "model": "Optima 880",
+   "serial": "SYN-TEST-0001",
+   "manufacture_date": "01/2020"
+  },
+  "observed_code": "FLO"
+ },
+ "research": {
+  "script": [
+   {
+    "message": {
+     "content": "",
+     "tool_calls": [
+      {
+       "name": "search",
+       "args": {
+        "query": "Sundance Spas Optima 880 FLO code"
+       }
+      },
+      {
+       "name": "search",
+       "args": {
+        "query": "Optima 880 flow switch"
+       }
+      },
+      {
+       "name": "fetch",
+       "args": {
+        "url": "https://spa.example.com/error-codes"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "tool_results": [
+   {
+    "tool": "search",
+    "query": "Sundance Spas Optima 880 FLO code",
+    "credits": 1,
+    "results": [
+     {
+      "url": "https://spa.example.com/error-codes",
+      "title": "Spa error codes (synthetic)"
+     },
+     {
+      "url": "https://spa.example.com/heater-guide",
+      "title": "Heater guide"
+     }
+    ]
+   },
+   {
+    "tool": "search",
+    "query": "Optima 880 flow switch",
+    "credits": 1,
+    "results": [
+     {
+      "url": "https://spa.example.com/error-codes",
+      "title": "Spa error codes (synthetic)"
+     },
+     {
+      "url": "https://spa.example.com/heater-guide",
+      "title": "Heater guide"
+     }
+    ]
+   },
+   {
+    "tool": "fetch",
+    "url": "https://spa.example.com/error-codes",
+    "results": [
+     {
+      "url": "https://spa.example.com/error-codes"
+     }
+    ],
+    "failed_results": []
+   }
+  ],
+  "blocked_calls": {}
+ },
+ "synthesize": [],
+ "page_texts": {}
+}

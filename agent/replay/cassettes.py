@@ -28,7 +28,9 @@ Format (cassette_version 1):
 A response is in the ReplayChatModel format: {"message": {"content",
 "tool_calls", "usage"}} or {"structured": {...}, "usage": {...}}. A tool
 result is {"tool": "search", "query", "results"} or {"tool": "fetch", "url",
-"results", "failed_results"}, either with optional "credits"; or one of the
+"results", "failed_results"}, either with optional "credits" (and each result
+with an optional "text_sha256", the hash of its page text under the pages
+folder, written by agent/live/recorder.py); or one of the
 failure shapes the wrappers must handle (PLAN 8.7): {"tool", "error": "..."},
 {"tool", "string": "..."} (a bare string return) or {"tool", "raise":
 "timeout"}. Each failure shape may also name its query or url.
@@ -37,6 +39,7 @@ failure shapes the wrappers must handle (PLAN 8.7): {"tool", "error": "..."},
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -67,6 +70,9 @@ PROVENANCE_OPTIONAL = ("public_already",)
 IDENTITY_FIELDS = ("manufacturer", "model", "serial", "manufacture_date")
 CAPS_KEYS = ("run_cap_usd", "research_budget_usd", "run_credit_cap")
 FAILURE_SHAPES = ("error", "string", "raise")
+# A live recording names each result's saved page text by hash (D4); the text
+# itself stays in the local pages folder (decision 15).
+RESULT_OPTIONAL = ("text_sha256",)
 RAISE_KINDS = ("timeout",)
 
 CASE_RE = re.compile(r"^[a-z0-9_]+$")
@@ -237,17 +243,30 @@ def _check_tool_result(c: _Checker, entry: Any, path: str) -> None:
         if not re.match(r"^https?://", url, re.IGNORECASE):
             c.fail(f"{rpath}.url", "must be an http or https URL")
         if tool == "search":
-            c.keys(result, rpath, ("url", "title", "content", "raw_content", "score"))
+            c.keys(result, rpath, ("url", "title", "content", "raw_content", "score"), RESULT_OPTIONAL)
             c.str_(result["title"], f"{rpath}.title")
             c.str_(result["content"], f"{rpath}.content")
             c.opt_str(result["raw_content"], f"{rpath}.raw_content")
         else:
-            c.keys(result, rpath, ("url", "raw_content"))
+            c.keys(result, rpath, ("url", "raw_content"), RESULT_OPTIONAL)
             c.opt_str(result["raw_content"], f"{rpath}.raw_content")
+        _check_text_sha256(c, result, rpath)
         # Recorded text belongs only to example hosts (decision 15).
         text = result.get("raw_content") or result.get("content")
         if text and not is_example_url(url):
             c.fail(rpath, "page text is attached to a real URL; only example hosts may carry text")
+
+
+def _check_text_sha256(c: _Checker, result: dict, rpath: str) -> None:
+    """A recorded page text hash is 64 lower case hex, and names the recorded text when there is one."""
+    if "text_sha256" not in result:
+        return
+    sha = result["text_sha256"]
+    if not isinstance(sha, str) or not SHA256_RE.match(sha):
+        c.fail(f"{rpath}.text_sha256", "must be 64 lower case hex characters")
+    raw = result.get("raw_content")
+    if raw and hashlib.sha256(raw.encode("utf-8")).hexdigest() != sha:
+        c.fail(f"{rpath}.text_sha256", "does not match the sha256 of raw_content")
 
 
 def _check_script_matches_results(c: _Checker, research: dict) -> None:

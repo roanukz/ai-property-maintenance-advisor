@@ -8,6 +8,7 @@ Node keys (every component normalized so two spellings of one thing share a key)
 - ModelFamily: `family:{maker}:{family}`
 - ErrorCode: `code:{maker}:{family or model}:{code}`
 - Part: `part:{maker}:{part_no}`
+- Cause: `cause:{maker}:{family or model}:{sha256(normalized label)[:12]}`
 - Source: `source:{sha256(url)[:12]}`
 
 Normalization, per component:
@@ -22,17 +23,28 @@ Normalization, per component:
   whitespace and punctuation stripped), then inner whitespace runs to one
   space, so an observed code "flo" finds the edge for "FLO".
 - part number (`norm_part`): NFKC, uppercase, whitespace removed; dashes kept.
+- cause label (`norm_label`): NFC, casefolded, whitespace runs to one space,
+  surrounding whitespace and punctuation stripped; the key holds the first
+  12 hex digits of its sha256, since a label is a sentence.
 
 Each node keeps its value as printed ("code", "part_no", "model", "family")
 because an edge's evidence must contain its target as printed.
 
 Persisted edges (IN_FAMILY, HAS_CODE, CODE_POINTS_TO_PART, SUPERSEDED_BY,
-PART_DISCONTINUED) each carry `source_url`, `retrieved_at`, `evidence`,
+PART_DISCONTINUED, DOCUMENTED_CAUSE) each carry `source_url`, `retrieved_at`, `evidence`,
 `evidence_sha256`, `brief_run_id` and `validated_at`; `add_edge` refuses an
 edge missing any of them, whose hash does not match, or whose evidence fails
 the section 8.11 conditions it can check (and all five when page text is
 given). Property and Appliance nodes and INSTALLED_AT and IS_MODEL edges come
 from the registry at load time and are never saved (decision 45).
+
+DOCUMENTED_CAUSE (decision D2, 18 September 2026) joins a model or family to
+a Cause node and also carries `label` (the candidate's documented_meaning,
+the cause as the brief printed it) and `action` (its documented_action). Its
+evidence passes conditions 1 to 4 like any edge; condition 5 is the cause
+condition of agent/rules/evidence.py (the label's content words, or the whole
+label, in the evidence), checked against the edge's own label, whose
+normalized form must be the Cause node's.
 
 An edge may also carry `text_sha256`, the hash of the page text its evidence
 was verified against, so a later run that fetches a changed page at the same
@@ -59,7 +71,15 @@ from typing import Any
 
 import networkx as nx
 
-from agent.rules.evidence import TARGET_NOT_TOKEN, SpanResult, check_span_shape, target_is_token, verify_span
+from agent.rules.evidence import (
+    TARGET_NOT_TOKEN,
+    SpanResult,
+    check_cause_shape,
+    check_span_shape,
+    target_is_token,
+    verify_cause_span,
+    verify_span,
+)
 from agent.rules.evidence import evidence_sha256 as hash_evidence
 from agent.rules.observed_code import normalize_code
 
@@ -72,6 +92,7 @@ HAS_CODE = "HAS_CODE"
 CODE_POINTS_TO_PART = "CODE_POINTS_TO_PART"
 SUPERSEDED_BY = "SUPERSEDED_BY"
 PART_DISCONTINUED = "PART_DISCONTINUED"
+DOCUMENTED_CAUSE = "DOCUMENTED_CAUSE"
 INSTALLED_AT = "INSTALLED_AT"
 IS_MODEL = "IS_MODEL"
 
@@ -82,6 +103,7 @@ EDGE_KINDS: dict[str, tuple[tuple[str, ...], str]] = {
     CODE_POINTS_TO_PART: (("code",), "part"),
     SUPERSEDED_BY: (("model",), "model"),
     PART_DISCONTINUED: (("model", "family"), "part"),
+    DOCUMENTED_CAUSE: (("model", "family"), "cause"),
 }
 # Kinds whose target must stand as its own token where the quote sits in the
 # page: every persisted kind ("E1" cut from "E10", "Optima 880" cut from
@@ -91,11 +113,13 @@ REGISTRY_KINDS = (INSTALLED_AT, IS_MODEL)
 REGISTRY_NODE_TYPES = ("property", "appliance")
 
 # The node attribute holding each target type's value as printed.
-PRINTED = {"family": "family", "code": "code", "part": "part_no", "model": "model"}
+PRINTED = {"family": "family", "code": "code", "part": "part_no", "model": "model", "cause": "label"}
 
 EDGE_FIELDS = ("source_url", "retrieved_at", "evidence", "evidence_sha256", "brief_run_id", "validated_at")
 # Optional per edge: the sha256 of the page text the evidence was verified against.
 EDGE_TEXT_SHA = "text_sha256"
+# Required on a DOCUMENTED_CAUSE edge only: the cause as printed and its action.
+CAUSE_FIELDS = ("label", "action")
 DROPS_SUFFIX = ".drops.jsonl"
 
 CORPORATE_SUFFIXES = ("inc", "incorporated", "llc", "co", "corp", "corporation", "ltd", "limited", "company")
@@ -155,6 +179,15 @@ def norm_part(part_no: str) -> str:
     return out
 
 
+def norm_label(label: str) -> str:
+    """Cause label component before hashing: NFC, casefolded, one space per run, punctuation trimmed."""
+    text = " ".join(unicodedata.normalize("NFC", _text(label, "cause label")).casefold().split())
+    out = text.strip(" " + "".join(ch for ch in set(text) if unicodedata.category(ch)[0] == "P"))
+    if not out:
+        raise ValueError(f"cause label {label!r} normalizes to nothing")
+    return out
+
+
 def model_key(maker: str, model: str) -> str:
     return f"model:{norm_maker(maker)}:{norm_model(model)}"
 
@@ -170,6 +203,12 @@ def code_key(maker: str, scope: str, code: str) -> str:
 
 def part_key(maker: str, part_no: str) -> str:
     return f"part:{norm_maker(maker)}:{norm_part(part_no)}"
+
+
+def cause_key(maker: str, scope: str, label: str) -> str:
+    """`scope` is the family or model name the cause is documented for."""
+    digest = hashlib.sha256(norm_label(label).encode("utf-8")).hexdigest()[:12]
+    return f"cause:{norm_maker(maker)}:{norm_model(scope)}:{digest}"
 
 
 def source_key(url: str) -> str:
@@ -258,6 +297,13 @@ class KnowledgeGraph:
     def add_part(self, maker: str, part_no: str) -> str:
         return self._upsert(part_key(maker, part_no), {"maker": maker, "part_no": part_no})
 
+    def add_cause(self, maker: str, scope: str, label: str) -> str:
+        """A Cause node; an existing node keeps the label it was first printed with."""
+        key = cause_key(maker, scope, label)
+        if key in self.g and not self.g.nodes[key].get("derived"):
+            return key
+        return self._upsert(key, {"maker": maker, "scope": scope, "label": label, "label_norm": norm_label(label)})
+
     def add_source(self, url: str, *, host: str, title: str | None, retrieved_at: str,
                    text_sha256: str | None, tier: str) -> str:
         """The source node an edge's `source_url` points at (PLAN 8.11 Source row).
@@ -288,7 +334,8 @@ class KnowledgeGraph:
 
     def add_edge(self, kind: str, src_key: str, dst_key: str, *, source_url: str, retrieved_at: str,
                  evidence: str, evidence_sha256: str, brief_run_id: str, validated_at: str,
-                 page_text: str | None = None, text_sha256: str | None = None) -> dict[str, Any]:
+                 page_text: str | None = None, text_sha256: str | None = None,
+                 label: str | None = None, action: str | None = None) -> dict[str, Any]:
         """Add one document derived edge, or raise EdgeRejected.
 
         Both endpoints must already be nodes. Every field must be a non empty
@@ -300,6 +347,11 @@ class KnowledgeGraph:
         "E10" and "Optima 880" cut from "Optima 880X" are refused). `text_sha256`, when
         given, is stored on the edge. Adding the same edge again (kind,
         endpoints, URL and evidence) replaces it.
+
+        A DOCUMENTED_CAUSE edge also needs `label` and `action` (non empty),
+        and its evidence is checked by the cause condition against `label`,
+        whose normalized form must match the Cause node's; no other kind
+        takes them.
         """
         fields = {"source_url": source_url, "retrieved_at": retrieved_at, "evidence": evidence,
                   "evidence_sha256": evidence_sha256, "brief_run_id": brief_run_id,
@@ -319,18 +371,38 @@ class KnowledgeGraph:
             raise EdgeRejected("source_url", f"{source_url!r} is not an http or https URL")
         if evidence_sha256 != hash_evidence(evidence):
             raise EdgeRejected("evidence_sha256", "evidence_sha256 does not hash the evidence")
+        cause = self._cause_fields(kind, src_key, dst_key, label, action)
         target = self.target_of(dst_key)
-        result = (verify_span(evidence, page_text, target=target) if page_text is not None
-                  else check_span_shape(evidence, target=target))
+        if kind == DOCUMENTED_CAUSE:
+            result = (verify_cause_span(evidence, page_text, label=label) if page_text is not None
+                      else check_cause_shape(evidence, label=label))
+        else:
+            result = (verify_span(evidence, page_text, target=target) if page_text is not None
+                      else check_span_shape(evidence, target=target))
         if not result.ok:
             raise EdgeRejected(result.reason, f"{kind} {src_key} -> {dst_key}: evidence rejected")
         if kind in TOKEN_TARGET_KINDS and page_text is not None and not target_is_token(evidence, page_text, target=target):
             raise EdgeRejected(TARGET_NOT_TOKEN, f"{kind} {src_key} -> {dst_key}: {target!r} is part of a longer token")
         if text_sha256 is not None and (not isinstance(text_sha256, str) or not text_sha256.strip()):
             raise EdgeRejected("missing_fields", f"{kind} {src_key} -> {dst_key}: blank text_sha256")
-        attrs = {"kind": kind, **fields, **({EDGE_TEXT_SHA: text_sha256} if text_sha256 else {})}
+        attrs = {"kind": kind, **fields, **cause, **({EDGE_TEXT_SHA: text_sha256} if text_sha256 else {})}
         self.g.add_edge(src_key, dst_key, key=_edge_id(kind, source_url, evidence_sha256), **attrs)
         return {"src": src_key, "dst": dst_key, **attrs}
+
+    def _cause_fields(self, kind: str, src_key: str, dst_key: str, label: str | None,
+                      action: str | None) -> dict[str, str]:
+        """The label and action a cause edge stores, or {} for any other kind; raises EdgeRejected."""
+        if kind != DOCUMENTED_CAUSE:
+            if label is not None or action is not None:
+                raise EdgeRejected("unexpected_fields", f"{kind} {src_key} -> {dst_key} takes no label or action")
+            return {}
+        values = {"label": label, "action": action}
+        blank = [name for name, value in values.items() if not isinstance(value, str) or not value.strip()]
+        if blank:
+            raise EdgeRejected("missing_fields", f"{kind} {src_key} -> {dst_key} lacks {blank}")
+        if norm_label(label) != self.g.nodes[dst_key].get("label_norm"):  # type: ignore[arg-type]
+            raise EdgeRejected("label_mismatch", f"{kind} {src_key} -> {dst_key}: label is not the cause's")
+        return values  # type: ignore[return-value]
 
     def try_add_edge(self, kind: str, src_key: str, dst_key: str, *, page_text: str | None,
                      **fields: str) -> SpanResult:
@@ -391,6 +463,7 @@ class KnowledgeGraph:
                 kg.g.add_node(node["key"], **attrs)
             for edge in data.get("edges") or []:
                 fields = {name: edge.get(name) for name in EDGE_FIELDS}
+                fields.update({name: edge[name] for name in CAUSE_FIELDS if name in edge})
                 try:
                     kg.add_edge(edge.get("kind"), edge.get("src"), edge.get("dst"),
                                 text_sha256=edge.get(EDGE_TEXT_SHA), **fields)
@@ -452,9 +525,28 @@ class KnowledgeGraph:
             return False
         return check_span_shape(edge.get("evidence"), target=target).ok
 
+    def _verified_cause(self, edge: dict[str, Any]) -> bool:
+        """The same checks for a cause edge: hash, span shape with the cause
+        condition, a non blank action, and its label naming its Cause node."""
+        if edge.get("evidence_sha256") != hash_evidence(edge.get("evidence") or ""):
+            return False
+        label, action = edge.get("label"), edge.get("action")
+        if not isinstance(action, str) or not action.strip() or not isinstance(label, str):
+            return False
+        try:
+            if norm_label(label) != self.g.nodes[edge["dst"]].get("label_norm"):
+                return False
+        except ValueError:
+            return False
+        return check_cause_shape(edge.get("evidence"), label=label).ok
+
+    def _edge_ok(self, edge: dict[str, Any]) -> bool:
+        if edge.get("kind") == DOCUMENTED_CAUSE:
+            return self._verified_cause(edge)
+        return self._verified(edge, self.target_of(edge["dst"]))
+
     def _verified_edges(self, key: str, kinds: tuple[str, ...]) -> list[dict[str, Any]]:
-        return [self._with_source(e) for e in self._document_edges(key, kinds=kinds)
-                if self._verified(e, self.target_of(e["dst"]))]
+        return [self._with_source(e) for e in self._document_edges(key, kinds=kinds) if self._edge_ok(e)]
 
     def has_model(self, maker: str, model: str) -> bool:
         """True when the model has at least one verified document edge of its own (outgoing).
@@ -526,6 +618,17 @@ class KnowledgeGraph:
             found.extend(self._verified_edges(scope, (PART_DISCONTINUED,)))
         return found
 
+    def causes_for(self, maker: str, model: str) -> list[dict[str, Any]]:
+        """Verified DOCUMENTED_CAUSE edges from this model or its family.
+
+        Each dict carries the edge fields (with `label` and `action`),
+        `target` (the Cause node's label as first printed) and `source`.
+        """
+        found: list[dict[str, Any]] = []
+        for scope in self._scopes(maker, model):
+            found.extend(self._verified_edges(scope, (DOCUMENTED_CAUSE,)))
+        return found
+
     def appliances_for_model(self, maker: str, model: str) -> list[str]:
         """Registry appliance IDs whose IS_MODEL edge points at this model."""
         key = model_key(maker, model)
@@ -578,6 +681,10 @@ class KnowledgeGraph:
             else:
                 result = verify_span(edge["evidence"], text, target=target)
                 report["full"] += 1
+            if edge["kind"] == DOCUMENTED_CAUSE:
+                # A cause's condition 5 is its label's words, not its label printed verbatim.
+                result = (verify_cause_span(edge["evidence"], text, label=edge.get("label")) if text is not None
+                          else check_cause_shape(edge["evidence"], label=edge.get("label")))
             if not result.ok:
                 report["failures"].append(f"{label}: {result.reason}")
         return report

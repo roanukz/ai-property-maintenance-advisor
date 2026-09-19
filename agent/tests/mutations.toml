@@ -615,7 +615,7 @@ tests = ["agent/tests/test_registry.py::test_seed_has_one_discontinued_synthetic
 id = "registry_pending_owner_choice_dropped"
 file = "agent/registry.py"
 search = '                        int(bool(row.get("pending_owner_choice", False))),'
-replace = '                        0,'
+replace = '                        1,'
 tests = ["agent/tests/test_registry.py::test_seed_has_one_discontinued_synthetic_model_and_flags_third_real_model"]
 
 [[mutation]]
@@ -1257,8 +1257,8 @@ tests = ["agent/tests/test_published_pages.py::test_published_files_unchanged"]
 [[mutation]]
 id = "pages_off_origin_script"
 file = "tool.html"
-search = '<title>AI Property Maintenance Advisor: Recorded Demo</title>'
-replace = '''<title>AI Property Maintenance Advisor: Recorded Demo</title>
+search = '<title>AI Property Maintenance Advisor: Recorded Demo v2</title>'
+replace = '''<title>AI Property Maintenance Advisor: Recorded Demo v2</title>
     <script src="https://cdn.example.com/x.js"></script>'''
 tests = ["agent/tests/test_published_pages.py::test_demo_makes_no_off_origin_or_script_requests"]
 
@@ -1266,10 +1266,10 @@ tests = ["agent/tests/test_published_pages.py::test_demo_makes_no_off_origin_or_
 id = "pages_fetch_in_demo_js"
 file = "src/demo.js"
 search = '''/* ===========================================================================
-   Recorded demo.'''
+   Recorded demo, version 2.'''
 replace = '''fetch("/api/track");
 /* ===========================================================================
-   Recorded demo.'''
+   Recorded demo, version 2.'''
 tests = ["agent/tests/test_published_pages.py::test_demo_makes_no_off_origin_or_script_requests"]
 
 [[mutation]]
@@ -2669,8 +2669,8 @@ tests = [
 [[mutation]]
 id = "research_sources_from_whole_collector"
 file = "agent/nodes/research.py"
-search = '''    out["sources"] = build_sources(ctx, ctx.collector[start:], trail, known, terms)'''
-replace = '''    out["sources"] = build_sources(ctx, ctx.collector, trail, known, terms)'''
+search = '''    artifacts = in_call_order(ctx.collector[start:], messages)'''
+replace = '''    artifacts = in_call_order(ctx.collector, messages)'''
 tests = ["agent/tests/test_research_sources.py::test_registry_is_exactly_successful_tool_artifacts"]
 
 [[mutation]]
@@ -2704,8 +2704,8 @@ tests = ["agent/tests/test_excerpts.py::test_fetch_tool_shows_the_model_excerpts
 [[mutation]]
 id = "research_source_excerpts_unanchored"
 file = "agent/nodes/research.py"
-search = '''    out["sources"] = build_sources(ctx, ctx.collector[start:], trail, known, terms)'''
-replace = '''    out["sources"] = build_sources(ctx, ctx.collector[start:], trail, known, None)'''
+search = '''    out["sources"] = build_sources(ctx, artifacts, trail, known, terms)'''
+replace = '''    out["sources"] = build_sources(ctx, artifacts, trail, known, None)'''
 tests = ["agent/tests/test_excerpts.py::test_fetch_tool_shows_the_model_excerpts_not_the_page"]
 
 [[mutation]]
@@ -2965,8 +2965,8 @@ tests = ["agent/tests/test_nodes.py::test_synthesize_budget_stop_makes_no_call"]
 [[mutation]]
 id = "nodes_synth_no_truncation"
 file = "agent/nodes/synthesize.py"
-search = '''    blocks = [h + t[:n] for h, t, n in zip(headers, texts, shares)]
-    return "\n\n".join(blocks)[:budget]'''
+search = '''    blocks = [h + cut_at_word(t, n) for h, t, n in zip(headers, texts, shares)]
+    return cut_at_word("\n\n".join(blocks), budget)'''
 replace = '''    blocks = [h + t for h, t, n in zip(headers, texts, shares)]
     return "\n\n".join(blocks)'''
 tests = ["agent/tests/test_nodes.py::test_sources_block_is_cut_to_the_token_budget"]
@@ -3823,7 +3823,7 @@ id = "kg_reverify_shape_only"
 file = "agent/kg.py"
 search = '''                result = verify_span(edge["evidence"], text, target=target)'''
 replace = '''                result = check_span_shape(edge["evidence"], target=target)'''
-tests = ["agent/tests/test_graph_integrity.py::test_every_edge_reverifies[fixture-optima_flo]"]
+tests = ["agent/tests/test_kg.py::test_reverify_checks_cause_and_code_edges_against_their_page"]
 
 [[mutation]]
 id = "kg_reverify_missing_text_is_a_pass"
@@ -3936,7 +3936,8 @@ tests = ["agent/tests/test_grounding.py::test_code_on_textless_source_fails_outs
 id = "pipeline_grounding_hook_skipped"
 file = "agent/rules/pipeline.py"
 search = '''        errors += check_grounding(brief, sources=sources, mode=mode, provenance=provenance,
-                                  page_texts=page_texts, report=grounding_report)
+                                  page_texts=page_texts, report=grounding_report,
+                                  recorded_text_urls=frozenset(recorded_text_urls or ()))
 '''
 replace = '''        pass
 '''
@@ -4166,9 +4167,10 @@ tests = ["agent/tests/test_graph_lookup_node.py::test_missing_model_adds_nothing
 [[mutation]]
 id = "route_classifier_without_causes"
 file = "agent/nodes/route.py"
-search = '''        verdict = classify() if cov.model_edges else Classification('''
-replace = '''        verdict = classify() if True else Classification('''
-tests = ["agent/tests/test_router.py::test_route_decision_table"]
+search = '''        if causes < needed:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_router.py::test_route_decision_table",
+         "agent/tests/test_router.py::test_single_code_edge_never_answers_a_no_code_question"]
 
 [[mutation]]
 id = "route_classifier_blind"
@@ -4385,7 +4387,8 @@ id = "persist_ok_check_off"
 file = "agent/nodes/persist.py"
 search = '''    if state.get("status") != "ok" or brief.get("status") != "ok":'''
 replace = '''    if False:'''
-tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_edges"]
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_edges",
+         "agent/tests/test_persist.py::test_cause_edge_goes_under_the_model_without_a_family_and_never_from_a_graph_source"]
 
 [[mutation]]
 id = "persist_not_idempotent"
@@ -6762,3 +6765,933 @@ search = '''            widened = anchor_to_target(evidence, page, target=form)'
 replace = '''            widened = None'''
 tests = ["agent/tests/test_evidence.py::test_persist_stores_the_widened_verbatim_span"]
 why = "Phase 5 live run: the only candidate edge was dropped because the quote left out the code"
+
+# ---------------------------------------------------------------------------
+# D1 routing and D2 cause edges (18 September 2026)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "route_row3_min_causes_off"
+file = "agent/nodes/route.py"
+search = '''        causes, needed = cov.cause_count, config.GRAPH_ONLY_MIN_CAUSES'''
+replace = '''        causes, needed = cov.cause_count, 0'''
+tests = ["agent/tests/test_router.py::test_route_decision_table",
+         "agent/tests/test_router.py::test_single_code_edge_never_answers_a_no_code_question",
+         "agent/tests/test_router.py::test_sc7b_code_less_repeat_reuses_cause_edges"]
+
+[[mutation]]
+id = "route_causes_counted_by_edge"
+file = "agent/nodes/graph_lookup.py"
+search = '''        return min(labels, quotes)'''
+replace = '''        return len(self.cause_edges)'''
+tests = ["agent/tests/test_router.py::test_route_decision_table"]
+
+[[mutation]]
+id = "route_classifier_sees_code_edges"
+file = "agent/nodes/route.py"
+search = '''    return [{"code": None, "evidence": e["evidence"]} for e in cov.cause_edges]'''
+replace = '''    return [{"code": None, "evidence": e["evidence"]} for e in [*cov.model_edges, *cov.cause_edges]]'''
+tests = ["agent/tests/test_router.py::test_classifier_sees_the_documented_causes"]
+
+[[mutation]]
+id = "kg_cause_hash_unchecked"
+file = "agent/kg.py"
+search = '''        if edge.get("evidence_sha256") != hash_evidence(edge.get("evidence") or ""):
+            return False
+        label, action = edge.get("label"), edge.get("action")'''
+replace = '''        label, action = edge.get("label"), edge.get("action")'''
+tests = ["agent/tests/test_kg.py::test_damaged_cause_edge_is_not_a_cause",
+         "agent/tests/test_router.py::test_query_level_check_on_in_memory_graph",
+         "agent/tests/test_graph_lookup_node.py::test_documented_causes_are_sources_when_no_code_is_confirmed"]
+
+[[mutation]]
+id = "kg_cause_action_unchecked"
+file = "agent/kg.py"
+search = '''        if not isinstance(action, str) or not action.strip() or not isinstance(label, str):'''
+replace = '''        if not isinstance(label, str):'''
+tests = ["agent/tests/test_kg.py::test_damaged_cause_edge_is_not_a_cause"]
+
+[[mutation]]
+id = "kg_cause_key_raw_label"
+file = "agent/kg.py"
+search = '''    digest = hashlib.sha256(norm_label(label).encode("utf-8")).hexdigest()[:12]'''
+replace = '''    digest = hashlib.sha256(label.encode("utf-8")).hexdigest()[:12]'''
+tests = ["agent/tests/test_kg.py::test_cause_key_hashes_the_normalized_label"]
+
+[[mutation]]
+id = "kg_cause_condition_skipped"
+file = "agent/kg.py"
+search = '''            result = (verify_cause_span(evidence, page_text, label=label) if page_text is not None
+                      else check_cause_shape(evidence, label=label))'''
+replace = '''            result = (verify_span(evidence, page_text, target=evidence) if page_text is not None
+                      else check_span_shape(evidence, target=evidence))'''
+tests = ["agent/tests/test_kg.py::test_cause_edge_stores_label_action_and_passes_its_condition_5"]
+
+[[mutation]]
+id = "kg_cause_label_optional"
+file = "agent/kg.py"
+search = '''        if blank:
+            raise EdgeRejected("missing_fields"'''
+replace = '''        if False:
+            raise EdgeRejected("missing_fields"'''
+tests = ["agent/tests/test_kg.py::test_cause_edge_stores_label_action_and_passes_its_condition_5"]
+
+[[mutation]]
+id = "kg_load_drops_cause_fields"
+file = "agent/kg.py"
+search = '''                fields.update({name: edge[name] for name in CAUSE_FIELDS if name in edge})'''
+replace = '''                pass'''
+tests = ["agent/tests/test_kg.py::test_cause_edge_stores_label_action_and_passes_its_condition_5",
+         "agent/tests/test_router.py::test_sc7b_code_less_repeat_reuses_cause_edges"]
+
+[[mutation]]
+id = "kg_reverify_cause_shape_only"
+file = "agent/kg.py"
+search = '''                result = (verify_cause_span(edge["evidence"], text, label=edge.get("label")) if text is not None'''
+replace = '''                result = (check_cause_shape(edge["evidence"], label=edge.get("label")) if text is not None'''
+tests = ["agent/tests/test_kg.py::test_reverify_checks_cause_and_code_edges_against_their_page",
+         "agent/tests/test_graph_integrity.py::test_every_edge_reverifies[fixture-optima_flo]"]
+
+[[mutation]]
+id = "cli_graph_stats_hides_causes"
+file = "agent/cli.py"
+search = '''        lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
+                     f"{stats['nodes'].get('cause', 0)} causes")'''
+replace = '''        pass'''
+tests = ["agent/tests/test_kg.py::test_graph_stats_counts_documented_causes",
+         "agent/tests/test_persist.py::test_cli_replay_leaves_runtime_graph_unchanged"]
+
+[[mutation]]
+id = "evidence_cause_words_no_stem"
+file = "agent/rules/evidence.py"
+search = '''    return {_stem(w) for w in words
+'''
+replace = '''    return {w for w in words
+'''
+tests = ["agent/tests/test_evidence.py::test_cause_words_are_letters_long_enough_casefolded_and_stemmed"]
+
+[[mutation]]
+id = "evidence_cause_words_keep_stop_words"
+file = "agent/rules/evidence.py"
+search = '''            if len(w) >= config.CAUSE_WORD_MIN_CHARS and w not in stop and _stem(w) not in stop}'''
+replace = '''            if len(w) >= config.CAUSE_WORD_MIN_CHARS}'''
+tests = ["agent/tests/test_evidence.py::test_cause_words_are_letters_long_enough_casefolded_and_stemmed"]
+
+[[mutation]]
+id = "evidence_cause_words_short_words"
+file = "agent/rules/evidence.py"
+search = '''if len(w) >= config.CAUSE_WORD_MIN_CHARS and'''
+replace = '''if len(w) >= 1 and'''
+tests = ["agent/tests/test_evidence.py::test_cause_words_are_letters_long_enough_casefolded_and_stemmed"]
+
+[[mutation]]
+id = "evidence_cause_min_words_one"
+file = "agent/rules/evidence.py"
+search = '''    return len(cause_words(label) & cause_words(span)) >= config.CAUSE_MIN_SHARED_WORDS'''
+replace = '''    return len(cause_words(label) & cause_words(span)) >= 1'''
+tests = ["agent/tests/test_evidence.py::test_cause_condition_needs_two_shared_words_or_the_whole_label",
+         "agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges",
+         "agent/tests/test_kg.py::test_cause_edge_stores_label_action_and_passes_its_condition_5"]
+
+[[mutation]]
+id = "evidence_cause_verbatim_label_ignored"
+file = "agent/rules/evidence.py"
+search = '''    if norm_label and re.search(r"(?<![^\W_])" + re.escape(norm_label) + r"(?![^\W_])", normalize_for_span(span)):
+        return True
+'''
+replace = '''
+'''
+tests = ["agent/tests/test_evidence.py::test_cause_condition_needs_two_shared_words_or_the_whole_label"]
+
+[[mutation]]
+id = "evidence_cause_skips_page"
+file = "agent/rules/evidence.py"
+search = '''    return verify_span(span, page_text, target=span)'''
+replace = '''    return shape'''
+tests = ["agent/tests/test_evidence.py::test_cause_condition_needs_two_shared_words_or_the_whole_label",
+         "agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges",
+         "agent/tests/test_router.py::test_sc7b_code_less_repeat_reuses_cause_edges"]
+
+[[mutation]]
+id = "graph_lookup_causes_not_loaded"
+file = "agent/nodes/graph_lookup.py"
+search = '''    causes = [] if code else coverage.cause_edges'''
+replace = '''    causes = []'''
+tests = ["agent/tests/test_graph_lookup_node.py::test_documented_causes_are_sources_when_no_code_is_confirmed",
+         "agent/tests/test_router.py::test_sc7b_code_less_repeat_reuses_cause_edges"]
+
+[[mutation]]
+id = "graph_lookup_causes_with_code"
+file = "agent/nodes/graph_lookup.py"
+search = '''    causes = [] if code else coverage.cause_edges'''
+replace = '''    causes = coverage.cause_edges'''
+tests = ["agent/tests/test_graph_lookup_node.py::test_documented_causes_are_sources_when_no_code_is_confirmed"]
+
+[[mutation]]
+id = "persist_causes_off"
+file = "agent/nodes/persist.py"
+search = '''    causes, cause_dropped = cause_candidates(state, ctx)'''
+replace = '''    causes, cause_dropped = [], []'''
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges",
+         "agent/tests/test_router.py::test_sc7b_code_less_repeat_reuses_cause_edges"]
+
+[[mutation]]
+id = "persist_cause_no_span_check"
+file = "agent/nodes/persist.py"
+search = '''            check = verify_cause_span(evidence, texts.get(url), label=label)'''
+replace = '''            check = verify_cause_span(evidence, evidence, label=evidence)'''
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges"]
+
+[[mutation]]
+id = "persist_cause_without_action"
+file = "agent/nodes/persist.py"
+search = '''        if why is None and action is None:
+            why = DROP_NO_ACTION'''
+replace = '''        pass'''
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges"]
+
+[[mutation]]
+id = "persist_cause_keyed_on_model"
+file = "agent/nodes/persist.py"
+search = '''        family = kg.family_of(maker, model)
+        scope = family or model'''
+replace = '''        family = None
+        scope = family or model'''
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges"]
+
+[[mutation]]
+id = "persist_cause_not_idempotent"
+file = "agent/nodes/persist.py"
+search = '''        if any(u in kg.g and v in kg.g and kg.g.has_edge(u, v, key=edge_id) for u, v in earlier):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_persist.py::test_persist_writes_only_verified_cause_edges"]
+
+[[mutation]]
+id = "persist_cause_graph_source_readded"
+file = "agent/nodes/persist.py"
+search = '''        if why == "graph":
+            continue'''
+replace = '''        if False:
+            continue'''
+tests = ["agent/tests/test_persist.py::test_cause_edge_goes_under_the_model_without_a_family_and_never_from_a_graph_source"]
+
+# ---------------------------------------------------------------------------
+# D3 excerpts half and D4 replay grounding (18 September 2026)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "excerpts_snap_off"
+file = "agent/research/excerpts.py"
+search = '''    return i <= 0 or i >= len(text) or text[i - 1].isspace() or text[i].isspace()'''
+replace = '''    return True'''
+tests = ["agent/tests/test_excerpts.py::test_excerpts_never_start_or_end_inside_a_word"]
+
+[[mutation]]
+id = "excerpts_narrow_window_unsnapped"
+file = "agent/research/excerpts.py"
+search = '''            narrow = _snap(text, max(0, start - pad), min(len(text), end + pad), anchor)'''
+replace = '''            narrow = (max(0, start - pad), min(len(text), end + pad))'''
+tests = ["agent/tests/test_excerpts.py::test_excerpts_never_start_or_end_inside_a_word",
+         "agent/tests/test_excerpts.py::test_excerpt_keeps_the_whole_word_the_phase6_edge_cut"]
+
+[[mutation]]
+id = "excerpts_opening_mid_word"
+file = "agent/research/excerpts.py"
+search = '''    e = _prev_boundary(text, min(len(text), s + max_chars))'''
+replace = '''    e = min(len(text), s + max_chars)'''
+tests = ["agent/tests/test_excerpts.py::test_excerpts_never_start_or_end_inside_a_word"]
+
+[[mutation]]
+id = "excerpts_snap_cuts_anchor_end"
+file = "agent/research/excerpts.py"
+search = '''    if e < anchor[1]:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_excerpts.py::test_excerpt_keeps_the_whole_word_the_phase6_edge_cut"]
+
+[[mutation]]
+id = "excerpts_snap_cuts_anchor_start"
+file = "agent/research/excerpts.py"
+search = '''    if s > anchor[0]:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_excerpts.py::test_excerpt_keeps_the_whole_word_the_phase6_edge_cut"]
+
+[[mutation]]
+id = "excerpts_anchor_words_fallback_off"
+file = "agent/research/excerpts.py"
+search = '''                candidate = _merge(chosen + [_snap(text, start, end, anchor)])'''
+replace = '''                pass'''
+tests = ["agent/tests/test_excerpts.py::test_excerpt_keeps_the_whole_word_the_phase6_edge_cut"]
+
+[[mutation]]
+id = "grounding_live_exemption_removed"
+file = "agent/rules/grounding.py"
+search = '''    if mode == REPLAY_MODE and cited_source is not None and not page_text and recorded_live(provenance):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_grounding.py::test_live_recording_without_page_text_is_unverifiable"]
+why = "the recorder replay's cited page had recorded text, so since E4 it takes the earlier had_raw_text guard (grounding_live_snippet_first); this branch covers live sources whose text was never saved"
+
+[[mutation]]
+id = "grounding_live_exemption_ignores_text"
+file = "agent/rules/grounding.py"
+search = '''    if mode == REPLAY_MODE and cited_source is not None and not page_text and recorded_live(provenance):'''
+replace = '''    if mode == REPLAY_MODE and cited_source is not None and recorded_live(provenance):'''
+tests = ["agent/tests/test_grounding.py::test_live_recording_without_page_text_is_unverifiable"]
+
+[[mutation]]
+id = "grounding_live_exemption_any_mode"
+file = "agent/rules/grounding.py"
+search = '''    if mode == REPLAY_MODE and cited_source is not None and not page_text and recorded_live(provenance):'''
+replace = '''    if cited_source is not None and not page_text and recorded_live(provenance):'''
+tests = ["agent/tests/test_grounding.py::test_live_recording_without_page_text_is_unverifiable"]
+
+[[mutation]]
+id = "grounding_live_exemption_without_source"
+file = "agent/rules/grounding.py"
+search = '''    if mode == REPLAY_MODE and cited_source is not None and not page_text and recorded_live(provenance):'''
+replace = '''    if mode == REPLAY_MODE and not page_text and recorded_live(provenance):'''
+tests = ["agent/tests/test_grounding.py::test_live_recording_without_page_text_is_unverifiable"]
+
+[[mutation]]
+id = "grounding_live_prefix_any"
+file = "agent/rules/grounding.py"
+search = '''    return isinstance(derived, str) and derived.startswith(LIVE_PROVENANCE_PREFIX)'''
+replace = '''    return isinstance(derived, str)'''
+tests = ["agent/tests/test_grounding.py::test_live_recording_without_page_text_is_unverifiable"]
+
+[[mutation]]
+id = "validate_recorded_hash_ignored"
+file = "agent/nodes/validate.py"
+search = '''        text = _recorded_page(ctx.pages_dir, recorded.get(url))'''
+replace = '''        text = None'''
+tests = ["agent/tests/test_grounding.py::test_validate_reads_a_recorded_page_by_its_hash",
+         "agent/tests/test_recorder.py::test_live_recording_replays_grounding_from_local_page_text"]
+
+[[mutation]]
+id = "validate_recorded_page_unchecked"
+file = "agent/nodes/validate.py"
+search = '''    return text if hashlib.sha256(text.encode("utf-8")).hexdigest() == sha else None'''
+replace = '''    return text'''
+tests = ["agent/tests/test_grounding.py::test_validate_reads_a_recorded_page_by_its_hash"]
+
+[[mutation]]
+id = "recorder_text_hash_dropped"
+file = "agent/live/recorder.py"
+search = '''    return {"text_sha256": sha} if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha) else {}'''
+replace = '''    return {}'''
+tests = ["agent/tests/test_recorder.py::test_live_recording_replays_grounding_from_local_page_text",
+         "agent/tests/test_recorder.py::test_recording_holds_no_key_photo_bytes_or_real_page_text"]
+
+[[mutation]]
+id = "cassettes_text_hash_unknown_key"
+file = "agent/replay/cassettes.py"
+search = '''RESULT_OPTIONAL = ("text_sha256",)'''
+replace = '''RESULT_OPTIONAL = ()'''
+tests = ["agent/tests/test_cassettes.py::test_result_text_hash_names_the_local_page_text",
+         "agent/tests/test_recorder.py::test_live_recording_replays_grounding_from_local_page_text"]
+
+[[mutation]]
+id = "cassettes_text_hash_format_unchecked"
+file = "agent/replay/cassettes.py"
+search = '''    if not isinstance(sha, str) or not SHA256_RE.match(sha):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_cassettes.py::test_result_text_hash_names_the_local_page_text"]
+
+[[mutation]]
+id = "cassettes_text_hash_mismatch_accepted"
+file = "agent/replay/cassettes.py"
+search = '''    if raw and hashlib.sha256(raw.encode("utf-8")).hexdigest() != sha:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_cassettes.py::test_result_text_hash_names_the_local_page_text"]
+
+# ---------------------------------------------------------------------------
+# D3 persist half: stored spans end on word boundaries (18 September 2026)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "evidence_snap_off"
+file = "agent/rules/evidence.py"
+search = '''    if any(not cuts_word(page, s) and not cuts_word(page, s + len(norm)) for s in starts):'''
+replace = '''    if starts:'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries",
+         "agent/tests/test_persist.py::test_stored_spans_are_extended_to_whole_words"]
+
+[[mutation]]
+id = "evidence_snap_no_trim_end"
+file = "agent/rules/evidence.py"
+search = '''        ends = [out, inward]'''
+replace = '''        ends = [out]'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "evidence_snap_no_trim_start"
+file = "agent/rules/evidence.py"
+search = '''        starts = [out, inward]'''
+replace = '''        starts = [out]'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "evidence_snap_ignores_max"
+file = "agent/rules/evidence.py"
+search = '''                if e2 > s2 and len(candidate) <= config.EVIDENCE_MAX_CHARS and accept(candidate):'''
+replace = '''                if e2 > s2 and accept(candidate):'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "evidence_snap_accept_ignored"
+file = "agent/rules/evidence.py"
+search = '''                if e2 > s2 and len(candidate) <= config.EVIDENCE_MAX_CHARS and accept(candidate):'''
+replace = '''                if e2 > s2 and len(candidate) <= config.EVIDENCE_MAX_CHARS:'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "evidence_word_is_nonspace"
+file = "agent/rules/evidence.py"
+search = '''    return bool(_WORD_CHAR.fullmatch(ch))'''
+replace = '''    return not ch.isspace()'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "evidence_word_apostrophe_not_word"
+file = "agent/rules/evidence.py"
+search = '''_WORD_CHAR = re.compile(r"[^\W_]|['\u2019]")'''
+replace = '''_WORD_CHAR = re.compile(r"[^\W_]")'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+
+[[mutation]]
+id = "persist_code_snap_off"
+file = "agent/nodes/persist.py"
+search = '''        evidence = snap_span_to_words(evidence, texts.get(url), accept=_code_accepts(texts.get(url), target))'''
+replace = '''        evidence = evidence'''
+tests = ["agent/tests/test_persist.py::test_stored_spans_are_extended_to_whole_words"]
+
+[[mutation]]
+id = "persist_cause_snap_off"
+file = "agent/nodes/persist.py"
+search = '''            evidence = snap_span_to_words(evidence, texts[url], accept=_cause_accepts(texts[url], label))'''
+replace = '''            pass'''
+tests = ["agent/tests/test_persist.py::test_stored_spans_are_extended_to_whole_words"]
+
+[[mutation]]
+id = "persist_phase4_snap_off"
+file = "agent/nodes/persist.py"
+search = '''            evidence = snap_span_to_words(evidence, texts[url], accept=_code_accepts(texts[url], target))'''
+replace = '''            pass'''
+tests = ["agent/tests/test_persist.py::test_stored_spans_are_extended_to_whole_words"]
+
+[[mutation]]
+id = "research_sources_in_finish_order"
+file = "agent/nodes/research.py"
+search = '''    return ordered + left'''
+replace = '''    return list(artifacts)'''
+tests = ["agent/tests/test_research_sources.py::test_sources_follow_the_call_order_not_the_finish_order"]
+why = "D4 finding: parallel calls finish in no fixed order, so replayed source indices named different pages"
+
+[[mutation]]
+id = "persist_edge_page_hash_dropped"
+file = "agent/nodes/persist.py"
+search = '''    return found.get("text_sha256") or page_sha256(page)'''
+replace = '''    return found.get("text_sha256")'''
+tests = ["agent/tests/test_recorder.py::test_live_recording_replays_grounding_from_local_page_text"]
+
+# ---------------------------------------------------------------------------
+# Review findings after the D1 to D4 build (18 September 2026)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "route_cause_count_ignores_quotes"
+file = "agent/nodes/graph_lookup.py"
+search = '''        return min(labels, quotes)'''
+replace = '''        return labels'''
+tests = ["agent/tests/test_router.py::test_route_decision_table[row4_one_quote_under_three_labels_counts_once]",
+         "agent/tests/test_router.py::test_route_counts_distinct_causes_backed_by_distinct_quotes[one_quote_three_labels]"]
+why = "E1: one quote stored under three paraphrased labels counts as three causes"
+
+[[mutation]]
+id = "cause_count_by_node"
+file = "agent/nodes/graph_lookup.py"
+search = '''        return min(labels, quotes)'''
+replace = '''        return len({edge["dst"] for edge in self.cause_edges})'''
+tests = ["agent/tests/test_router.py::test_route_decision_table[row4_one_quote_under_three_labels_counts_once]",
+         "agent/tests/test_router.py::test_route_decision_table[row4_same_cause_on_model_and_family_counts_once]",
+         "agent/tests/test_router.py::test_route_counts_distinct_causes_backed_by_distinct_quotes[one_quote_three_labels]",
+         "agent/tests/test_router.py::test_route_counts_distinct_causes_backed_by_distinct_quotes[one_cause_on_model_and_family]"]
+why = "E1 and R1: the count as built before review, distinct Cause node keys"
+
+[[mutation]]
+id = "route_cause_count_by_node_key"
+file = "agent/nodes/graph_lookup.py"
+search = '''        labels = len({norm_label(edge["label"]) for edge in self.cause_edges})'''
+replace = '''        labels = len({edge["dst"] for edge in self.cause_edges})'''
+tests = ["agent/tests/test_router.py::test_route_decision_table[row4_same_cause_on_model_and_family_counts_once]",
+         "agent/tests/test_router.py::test_route_counts_distinct_causes_backed_by_distinct_quotes[one_cause_on_model_and_family]"]
+why = "R1, P3: one cause under the model and under its family has two keys and counts twice"
+
+[[mutation]]
+id = "cause_label_substring"
+file = "agent/rules/evidence.py"
+search = '''    if norm_label and re.search(r"(?<![^\W_])" + re.escape(norm_label) + r"(?![^\W_])", normalize_for_span(span)):'''
+replace = '''    if norm_label and norm_label in normalize_for_span(span):'''
+tests = ["agent/tests/test_evidence.py::test_cause_label_must_match_whole_words"]
+why = "E3: the whole label path matches inside a longer word"
+
+[[mutation]]
+id = "cause_stop_list_short"
+file = "agent/config.py"
+search = '''"check", '''
+replace = ''''''
+tests = ["agent/tests/test_evidence.py::test_generic_cause_label_is_refused"]
+why = "E5: 'check' counts as a content word, so 'Check the unit' is a cause"
+
+[[mutation]]
+id = "cause_stop_list_stem_unchecked"
+file = "agent/rules/evidence.py"
+search = ''' and w not in stop and _stem(w) not in stop}'''
+replace = ''' and w not in stop}'''
+tests = ["agent/tests/test_evidence.py::test_generic_cause_label_is_refused"]
+why = "E5: 'checks' and 'needs' pass the stop list once stemmed"
+
+[[mutation]]
+id = "evidence_cause_known_limit_min_words_three"
+file = "agent/config.py"
+search = '''CAUSE_MIN_SHARED_WORDS = 2'''
+replace = '''CAUSE_MIN_SHARED_WORDS = 3'''
+tests = ["agent/tests/test_evidence.py::test_cause_component_only_quote_passes_known_limit"]
+why = "E2: the characterized false positive of the decided D2 floor changes if the floor does"
+
+[[mutation]]
+id = "grounding_live_snippet_first"
+file = "agent/rules/grounding.py"
+search = '''    if (mode == REPLAY_MODE and cited_source is not None and not page_text and had_raw_text
+            and recorded_live(provenance)):
+        return GroundingResult(UNVERIFIABLE, LIVE_NO_TEXT)
+'''
+replace = ''''''
+tests = ["agent/tests/test_grounding.py::test_live_replay_without_page_is_unverifiable_even_if_snippet_has_code"]
+why = "E4: a replayed live recording without its page text is verified from the snippet"
+
+[[mutation]]
+id = "pipeline_had_raw_text_ignored"
+file = "agent/rules/pipeline.py"
+search = '''            had_raw_text=url in recorded_text_urls or bool((by_url.get(url) or {}).get("text_sha256")),'''
+replace = '''            had_raw_text=False,'''
+tests = ["agent/tests/test_grounding.py::test_live_replay_without_page_is_unverifiable_even_if_snippet_has_code"]
+why = "E4: the rules never tell grounding which cited pages live had"
+
+[[mutation]]
+id = "validate_recorded_urls_not_passed"
+file = "agent/nodes/validate.py"
+search = '''        recorded_text_urls=set(recorded_text_hashes(ctx.cassette)),'''
+replace = '''        recorded_text_urls=set(),'''
+tests = ["agent/tests/test_grounding.py::test_live_replay_without_page_is_unverifiable_even_if_snippet_has_code"]
+why = "E4: validate does not pass the recording's page hashes to the rules"
+
+[[mutation]]
+id = "validate_sidecar_ignored"
+file = "agent/nodes/validate.py"
+search = '''    for url, sha in _sidecar_hashes(getattr(cassette, "path", None)):
+        out.setdefault(url, sha)
+'''
+replace = ''''''
+tests = ["agent/tests/test_grounding.py::test_recording_without_inline_hashes_finds_pages_through_its_texts_file",
+         "agent/tests/test_recorder.py::test_phase5_recording_replays_to_ok[with_page_text]"]
+why = "P1: a recording with no inline text_sha256 never finds its pages; the test strips the fixed build's hot tub recording of its inline hashes in tmp_path, and mutate.py points ADVISOR_PHASE5_DATA_DIR at the repo's own data folder, read only"
+
+[[mutation]]
+id = "validate_sidecar_first_hash_not_kept"
+file = "agent/nodes/validate.py"
+search = '''        out.setdefault(url, sha)'''
+replace = '''        out[url] = sha'''
+tests = ["agent/tests/test_grounding.py::test_recording_without_inline_hashes_finds_pages_through_its_texts_file"]
+why = "P1: a later withheld entry for the same URL replaces the first hash"
+
+[[mutation]]
+id = "recorder_fetch_text_hash_dropped"
+file = "agent/live/recorder.py"
+search = '''    return {"url": url, "raw_content": raw, **_text_hash(result)}'''
+replace = '''    return {"url": url, "raw_content": raw}'''
+tests = ["agent/tests/test_recorder.py::test_recorded_fetch_keeps_its_page_text_hash"]
+why = "T1: fetch results lose their text_sha256"
+
+[[mutation]]
+id = "persist_cause_snap_accept_ignored"
+file = "agent/nodes/persist.py"
+search = '''    return lambda span: verify_cause_span(span, page, label=label).ok'''
+replace = '''    return lambda span: True'''
+tests = ["agent/tests/test_persist.py::test_snapped_span_that_fails_its_check_again_is_dropped"]
+why = "T2: a snapped cause span is not checked again"
+
+[[mutation]]
+id = "kg_cause_condition5_unchecked_at_query"
+file = "agent/kg.py"
+search = '''        return check_cause_shape(edge.get("evidence"), label=label).ok'''
+replace = '''        return check_cause_shape(edge.get("evidence"), label=edge.get("evidence")).ok'''
+tests = ["agent/tests/test_router.py::test_query_level_check_on_in_memory_graph[row4_cause_label_its_quote_lacks_not_counted]"]
+why = "T3: a cause edge whose quote does not support its label counts toward row 3"
+
+[[mutation]]
+id = "kg_cause_label_node_unchecked_at_query"
+file = "agent/kg.py"
+search = '''            if norm_label(label) != self.g.nodes[edge["dst"]].get("label_norm"):
+                return False'''
+replace = '''            pass'''
+tests = ["agent/tests/test_router.py::test_query_level_check_on_in_memory_graph[row4_cause_edge_into_another_cause_not_counted]"]
+why = "T3: a cause edge into a Cause node with another label counts toward row 3"
+
+[[mutation]]
+id = "evidence_snap_max_exclusive"
+file = "agent/rules/evidence.py"
+search = '''                if e2 > s2 and len(candidate) <= config.EVIDENCE_MAX_CHARS and accept(candidate):'''
+replace = '''                if e2 > s2 and len(candidate) < config.EVIDENCE_MAX_CHARS and accept(candidate):'''
+tests = ["agent/tests/test_evidence.py::test_stored_span_snaps_to_word_boundaries"]
+why = "T4: a span extended to exactly EVIDENCE_MAX_CHARS is refused"
+
+[[mutation]]
+id = "synth_share_cut_mid_word"
+file = "agent/nodes/synthesize.py"
+search = '''    blocks = [h + cut_at_word(t, n) for h, t, n in zip(headers, texts, shares)]'''
+replace = '''    blocks = [h + t[:n] for h, t, n in zip(headers, texts, shares)]'''
+tests = ["agent/tests/test_nodes.py::test_sources_block_never_cuts_a_word"]
+why = "Phase 6 finding: a source cut to its budget share mid word was copied into the brief"
+
+[[mutation]]
+id = "synth_block_cut_mid_word"
+file = "agent/nodes/synthesize.py"
+search = '''    if cut[-1].isalnum() and text[limit].isalnum():'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_nodes.py::test_sources_block_never_cuts_a_word"]
+why = "the word boundary rule itself"
+
+[[mutation]]
+id = "persist_run_record_no_build_id"
+file = "agent/nodes/persist.py"
+search = '''        "build_id": build_id(),
+'''
+replace = ''''''
+tests = ["agent/tests/test_persist.py::test_run_record_names_the_build_that_produced_it"]
+why = "decision 35: every published live number must trace to the build that produced it"
+
+# ---------------------------------------------------------------------------
+# The recorded v2 demo: agent/replay/build_demo.py, check_demo.py, the
+# installed page, and the widened published pages scan (test_build_demo.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "build_demo_records_label_dropped"
+file = "agent/replay/build_demo.py"
+search = '''        "records_label": SYNTHETIC_RECORDS_LABEL if synthetic_records else None,'''
+replace = '''        "records_label": None,'''
+tests = ["agent/tests/test_build_demo.py::test_synthetic_build_shows_every_role_and_labels_synthetic_records"]
+why = "a live run against synthetic property records must say so wherever it appears"
+
+[[mutation]]
+id = "build_demo_optional_block_kept"
+file = "agent/replay/build_demo.py"
+search = '''            page = re.sub(rf"[ \t]*<!-- if:role:{role} -->.*?<!-- /if:role:{role} -->\n?", "", page, flags=re.S)'''
+replace = '''            page = re.sub(rf"[ \t]*<!-- /?if:role:{role} -->\n?", "", page)'''
+tests = ["agent/tests/test_build_demo.py::test_optional_role_can_be_left_out"]
+why = "the page must not link to a case the selection left out"
+
+[[mutation]]
+id = "build_demo_guard_ignores_other_build"
+file = "agent/replay/build_demo.py"
+search = '''            if build != current:
+                reasons.append(f"{run_id} ran on build {build}, not the current build {current}")'''
+replace = '''            pass'''
+tests = ["agent/tests/test_build_demo.py::test_guard_refuses_a_run_from_another_build"]
+why = "decision 35 and the standing rule: only the current build's runs are results"
+
+[[mutation]]
+id = "build_demo_build_from_eval_only"
+file = "agent/replay/build_demo.py"
+search = '''    if rf.run is not None and rf.run.get("build_id"):
+        out["run record"] = str(rf.run["build_id"])'''
+replace = '''    if False:
+        out["run record"] = ""'''
+tests = ["agent/tests/test_build_demo.py::test_guard_reads_the_build_from_the_run_record_first"]
+why = "every run record carries its build_id; the guard reads it first and fails on disagreement"
+
+[[mutation]]
+id = "build_demo_missing_role_allowed"
+file = "agent/replay/build_demo.py"
+search = '''    missing = [r for r in ROLES if not roles.get(r)]'''
+replace = '''    missing = []'''
+tests = ["agent/tests/test_build_demo.py::test_guard_refuses_a_missing_role"]
+why = "a selection missing a required role is refused with the role named"
+
+[[mutation]]
+id = "build_demo_stand_in_fixtures_unlabeled"
+file = "agent/replay/build_demo.py"
+search = '''        head.append(f"// {STAND_IN_LABEL}")'''
+replace = '''        pass'''
+tests = ["agent/tests/test_build_demo.py::test_stand_in_build_stamps_the_label"]
+why = "stand-in data carries its label on every surface, the data file included"
+
+[[mutation]]
+id = "build_demo_superseded_scan_off"
+file = "agent/replay/build_demo.py"
+search = '''            hits += superseded_hits(tmp, superseded_ids(data_dir) - selected)'''
+replace = '''            hits += []'''
+tests = ["agent/tests/test_build_demo.py::test_rerun_build_refuses_to_name_a_superseded_run"]
+why = "a bug fix is not a finding: no superseded build or run appears on the page"
+
+[[mutation]]
+id = "build_demo_age_statement_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''    if warranty.get("age_statement") != expected:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_build_demo.py::test_synthetic_records_are_checked_against_the_seed"]
+why = "the page says code worked out the age from the install date; the builder proves it"
+
+[[mutation]]
+id = "build_demo_trail_copies_results"
+file = "agent/replay/build_demo.py"
+search = '''            item["results"] = len(res.get("results") or [])'''
+replace = '''            item["results"] = len(res.get("results") or [])
+            item["raw"] = res.get("results")'''
+tests = ["agent/tests/test_build_demo.py::test_allowlist_never_copies_a_key_raw_page_text_or_a_local_path"]
+why = "the builder copies named fields only; raw search results never reach the page"
+
+[[mutation]]
+id = "build_demo_missing_denylist_allowed"
+file = "agent/replay/build_demo.py"
+search = '''    if not denylist_path.is_file():'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_build_demo.py::test_privacy_scan_fails_closed"]
+why = "no denylist means no privacy scan, so no build"
+
+[[mutation]]
+id = "build_demo_network_regex_misses_sendbeacon"
+file = "agent/replay/build_demo.py"
+search = '''    r"\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|\bimport\s*\(|importScripts"'''
+replace = '''    r"\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|\bimport\s*\(|importScripts"'''
+tests = ["agent/tests/test_build_demo.py::test_network_scan_fails_closed"]
+why = "the page makes no network request; the builder's scan must see every kind"
+
+[[mutation]]
+id = "build_demo_fingerprint_drifts"
+file = "agent/replay/build_demo.py"
+search = '''        digest.update(rel.encode("utf-8") + b"\0")'''
+replace = '''        digest.update(rel.encode("utf-8"))'''
+tests = ["agent/tests/test_build_demo.py::test_advisor_build_id_matches_build_info"]
+why = "the guard's current build must be build_info's fingerprint, less only the demo tooling"
+
+[[mutation]]
+id = "installed_demo_off_origin_image"
+file = "tool.html"
+search = '''        <p class="eyebrow">Recorded demo, version 2</p>'''
+replace = '''        <p class="eyebrow">Recorded demo, version 2</p>
+        <img src="https://example.com/x.png" alt="" />'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_passes_on_the_installed_site"]
+why = "check_demo on the installed page catches an off origin load"
+
+[[mutation]]
+id = "installed_demo_dash_in_eyebrow"
+file = "tool.html"
+search = '''        <p class="eyebrow">Recorded demo, version 2</p>'''
+replace = "        <p class=\"eyebrow\">Recorded demo \u2014 version 2</p>"
+tests = ["agent/tests/test_build_demo.py::test_installed_page_text_has_no_em_or_en_dash"]
+why = "house rule: no em or en dash anywhere a reader sees"
+
+[[mutation]]
+id = "pages_brief_subfolder_off_origin"
+file = "briefs/v2/zz-mutant.html"
+replace = '''<!doctype html><html><body><img src="https://example.com/x.png" alt=""></body></html>
+'''
+tests = ["agent/tests/test_published_pages.py::test_demo_makes_no_off_origin_or_script_requests"]
+why = "the published pages scan covers briefs/** so the v2 demo's briefs/v2/ is scanned"
+
+[[mutation]]
+id = "style_v1_fixtures_escape_still_banned"
+file = "agent/tests/fixtures/v1_fixtures.js"
+search = '''// Recorded output from a live run on 2026-08-18. This page makes no API call.'''
+replace = '''// Recorded output from a live run on 2026-08-18 \u2014 This page makes no API call.'''
+tests = ["agent/tests/test_style.py::test_no_en_or_em_dashes_in_agent_or_seed"]
+why = "v1_fixtures.js is exempt from the raw dash rule only (its recorded text), never from escapes"
+
+# ---------------------------------------------------------------------------
+# test_teardown.py: the teardown's front matter and the no dash rule
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "teardown_hero_eyebrow_changed"
+file = "index.html"
+search = '<p class="eyebrow">Product teardown</p>'
+replace = '<p class="eyebrow">Teardown</p>'
+tests = ["agent/tests/test_teardown.py::test_title_and_hero_order"]
+
+[[mutation]]
+id = "teardown_lede_four_sentences"
+file = "index.html"
+search = 'arrives on a second visit.'
+replace = 'arrives on a second visit. The owner pays twice. The guest waits.'
+tests = ["agent/tests/test_teardown.py::test_lede_is_two_or_three_sentences"]
+
+[[mutation]]
+id = "teardown_byline_changed"
+file = "index.html"
+search = 'Product teardown of a tool I designed, directed'
+replace = 'Product teardown of a tool I designed, built'
+tests = ["agent/tests/test_teardown.py::test_byline_text"]
+
+[[mutation]]
+id = "teardown_tldr_kicker_changed"
+file = "index.html"
+search = '<p class="section-kicker">Thirty seconds</p>'
+replace = '<p class="section-kicker">The short version</p>'
+tests = ["agent/tests/test_teardown.py::test_tldr_kicker_heading_and_definition_line"]
+
+[[mutation]]
+id = "teardown_tldr_sixth_sentence"
+file = "index.html"
+search = 'in front of a technician.'
+replace = 'in front of a technician. Try the demo today.'
+tests = ["agent/tests/test_teardown.py::test_tldr_fits_five_sentences_and_100_words"]
+
+[[mutation]]
+id = "teardown_tldr_two_numbers"
+file = "index.html"
+search = 'few or no searches'
+replace = '0 to 2 searches'
+tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
+
+[[mutation]]
+id = "teardown_tldr_link"
+file = "index.html"
+search = 'free search service runs'
+replace = 'free <a href="#two-apis">search service</a> runs'
+tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
+
+[[mutation]]
+id = "teardown_summary_leads_swapped"
+file = "index.html"
+search = '<strong>What it means.</strong>'
+replace = '<strong>What it shows.</strong>'
+tests = ["agent/tests/test_teardown.py::test_summary_has_the_six_leads_in_order"]
+
+[[mutation]]
+id = "teardown_rail_drops_tldr"
+file = "index.html"
+search = '<li><a href="#tldr">TL;DR</a></li>'
+replace = ''
+tests = ["agent/tests/test_teardown.py::test_contents_rail_lists_tldr_and_summary_first"]
+
+[[mutation]]
+id = "teardown_rail_label_scheme"
+file = "index.html"
+search = '<a href="#frameworks">Part 5. Why LangGraph and LangChain</a>'
+replace = '<a href="#frameworks">5. Why LangGraph and LangChain</a>'
+tests = ["agent/tests/test_teardown.py::test_contents_rail_labels_match_section_kickers"]
+
+[[mutation]]
+id = "teardown_dash_reader_skips_attributes"
+file = "agent/tests/test_teardown.py"
+search = 'self.chunks += [values[a] or "" for a in VISIBLE_ATTRS if a in values]'
+replace = 'pass'
+tests = ["agent/tests/test_teardown.py::test_visible_text_reader_sees_entities_and_attributes"]
+
+[[mutation]]
+id = "teardown_index_em_dash"
+file = "index.html"
+search = 'Two APIs, each for its job</h2>'
+replace = 'Two APIs &mdash; each for its job</h2>'
+tests = ["agent/tests/test_teardown.py::test_no_em_or_en_dash_in_visible_text[index.html]"]
+
+[[mutation]]
+id = "teardown_tool_en_dash"
+file = "tool.html"
+search = '<a href="index.html">&larr; Read the teardown</a>'
+replace = '<a href="index.html">&larr; Read the teardown &ndash; v2</a>'
+tests = ["agent/tests/test_teardown.py::test_no_em_or_en_dash_in_visible_text[tool.html]"]
+why = "the anchor is the demo's back link, present in the v1 demo and in the v2 demo that replaces it"
+
+[[mutation]]
+id = "build_demo_blocked_note_says_cap"
+file = "agent/replay/build_demo.py"
+search = '''"note": "Blocked by the run's search or fetch limit before it was sent. Never sent."}'''
+replace = '''"note": "Blocked by the run's cap before it was sent. Never sent."}'''
+tests = ["agent/tests/test_build_demo.py::test_blocked_calls_are_put_down_to_the_search_limit_not_the_spending_cap"]
+why = "review N9, H5: a blocked call was stopped by the search or fetch count limit, not the spending cap"
+
+[[mutation]]
+id = "build_demo_nra_takeaway_says_cap"
+file = "agent/replay/build_demo.py"
+search = '''            line += f" ({blocked_count(c)} more blocked by the search limit)"'''
+replace = '''            line += f" ({blocked_count(c)} more blocked by the cap)"'''
+tests = ["agent/tests/test_build_demo.py::test_blocked_calls_are_put_down_to_the_search_limit_not_the_spending_cap"]
+why = "review N9, H5: the refusal case's takeaway blamed the spending cap for a search the count limit blocked"
+
+[[mutation]]
+id = "build_demo_topup_takeaway_did_the_rest"
+file = "agent/replay/build_demo.py"
+search = '''            if cands and all(x.get("source_origin") == "graph" for x in cands):'''
+replace = '''            if False and cands and all(x.get("source_origin") == "graph" for x in cands):'''
+tests = ["agent/tests/test_build_demo.py::test_top_up_takeaways_say_what_memory_did_not_do"]
+why = "review H2, R4: the vague question's top up added no cause, and the takeaway said it did the rest"
+
+[[mutation]]
+id = "build_demo_ac_topup_unused_facts_unsaid"
+file = "agent/replay/build_demo.py"
+search = '''            if cands and not mem.get("offered_from_memory") and all(x.get("source_origin") == "search" for x in cands):'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_build_demo.py::test_top_up_takeaways_say_what_memory_did_not_do"]
+why = "review N1, R3: the new symptom's brief used none of the stored facts, and the takeaway must say so"
+
+[[mutation]]
+id = "build_demo_thinner_repeat_unsaid"
+file = "agent/replay/build_demo.py"
+search = '''        if isinstance(mine, int) and isinstance(theirs, int) and mine < theirs:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_build_demo.py::test_repeat_takeaway_says_when_the_brief_was_thinner"]
+why = "review H3, R1: the cheaper repeat brief left out the steps to try first, and the takeaway must say so"
+
+[[mutation]]
+id = "build_demo_try_first_not_compared"
+file = "agent/replay/build_demo.py"
+search = '''
+                "try_first_steps": (c["outcome"] or {}).get("try_first_steps")}'''
+replace = '''}'''
+tests = ["agent/tests/test_build_demo.py::test_repeat_takeaway_says_when_the_brief_was_thinner"]
+why = "review R1: the side by side compares the steps to try first, not only searches, cost and time"
+
+[[mutation]]
+id = "build_demo_single_fact_says_each"
+file = "agent/replay/build_demo.py"
+search = '''        each = "each " if stored > 1 else ""'''
+replace = '''        each = "each "'''
+tests = ["agent/tests/test_build_demo.py::test_one_stored_fact_is_not_called_each"]
+why = "review R10: \"1 fact ... each\" on the first line a visitor reads"
+
+[[mutation]]
+id = "demo_js_blocked_says_cap"
+file = "src/demo.js"
+search = '''txt(meta, "Blocked by the run's search or fetch limit before it was sent. Nothing was spent on it.");'''
+replace = '''txt(meta, "Blocked by the run's cap before it was sent. Nothing was spent on it.");'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_names_the_search_limit_and_compares_steps"]
+why = "review N9, H5, R5: the trail note blamed the spending cap"
+
+[[mutation]]
+id = "demo_js_try_first_row_dropped"
+file = "src/demo.js"
+search = '''      ["Steps to try first in the brief", "try_first_steps", function (v) { return v == null ? "not recorded" : String(v); }]'''
+replace = '''      ["Search credits again", "tavily_credits", String]'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_names_the_search_limit_and_compares_steps"]
+why = "review R1: the side by side shows the steps to try first"
+
+[[mutation]]
+id = "demo_js_compare_note_started_from"
+file = "src/demo.js"
+search = '''"Both runs searched. This one checked what memory held for the unit first,'''
+replace = '''"Both runs searched, but this one started from what memory held for the unit first,'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_names_the_search_limit_and_compares_steps"]
+why = "review N1, R3: a top up checked memory first; it did not start from it"
+
+[[mutation]]
+id = "demo_page_bullet_says_cap_blocked"
+file = "tool.html"
+search = '''A hard spending cap on every run and a fixed limit on searches and
+              page fetches, both enforced in code; any call the limit blocked is
+              shown in the research trail.'''
+replace = '''A hard spending cap on every run, enforced in code, and any search
+              the cap blocked is shown in the research trail.'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_names_the_search_limit_and_compares_steps"]
+why = "review N9, H5, R5: the What's new bullet put blocked calls down to the spending cap"

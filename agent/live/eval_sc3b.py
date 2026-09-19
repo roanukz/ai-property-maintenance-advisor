@@ -49,6 +49,7 @@ from pathlib import Path
 from typing import IO, Any
 
 from agent import cli, config
+from agent.build_info import build_id as _build_id
 from agent.cli import CliRefusal
 from agent.live import evaluators
 from agent.live.preflight import PROCEED, confirmed
@@ -228,19 +229,8 @@ def open_batch_ledger(mode: str, runs: int, *, new_ledger: bool, need: tuple[str
     return ledger
 
 
-def build_id() -> str:
-    """A fingerprint of the advisor's code (agent/ without its tests), for decision 35."""
-    digest = hashlib.sha256()
-    root = config.REPO_ROOT / "agent"
-    tests = root / "tests"
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.is_relative_to(tests) or "__pycache__" in path.parts:
-            continue
-        if path.suffix not in (".py", ".sql", ".json", ".toml"):
-            continue
-        digest.update(path.relative_to(root).as_posix().encode("utf-8") + b"\0")
-        digest.update(path.read_bytes() + b"\0")
-    return digest.hexdigest()[:16]
+# build_id lives in agent.build_info so run records carry it too (decision 35).
+build_id = _build_id
 
 
 def load_records(suite: str, eval_dir: Path | None = None) -> list[dict[str, Any]]:

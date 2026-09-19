@@ -1,0 +1,642 @@
+{
+  "cassette_version": 1,
+  "case": "notheating",
+  "provenance": {
+    "derived_from": "v1 lookup db572cf7b81b; v1 extract lookup for demo-assets/plate-clear.jpg",
+    "copied_fields": [
+      "input.symptom",
+      "research.tool_results[*].results[*].url",
+      "research.tool_results[*].results[*].title",
+      "synthesize[*].draft.status",
+      "synthesize[*].draft.matched_identity",
+      "synthesize[*].draft.warranty_caution.text",
+      "synthesize[*].draft.try_first[*].step",
+      "synthesize[*].draft.try_first[*].detail",
+      "synthesize[*].draft.try_first[*].safety_flag",
+      "synthesize[*].draft.candidates[*].code",
+      "synthesize[*].draft.candidates[*].documented_meaning",
+      "synthesize[*].draft.candidates[*].documented_action",
+      "synthesize[*].draft.candidates[*].who",
+      "synthesize[*].draft.candidates[*].why_shown",
+      "synthesize[*].draft.candidates[*].confirmed",
+      "synthesize[*].draft.warranty.cautions[*].text",
+      "synthesize[*].draft.warranty.age_statement",
+      "synthesize[*].draft.warranty.verify[*]",
+      "synthesize[*].draft.source_tiers[*].tier",
+      "expect.cited_urls.warranty_caution",
+      "expect.cited_urls.try_first[*]",
+      "expect.cited_urls.candidates[*]",
+      "expect.cited_urls.warranty_cautions[*]",
+      "resume.identity.manufacturer",
+      "resume.identity.model",
+      "resume.identity.serial",
+      "resume.identity.manufacture_date",
+      "resume.observed_code",
+      "read_plate.extraction.manufacturer",
+      "read_plate.extraction.model",
+      "read_plate.extraction.serial",
+      "read_plate.extraction.manufacture_date",
+      "read_plate.extraction.confidence.manufacturer",
+      "read_plate.extraction.confidence.model",
+      "read_plate.extraction.confidence.serial",
+      "read_plate.extraction.confidence.manufacture_date",
+      "read_plate.usage.input_tokens",
+      "read_plate.usage.output_tokens"
+    ],
+    "public_already": "src/fixtures.js case notheating; briefs/db572cf7b81b.html; demo-assets/plate-clear.jpg",
+    "synthetic_fields": [
+      "research.script (one search per turn, then a final message)",
+      "research.tool_results[*].query (differ from v1's recorded searched strings)",
+      "research.tool_results[*].results on example hosts (decoys, interleaved between cited sources)",
+      "research.tool_results[*].results[*].score and credits",
+      "research.tool_results[*].results[*].content (empty on real URLs; v1 recorded no text)",
+      "research.script[*].message.usage and synthesize[*].usage (PLAN section 9 typical split)",
+      "synthesize[*].draft evidence, authorship_quote (empty), upgrade_options and maintenance_due (empty)",
+      "synthesize[*].draft source_index values (remapped by URL into the code built registry)",
+      "expect"
+    ],
+    "built_by": "agent/replay/build_cassettes.py",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "input": {
+    "identity": null,
+    "symptom": "not heating",
+    "plate_sha256": "3a142b569054d3ba8688a2bca946bd9e180d0eb075e45e2127cc553a40a5b79b"
+  },
+  "read_plate": {
+    "extraction": {
+      "manufacturer": "SUNDANCE® SPAS",
+      "model": "OPTIMA 880",
+      "serial": "100915742",
+      "manufacture_date": "06/2014",
+      "confidence": {
+        "manufacturer": "high",
+        "model": "high",
+        "serial": "high",
+        "manufacture_date": "high"
+      }
+    },
+    "usage": {
+      "input_tokens": 2540,
+      "output_tokens": 95,
+      "total_tokens": 2635
+    }
+  },
+  "resume": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "observed_code": null
+  },
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance Optima 880 spa heater not working"
+              },
+              "id": "call_notheating_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance 880 series owner manual heating troubleshooting"
+              },
+              "id": "call_notheating_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Optima 880 cabinet indicator light red meaning"
+              },
+              "id": "call_notheating_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance spa COOL ICE message at startup"
+              },
+              "id": "call_notheating_search_4"
+            }
+          ],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance hot tub warranty commercial use terms"
+              },
+              "id": "call_notheating_search_5"
+            }
+          ],
+          "usage": {
+            "input_tokens": 10600,
+            "output_tokens": 250,
+            "total_tokens": 10850
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research finished after 5 searches; the results above are what I found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 12750,
+            "output_tokens": 250,
+            "total_tokens": 13000
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Sundance Optima 880 spa heater not working",
+        "results": [
+          {
+            "url": "https://example.org/replay/notheating/decoy-01",
+            "title": "Synthetic decoy result 01 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.95
+          },
+          {
+            "url": "https://www.justanswer.com/pool-and-spa/nq7zy-sundance-880-cameo-flo-erro.html",
+            "title": "Sundance 880 Cameo FLO Error: Expert Solutions & Troubleshooting \u2014 JustAnswer",
+            "content": "",
+            "raw_content": null,
+            "score": 0.94
+          },
+          {
+            "url": "https://example.net/replay/notheating/decoy-02",
+            "title": "Synthetic decoy result 02 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.93
+          },
+          {
+            "url": "https://example.com/replay/notheating/decoy-03",
+            "title": "Synthetic decoy result 03 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.92
+          },
+          {
+            "url": "https://example.org/replay/notheating/decoy-04",
+            "title": "Synthetic decoy result 04 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.91
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance 880 series owner manual heating troubleshooting",
+        "results": [
+          {
+            "url": "https://www.sundancespas.com/en-us/What-Hot-Tub-Has-The-Best-Warranty.html",
+            "title": "What Hot Tub Has The Best Warranty \u2014 Sundance Spas",
+            "content": "",
+            "raw_content": null,
+            "score": 0.948
+          },
+          {
+            "url": "https://example.net/replay/notheating/decoy-05",
+            "title": "Synthetic decoy result 05 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.938
+          },
+          {
+            "url": "https://example.com/replay/notheating/decoy-06",
+            "title": "Synthetic decoy result 06 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.928
+          },
+          {
+            "url": "https://example.org/replay/notheating/decoy-07",
+            "title": "Synthetic decoy result 07 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.918
+          },
+          {
+            "url": "https://www.justanswer.com/pool-and-spa/lc5g1-sundance-spa-shows-flo-cool-errors-when-remove.html",
+            "title": "Sundance Spa 'Flo' & 'Cool' Errors: Troubleshooting Guide \u2014 JustAnswer",
+            "content": "",
+            "raw_content": null,
+            "score": 0.908
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Optima 880 cabinet indicator light red meaning",
+        "results": [
+          {
+            "url": "https://example.net/replay/notheating/decoy-08",
+            "title": "Synthetic decoy result 08 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.946
+          },
+          {
+            "url": "https://example.com/replay/notheating/decoy-09",
+            "title": "Synthetic decoy result 09 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.936
+          },
+          {
+            "url": "https://example.org/replay/notheating/decoy-10",
+            "title": "Synthetic decoy result 10 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.926
+          },
+          {
+            "url": "https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide/",
+            "title": "Troubleshooting Your Sundance Spa: A Step-by-Step Guide \u2014 SpaStore.com",
+            "content": "",
+            "raw_content": null,
+            "score": 0.916
+          },
+          {
+            "url": "https://example.net/replay/notheating/decoy-11",
+            "title": "Synthetic decoy result 11 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.906
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance spa COOL ICE message at startup",
+        "results": [
+          {
+            "url": "https://www.spastore.com/blog/complete-sundance-spas-880-series-error-code-troubleshooting-guide/",
+            "title": "Complete Sundance Spas 880 Series Error Code Troubleshooting Guide \u2014 SpaStore.com",
+            "content": "",
+            "raw_content": null,
+            "score": 0.944
+          },
+          {
+            "url": "https://example.com/replay/notheating/decoy-12",
+            "title": "Synthetic decoy result 12 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.934
+          },
+          {
+            "url": "https://example.org/replay/notheating/decoy-13",
+            "title": "Synthetic decoy result 13 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.924
+          },
+          {
+            "url": "https://example.net/replay/notheating/decoy-14",
+            "title": "Synthetic decoy result 14 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.914
+          },
+          {
+            "url": "https://www.thespaworks.com/sites/default/files/2005_sundance_880_series_owners_manual.pdf",
+            "title": "Sundance 2005+ 880 Series Owner's Manual (Revision C), PDF hosted by The Spa Works",
+            "content": "",
+            "raw_content": null,
+            "score": 0.904
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance hot tub warranty commercial use terms",
+        "results": [
+          {
+            "url": "https://example.com/replay/notheating/decoy-15",
+            "title": "Synthetic decoy result 15 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.942
+          },
+          {
+            "url": "https://example.org/replay/notheating/decoy-16",
+            "title": "Synthetic decoy result 16 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.932
+          },
+          {
+            "url": "https://example.net/replay/notheating/decoy-17",
+            "title": "Synthetic decoy result 17 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.922
+          },
+          {
+            "url": "https://www.manualslib.com/manual/670390/Sundance-Spas-880-Series.html?page=80",
+            "title": "Sundance Spas 880 Series Owner's Manual \u2014 Troubleshooting / Display Messages (p.80)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.912
+          },
+          {
+            "url": "https://example.com/replay/notheating/decoy-18",
+            "title": "Synthetic decoy result 18 (notheating)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.902
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Sundance Spas Optima 880 \u2014 documented as part of the Sundance 880 Series family (Aspen, Maxxus, Optima, Cameo, Majesta, Altamar, Capri)",
+        "warranty_caution": {
+          "text": "Sundance warranty material states coverage generally applies to original residential owners purchasing through an authorized dealer, and that commercial or short-term rental use may have reduced terms or be excluded entirely. Owner must verify against their own warranty document.",
+          "source_index": 5
+        },
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Confirm the hot tub's house circuit breaker is ON",
+            "detail": "The manual's start-up sequence states that when power is turned on to the hot tub at the home's circuit breaker, the heater and filter/circulation pump automatically activate. Only look at / switch the breaker itself \u2014 do not open the spa equipment bay or any electrical panel.",
+            "safety_flag": true,
+            "source_index": 19
+          },
+          {
+            "step": "Look at the cabinet indicator light before touching anything else",
+            "detail": "The 880 Series has an external indicator light on the front cabinet panel: solid white indicates normal operation, solid red indicates a critical error that requires immediate attention to prevent equipment damage. Report the color to the owner.",
+            "safety_flag": true,
+            "source_index": 15
+          },
+          {
+            "step": "Check the water level is at the correct fill line",
+            "detail": "Dealer troubleshooting guidance lists water level as the first check; an improper water level can cause various operational problems.",
+            "safety_flag": false,
+            "source_index": 13
+          },
+          {
+            "step": "Remove and inspect the filter cartridge, then run the spa briefly with the filter out",
+            "detail": "Dealer guidance: remove the filter and check for visible debris, clogs or trapped air; run the spa a few minutes without the filter installed \u2014 if the problem resolves, the filter is likely the culprit, and it should then be thoroughly cleaned or replaced.",
+            "safety_flag": false,
+            "source_index": 13
+          },
+          {
+            "step": "Raise the temperature setpoint with the filter out and see whether the heater engages",
+            "detail": "Q&A guidance for a Sundance spa showing FLO/COOL: leave the spa filter out, start the spa, turn up the temperature and see if the heater will engage and start.",
+            "safety_flag": false,
+            "source_index": 9
+          },
+          {
+            "step": "If codes are latched, power down at the breaker for 10 minutes and restart",
+            "detail": "Q&A guidance: turning the hot tub breaker off and leaving it off for 10 minutes erases the stored codes completely, then restart. Handle only the breaker switch \u2014 no wiring work.",
+            "safety_flag": true,
+            "source_index": 9
+          }
+        ],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "A flow error. Q&A guidance for Sundance spas attributes it to the filter not letting enough water through to the pump \u2014 even a cleaned cartridge whose fabric has failed can restrict flow.",
+            "documented_action": "Removing or replacing the filter can restore proper circulation and clear this error; a new cartridge is described as solving the issue where cleaning did not.",
+            "who": "anyone",
+            "why_shown": "Surfaced because the reported symptom is 'not heating'; this source ties a FLO flow error directly to the spa not heating.",
+            "source_index": 9,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": "COOL",
+            "documented_meaning": "Per Q&A guidance, COOL notes that the water temperature is more than 15°F below the set temperature; the source states it does not by itself mean the heater is not working, and that it clears once the heater brings water within 15°F of setpoint. The same source notes COOL also comes up alongside a flow issue.",
+            "documented_action": "Inspect the temperature probe and heater for damage or loose connections; where it accompanies a flow issue, address the filter/flow restriction.",
+            "who": "technician",
+            "why_shown": "COOL is a display message associated with water below setpoint, i.e. the 'not heating' complaint.",
+            "source_index": 9,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": "COOL / ICE at start-up",
+            "documented_meaning": "The owner's manual start-up section notes the control panel LCD may flash water temperature and 'COOL' or 'ICE' after power-on, alongside the automatic activation of heater and filter/circulation pump.",
+            "documented_action": "Follow the manual's start-up sequence, including setting the hot tub to heat to warm water to a comfortable temperature.",
+            "who": "anyone",
+            "why_shown": "Applies if the spa was recently refilled or repowered and is simply still coming up to temperature.",
+            "source_index": 19,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Freeze-protection behavior: the manual states that if the hot tub water is more than -7°C cooler than the temperature setpoint, jets pump #1 and the heater will automatically activate to provide freeze protection, and the tub stays in that mode until the water temperature recovers.",
+            "documented_action": "Documented manual behavior; the same troubleshooting section directs the reader to a Sundance Spas dealer or qualified service technician for conditions it covers.",
+            "who": "technician",
+            "why_shown": "Surfaced because a cold-water / low-temperature display state can be normal protective behavior rather than a heater fault.",
+            "source_index": 23,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": "FLO with circulation pump not running / no voltage at heater relay",
+            "documented_meaning": "Q&A guidance for an 880 Cameo with a persistent FLO error and no circulation pump: verify pressure switch wiring and connections, check circulation pump continuity and impeller for blockages; no voltage at the heater relay is described as normal when the system detects a fault preventing heater operation.",
+            "documented_action": "Inspect control board outputs and test relay coil resistance \u2014 electrical testing work.",
+            "who": "technician",
+            "why_shown": "Surfaced only if the filter/flow steps above do not restore heating and the circulation pump is not running.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Solid red cabinet indicator light: a critical error is detected and the spa requires immediate attention to prevent equipment damage. These codes typically deactivate the heater or pumps for safety.",
+            "documented_action": "Address the displayed error code; the source frames red-light codes as heater/pump-disabling protective states.",
+            "who": "technician",
+            "why_shown": "Directly relevant to 'not heating' because red-light critical codes are documented as deactivating the heater.",
+            "source_index": 15,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": {
+          "age_statement": "Manufacture date is not readable on the data plate, so no age can be calculated as of 2026-08-18. Age math cannot be stated until the data plate or serial number is legible.",
+          "cautions": [
+            {
+              "text": "Sundance warranty material states these warranties generally apply to original residential owners purchasing through an authorized Sundance dealer, and that commercial or short-term rental use may have reduced terms or be excluded entirely. This is a short-term rental property, so this caution applies directly.",
+              "source_index": 5
+            },
+            {
+              "text": "The same source states that most manufacturers, including Sundance, require proper water chemistry maintenance, and damage caused by improper water balance \u2014 corrosion, scale buildup, discolored shell \u2014 is typically excluded from coverage; it advises keeping water test records.",
+              "source_index": 5
+            },
+            {
+              "text": "The same source notes warranty transferability varies, that some warranties are non-transferable and protect only the original purchaser, and advises checking the specific warranty PDF for transfer terms before assuming coverage moves with the tub.",
+              "source_index": 5
+            }
+          ],
+          "verify": [
+            "Locate the original purchase document and the warranty certificate that shipped with this specific Optima 880 and read the residential-use and commercial/rental clauses verbatim.",
+            "Confirm whether the spa was bought new from an authorized Sundance dealer and by the current owner, or acquired second-hand.",
+            "Recover the serial number / manufacture date from the data plate so the unit's age can be established.",
+            "Confirm with the authorized dealer, in writing, how short-term rental use is treated for this unit before any paid repair is authorized."
+          ]
+        },
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 23,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 19,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 15,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 13,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 9,
+            "tier": "forum",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 5,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "forum",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 13000,
+        "output_tokens": 3000,
+        "total_tokens": 16000
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "budget_stopped": false,
+    "candidates": 6,
+    "try_first": 6,
+    "confirmed": 0,
+    "candidate_codes": [
+      "FLO",
+      "COOL",
+      "COOL / ICE at start-up",
+      null,
+      "FLO with circulation pump not running / no voltage at heater relay",
+      null
+    ],
+    "safety_first": true,
+    "cited_urls": {
+      "warranty_caution": "https://www.sundancespas.com/en-us/What-Hot-Tub-Has-The-Best-Warranty.html",
+      "try_first": [
+        "https://www.thespaworks.com/sites/default/files/2005_sundance_880_series_owners_manual.pdf",
+        "https://www.spastore.com/blog/complete-sundance-spas-880-series-error-code-troubleshooting-guide/",
+        "https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide/",
+        "https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide/",
+        "https://www.justanswer.com/pool-and-spa/lc5g1-sundance-spa-shows-flo-cool-errors-when-remove.html",
+        "https://www.justanswer.com/pool-and-spa/lc5g1-sundance-spa-shows-flo-cool-errors-when-remove.html"
+      ],
+      "candidates": [
+        "https://www.justanswer.com/pool-and-spa/lc5g1-sundance-spa-shows-flo-cool-errors-when-remove.html",
+        "https://www.justanswer.com/pool-and-spa/lc5g1-sundance-spa-shows-flo-cool-errors-when-remove.html",
+        "https://www.thespaworks.com/sites/default/files/2005_sundance_880_series_owners_manual.pdf",
+        "https://www.manualslib.com/manual/670390/Sundance-Spas-880-Series.html?page=80",
+        "https://www.justanswer.com/pool-and-spa/nq7zy-sundance-880-cameo-flo-erro.html",
+        "https://www.spastore.com/blog/complete-sundance-spas-880-series-error-code-troubleshooting-guide/"
+      ],
+      "warranty_cautions": [
+        "https://www.sundancespas.com/en-us/What-Hot-Tub-Has-The-Best-Warranty.html",
+        "https://www.sundancespas.com/en-us/What-Hot-Tub-Has-The-Best-Warranty.html",
+        "https://www.sundancespas.com/en-us/What-Hot-Tub-Has-The-Best-Warranty.html"
+      ]
+    },
+    "observed_code": null,
+    "grounding": "unverifiable"
+  }
+}

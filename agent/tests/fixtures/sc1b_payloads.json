@@ -1,0 +1,444 @@
+{
+  "sc1b_version": 1,
+  "provenance": {
+    "source": "scripts/guardrail-tests.mjs (relative to V1_BRIEFCASE_DIR)",
+    "built_by": "agent/replay/build_cassettes.py",
+    "method": "literal text parsed in Python; the v1 file was never imported or run",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "payloads": [
+    {
+      "id": "v1_test_01",
+      "v1_test": 1,
+      "v1_line": 63,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "no_reliable_answer",
+        "matched_identity": null,
+        "observed_code": null,
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [],
+        "warranty": null,
+        "no_reliable_answer": {
+          "searched": [
+            "\"Aquarest ZX-9000 Pro\" manual"
+          ],
+          "found": [],
+          "why_insufficient": "No documentation exists for this model."
+        },
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_02",
+      "v1_test": 2,
+      "v1_line": 87,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "no_reliable_answer",
+        "matched_identity": "Aquarest ZX series",
+        "observed_code": null,
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Check the filter",
+            "detail": "Generic hot tub advice.",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "Invented meaning",
+            "documented_action": "Invented action",
+            "who": "anyone",
+            "why_shown": "Guessed from the category",
+            "source_index": 0,
+            "confirmed": false
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": {
+          "searched": [
+            "aquarest zx-9000"
+          ],
+          "found": [],
+          "why_insufficient": "Nothing found."
+        },
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ]
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_03",
+      "v1_test": 3,
+      "v1_line": 125,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/searched/i",
+      "payload": {
+        "status": "no_reliable_answer",
+        "try_first": [],
+        "candidates": [],
+        "no_reliable_answer": {
+          "searched": "not an array",
+          "found": [],
+          "why_insufficient": "x"
+        },
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_04",
+      "v1_test": 4,
+      "v1_line": 140,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/explanation block/i",
+      "payload": {
+        "status": "no_reliable_answer",
+        "try_first": [],
+        "candidates": [],
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_05",
+      "v1_test": 5,
+      "v1_line": 152,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/empty bibliography/i",
+      "payload": {
+        "status": "ok",
+        "try_first": [],
+        "candidates": [],
+        "sources": [],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_06",
+      "v1_test": 6,
+      "v1_line": 167,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/cites a source that does not exist/i",
+      "payload": {
+        "status": "ok",
+        "try_first": [],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "m",
+            "documented_action": "a",
+            "who": "anyone",
+            "why_shown": "w",
+            "source_index": 7,
+            "confirmed": false
+          }
+        ],
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_07",
+      "v1_test": 7,
+      "v1_line": 192,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/cites a source that does not exist/i",
+      "payload": {
+        "status": "ok",
+        "try_first": [
+          {
+            "step": "s",
+            "detail": "d",
+            "safety_flag": false,
+            "source_index": 3
+          }
+        ],
+        "candidates": [],
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_08",
+      "v1_test": 8,
+      "v1_line": 207,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/invalid tier/i",
+      "payload": {
+        "status": "ok",
+        "try_first": [],
+        "candidates": [],
+        "sources": [
+          {
+            "title": "t",
+            "url": "https://x.example",
+            "tier": "official"
+          }
+        ],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_09",
+      "v1_test": 9,
+      "v1_line": 226,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "reject",
+      "v1_error_matcher": "/non-web URL/i",
+      "payload": {
+        "status": "ok",
+        "try_first": [],
+        "candidates": [],
+        "sources": [
+          {
+            "title": "Evil",
+            "url": "javascript:alert(1)",
+            "tier": "dealer"
+          }
+        ],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_10",
+      "v1_test": 10,
+      "v1_line": 241,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "matched_identity": "<img src=x onerror=\"alert(1)\">",
+        "observed_code": null,
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [
+          {
+            "code": "<script>alert(1)</script>",
+            "documented_meaning": "m",
+            "documented_action": "a",
+            "who": "anyone",
+            "why_shown": "w",
+            "source_index": 0,
+            "confirmed": false
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ]
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_11_parsed",
+      "v1_test": 11,
+      "v1_line": 279,
+      "kind": "parse",
+      "v1_function": "parseBriefJson",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs",
+      "note": "The v1 test asserts parsing only; validateBrief would reject this object (ok with an empty bibliography)."
+    },
+    {
+      "id": "v1_test_12_parsed",
+      "v1_test": 12,
+      "v1_line": 284,
+      "kind": "parse",
+      "v1_function": "parseBriefJson",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs",
+      "note": "The v1 test asserts parsing only; validateBrief would reject this object (ok with an empty bibliography)."
+    },
+    {
+      "id": "v1_test_14_parsed",
+      "v1_test": 14,
+      "v1_line": 297,
+      "kind": "parse",
+      "v1_function": "parseBriefJson",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "matched_identity": "Sundance Optima 880",
+        "sources": []
+      },
+      "provenance": "scripts/guardrail-tests.mjs",
+      "note": "The v1 test asserts parsing only; validateBrief would reject this object (ok with an empty bibliography)."
+    },
+    {
+      "id": "v1_test_15",
+      "v1_test": 15,
+      "v1_line": 312,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "matched_identity": "Sundance Optima 880",
+        "observed_code": "FLO",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "Flow switch open",
+            "documented_action": "Clean filter, check water level.",
+            "who": "anyone",
+            "why_shown": "Observed on the panel.",
+            "source_index": 0,
+            "confirmed": true
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ]
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_16",
+      "v1_test": 16,
+      "v1_line": 341,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "matched_identity": null,
+        "observed_code": null,
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [],
+        "candidates": [],
+        "warranty": {
+          "age_statement": "About 12 years old.",
+          "cautions": [
+            {
+              "text": "Rental use may void coverage.",
+              "source_index": 0
+            }
+          ],
+          "verify": [
+            "Purchase date"
+          ]
+        },
+        "no_reliable_answer": null,
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ]
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    },
+    {
+      "id": "v1_test_17",
+      "v1_test": 17,
+      "v1_line": 363,
+      "kind": "validator",
+      "v1_function": "validateBrief",
+      "v1_decision": "accept",
+      "v1_error_matcher": null,
+      "payload": {
+        "status": "ok",
+        "try_first": [],
+        "candidates": [],
+        "warranty": {
+          "age_statement": "old",
+          "cautions": [
+            "plain string caution"
+          ],
+          "verify": []
+        },
+        "sources": [
+          {
+            "title": "Maker manual",
+            "url": "https://example-manufacturer.com/m",
+            "tier": "manufacturer"
+          }
+        ],
+        "no_reliable_answer": null
+      },
+      "provenance": "scripts/guardrail-tests.mjs"
+    }
+  ]
+}

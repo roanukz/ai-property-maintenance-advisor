@@ -55,8 +55,8 @@
       "warranty_terms": null,
       "warranty_source": null,
       "status": "active",
-      "notes": "Proposed third real model, pending the owner's choice (decision 13). Rheem Professional Classic Plus with LeakSense, 50 gallon electric, model PRO+E50 M2 RH92 CL. Checked on 18 September 2026: the maker's product page https://www.rheem.com/product/rheem-professional-classic-plus-with-leaksense-pro-e50-m2-rh92-cl/ lists this model number, capacity and fuel type. Serial and dates are synthetic.",
-      "pending_owner_choice": true,
+      "notes": "Third real model, confirmed on 18 September 2026 (decision 13; Roanuk delegated the choice). Rheem Professional Classic Plus with LeakSense, 50 gallon electric, model PRO+E50 M2 RH92 CL. Checked on 18 September 2026: the maker's product page https://www.rheem.com/product/rheem-professional-classic-plus-with-leaksense-pro-e50-m2-rh92-cl/ lists this model number, capacity and fuel type. Serial and dates are synthetic.",
+      "pending_owner_choice": false,
       "synthetic": true
     },
     {

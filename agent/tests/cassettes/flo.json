@@ -1,0 +1,521 @@
+{
+  "cassette_version": 1,
+  "case": "flo",
+  "provenance": {
+    "derived_from": "v1 lookup 549892815cb6; v1 extract lookup for demo-assets/plate-clear.jpg",
+    "copied_fields": [
+      "input.symptom",
+      "research.tool_results[*].results[*].url",
+      "research.tool_results[*].results[*].title",
+      "synthesize[*].draft.status",
+      "synthesize[*].draft.matched_identity",
+      "synthesize[*].draft.warranty_caution.text",
+      "synthesize[*].draft.try_first[*].step",
+      "synthesize[*].draft.try_first[*].detail",
+      "synthesize[*].draft.try_first[*].safety_flag",
+      "synthesize[*].draft.candidates[*].code",
+      "synthesize[*].draft.candidates[*].documented_meaning",
+      "synthesize[*].draft.candidates[*].documented_action",
+      "synthesize[*].draft.candidates[*].who",
+      "synthesize[*].draft.candidates[*].why_shown",
+      "synthesize[*].draft.candidates[*].confirmed",
+      "synthesize[*].draft.warranty.cautions[*].text",
+      "synthesize[*].draft.warranty.age_statement",
+      "synthesize[*].draft.warranty.verify[*]",
+      "synthesize[*].draft.source_tiers[*].tier",
+      "expect.cited_urls.try_first[*]",
+      "expect.cited_urls.candidates[*]",
+      "resume.identity.manufacturer",
+      "resume.identity.model",
+      "resume.identity.serial",
+      "resume.identity.manufacture_date",
+      "resume.observed_code",
+      "read_plate.extraction.manufacturer",
+      "read_plate.extraction.model",
+      "read_plate.extraction.serial",
+      "read_plate.extraction.manufacture_date",
+      "read_plate.extraction.confidence.manufacturer",
+      "read_plate.extraction.confidence.model",
+      "read_plate.extraction.confidence.serial",
+      "read_plate.extraction.confidence.manufacture_date",
+      "read_plate.usage.input_tokens",
+      "read_plate.usage.output_tokens"
+    ],
+    "public_already": "src/fixtures.js case flo; briefs/549892815cb6.html; demo-assets/plate-clear.jpg",
+    "synthetic_fields": [
+      "research.script (one search per turn, then a final message)",
+      "research.tool_results[*].query (differ from v1's recorded searched strings)",
+      "research.tool_results[*].results on example hosts (decoys, interleaved between cited sources)",
+      "research.tool_results[*].results[*].score and credits",
+      "research.tool_results[*].results[*].content (empty on real URLs; v1 recorded no text)",
+      "research.script[*].message.usage and synthesize[*].usage (PLAN section 9 typical split)",
+      "synthesize[*].draft evidence, authorship_quote (empty), upgrade_options and maintenance_due (empty)",
+      "synthesize[*].draft source_index values (remapped by URL into the code built registry)",
+      "expect"
+    ],
+    "built_by": "agent/replay/build_cassettes.py",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "input": {
+    "identity": null,
+    "symptom": "panel shows FLO",
+    "plate_sha256": "3a142b569054d3ba8688a2bca946bd9e180d0eb075e45e2127cc553a40a5b79b"
+  },
+  "read_plate": {
+    "extraction": {
+      "manufacturer": "SUNDANCE® SPAS",
+      "model": "OPTIMA 880",
+      "serial": "100915742",
+      "manufacture_date": "06/2014",
+      "confidence": {
+        "manufacturer": "high",
+        "model": "high",
+        "serial": "high",
+        "manufacture_date": "high"
+      }
+    },
+    "usage": {
+      "input_tokens": 2540,
+      "output_tokens": 95,
+      "total_tokens": 2635
+    }
+  },
+  "resume": {
+    "identity": {
+      "manufacturer": "Sundance Spas",
+      "model": "Optima 880",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "observed_code": "FLO"
+  },
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance Optima 880 FLO code meaning"
+              },
+              "id": "call_flo_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance 880 series flow error troubleshooting steps"
+              },
+              "id": "call_flo_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Optima 880 heater flow switch check"
+              },
+              "id": "call_flo_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance spa FLO message filter clogged test"
+              },
+              "id": "call_flo_search_4"
+            }
+          ],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Sundance 880 series warranty rental use"
+              },
+              "id": "call_flo_search_5"
+            }
+          ],
+          "usage": {
+            "input_tokens": 10600,
+            "output_tokens": 250,
+            "total_tokens": 10850
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research finished after 5 searches; the results above are what I found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 12750,
+            "output_tokens": 250,
+            "total_tokens": 13000
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Sundance Optima 880 FLO code meaning",
+        "results": [
+          {
+            "url": "https://example.org/replay/flo/decoy-01",
+            "title": "Synthetic decoy result 01 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.95
+          },
+          {
+            "url": "https://www.spastore.com/blog/hot-tub-spa-circuit-board-problems-symptoms-causes-and-fixes/",
+            "title": "Hot Tub & Spa Circuit Board Problems: Symptoms, Causes, and Fixes",
+            "content": "",
+            "raw_content": null,
+            "score": 0.94
+          },
+          {
+            "url": "https://example.net/replay/flo/decoy-02",
+            "title": "Synthetic decoy result 02 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.93
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-03",
+            "title": "Synthetic decoy result 03 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.92
+          },
+          {
+            "url": "https://example.org/replay/flo/decoy-04",
+            "title": "Synthetic decoy result 04 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.91
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance 880 series flow error troubleshooting steps",
+        "results": [
+          {
+            "url": "https://example.net/replay/flo/decoy-05",
+            "title": "Synthetic decoy result 05 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.948
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-06",
+            "title": "Synthetic decoy result 06 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.938
+          },
+          {
+            "url": "https://example.org/replay/flo/decoy-07",
+            "title": "Synthetic decoy result 07 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.928
+          },
+          {
+            "url": "https://example.net/replay/flo/decoy-08",
+            "title": "Synthetic decoy result 08 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.918
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-09",
+            "title": "Synthetic decoy result 09 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.908
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Optima 880 heater flow switch check",
+        "results": [
+          {
+            "url": "https://example.org/replay/flo/decoy-10",
+            "title": "Synthetic decoy result 10 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.946
+          },
+          {
+            "url": "https://example.net/replay/flo/decoy-11",
+            "title": "Synthetic decoy result 11 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.936
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-12",
+            "title": "Synthetic decoy result 12 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.926
+          },
+          {
+            "url": "https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error/",
+            "title": "How to Fix the Sundance Spa \"FLO\" Error",
+            "content": "",
+            "raw_content": null,
+            "score": 0.916
+          },
+          {
+            "url": "https://example.org/replay/flo/decoy-13",
+            "title": "Synthetic decoy result 13 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.906
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance spa FLO message filter clogged test",
+        "results": [
+          {
+            "url": "https://example.net/replay/flo/decoy-14",
+            "title": "Synthetic decoy result 14 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.944
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-15",
+            "title": "Synthetic decoy result 15 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.934
+          },
+          {
+            "url": "https://example.org/replay/flo/decoy-16",
+            "title": "Synthetic decoy result 16 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.924
+          },
+          {
+            "url": "https://example.net/replay/flo/decoy-17",
+            "title": "Synthetic decoy result 17 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.914
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-18",
+            "title": "Synthetic decoy result 18 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.904
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Sundance 880 series warranty rental use",
+        "results": [
+          {
+            "url": "https://example.org/replay/flo/decoy-19",
+            "title": "Synthetic decoy result 19 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.942
+          },
+          {
+            "url": "https://example.net/replay/flo/decoy-20",
+            "title": "Synthetic decoy result 20 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.932
+          },
+          {
+            "url": "https://example.com/replay/flo/decoy-21",
+            "title": "Synthetic decoy result 21 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.922
+          },
+          {
+            "url": "https://www.spastore.com/blog/complete-sundance-spas-880-series-error-code-troubleshooting-guide/",
+            "title": "Complete Sundance® Spas 880 Series Error Code Troubleshooting Guide",
+            "content": "",
+            "raw_content": null,
+            "score": 0.912
+          },
+          {
+            "url": "https://example.org/replay/flo/decoy-22",
+            "title": "Synthetic decoy result 22 (flo)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.902
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Sundance Spas Optima \u2014 Sundance 880 Series family (880 Series documented as including Aspen, Maxxus, Optima, Cameo, Majesta, Altamar, Capri)",
+        "warranty_caution": {
+          "text": "Manufacture date is not readable on the data plate, so unit age cannot be established. Spa/hot tub warranties are commonly limited or voided when the unit is placed in commercial or rental service; no fetched source documented this for this specific model, so the owner must verify against their own warranty document before assuming any coverage.",
+          "source_index": null
+        },
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Confirm water is visibly moving in the spa before anything else",
+            "detail": "Documented instruction: before testing anything, confirm that water is visibly moving in the spa, and never test the heater without confirmed water flow. If no water movement is visible, stop and report to the owner rather than energizing or testing the heater.",
+            "safety_flag": true,
+            "source_index": 1
+          },
+          {
+            "step": "Remove the filter cartridge and see whether the FLO message clears",
+            "detail": "Documented test for the FLO error: if the error disappears with the filter out, the filter is clogged; if it stays, the next documented items to check are the flow switch or the heater circulation pump (those checks are not owner steps).",
+            "safety_flag": false,
+            "source_index": 13
+          }
+        ],
+        "candidates": [
+          {
+            "code": "FLO",
+            "documented_meaning": "Codes such as FLO, FL, or three blinking dots all indicate insufficient water flow through the heater.",
+            "documented_action": "Confirm water is visibly moving in the spa; do not test the heater without confirmed water flow. Documented next checks are the pressure/flow switch test and, if bypassing the switch clears the error, replacing the switch or cable; if not, the circuit board is the likely cause. These checks are service work, not owner steps.",
+            "who": "technician",
+            "why_shown": "This is the exact code reported as showing on the unit's panel (FLO), and it is documented as an insufficient-flow-through-heater indication for Sundance spas.",
+            "source_index": 1,
+            "confirmed": true,
+            "evidence": ""
+          }
+        ],
+        "warranty": {
+          "age_statement": "Manufacture date is not readable and the serial is not readable, so no age can be calculated as of 2026-08-18. Age of unit: unknown.",
+          "cautions": [
+            {
+              "text": "Hot tubs placed in short-term rental / commercial service are commonly excluded from residential warranty terms. No fetched source documented the warranty terms for this model, so this is a caution only, not a statement about coverage.",
+              "source_index": null
+            }
+          ],
+          "verify": [
+            "Locate the original Sundance Spas warranty document or dealer purchase paperwork and read the commercial/rental use clause.",
+            "Recover the serial number and manufacture date from the data plate (usually inside the equipment bay door) so date-of-manufacture can be established.",
+            "Confirm coverage status directly with the selling Sundance dealer before any parts are ordered or replaced."
+          ]
+        },
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 23,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 13,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 13000,
+        "output_tokens": 3000,
+        "total_tokens": 16000
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "budget_stopped": false,
+    "candidates": 1,
+    "try_first": 2,
+    "confirmed": 1,
+    "candidate_codes": [
+      "FLO"
+    ],
+    "safety_first": true,
+    "cited_urls": {
+      "warranty_caution": null,
+      "try_first": [
+        "https://www.spastore.com/blog/hot-tub-spa-circuit-board-problems-symptoms-causes-and-fixes/",
+        "https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error/"
+      ],
+      "candidates": [
+        "https://www.spastore.com/blog/hot-tub-spa-circuit-board-problems-symptoms-causes-and-fixes/"
+      ],
+      "warranty_cautions": [
+        null
+      ]
+    },
+    "observed_code": "FLO",
+    "grounding": "unverifiable"
+  }
+}

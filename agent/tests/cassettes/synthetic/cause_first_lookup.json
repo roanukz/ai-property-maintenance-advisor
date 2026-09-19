@@ -1,0 +1,170 @@
+{
+  "cassette_version": 1,
+  "case": "cause_first_lookup",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the maker Synthetic Cooling Co., the model SC-16 (synthetic), queries, example.org/example.com URLs, page text, drafts, usage",
+      "Decision D2 and the SC7b shape: a first lookup with no code on a model the graph does not know (route row 5); the draft's four candidates have no code, three quote the synthetic page verbatim and one is reworded, so persist stores three verified DOCUMENTED_CAUSE edges and drops the fourth; the repeat is cause_repeat"
+    ],
+    "built_by": "hand written for the documented cause tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Synthetic Cooling Co.",
+      "model": "SC-16 (synthetic)",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "air conditioner runs but the house does not cool",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SC-16 not cooling causes"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic SC-16 not cooling causes",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/cooling/sc16-not-cooling",
+            "title": "Synthetic SC-16 troubleshooting page",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/cooling/sc16-not-cooling\n\nSC-16 (synthetic) troubleshooting: not cooling\nA dirty air filter restricts airflow across the indoor coil, so the system cannot cool the house.\nA tri",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/cooling/sc16-not-cooling\n\nSC-16 (synthetic) troubleshooting: not cooling\nA dirty air filter restricts airflow across the indoor coil, so the system cannot cool the house.\nA tripped outdoor breaker stops the outdoor unit while the indoor fan keeps running.\nA thermostat set to heat or to fan only will never start cooling.\nLow refrigerant charge makes the outdoor unit run without cooling; only a licensed technician may check it.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://example.org/replay/cause_first_lookup/decoy-01",
+            "title": "Synthetic decoy 01 (cause_first_lookup)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 9000,
+        "output_tokens": 1500,
+        "total_tokens": 10500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Replace the air filter",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": null,
+            "documented_meaning": "A dirty air filter restricts airflow.",
+            "documented_action": "Replace the air filter.",
+            "who": "anyone",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "A dirty air filter restricts airflow across the indoor coil, so the system cannot cool the house."
+          },
+          {
+            "code": null,
+            "documented_meaning": "The outdoor breaker has tripped.",
+            "documented_action": "Reset the outdoor breaker once.",
+            "who": "anyone",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "A tripped outdoor breaker stops the outdoor unit while the indoor fan keeps running."
+          },
+          {
+            "code": null,
+            "documented_meaning": "The thermostat is set to heat or fan only.",
+            "documented_action": "Set the thermostat to cool.",
+            "who": "anyone",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "A thermostat set to heat or to fan only will never start cooling."
+          },
+          {
+            "code": null,
+            "documented_meaning": "Low refrigerant charge.",
+            "documented_action": "Have a licensed technician check the charge.",
+            "who": "technician",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "Refrigerant charge can run low over time, and then the unit will not cool."
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "research"
+    ],
+    "research_limits": "main",
+    "cause_edges_written": 3
+  }
+}

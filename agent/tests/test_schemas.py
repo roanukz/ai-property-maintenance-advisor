@@ -25,8 +25,9 @@ from agent.schemas import (
     draft_to_brief_dict,
 )
 
-REPO = Path(__file__).resolve().parents[2]
-FIXTURES_JS = REPO / "src" / "fixtures.js"
+# v1's recorded briefs. The file is already public (it was src/fixtures.js on the
+# published site until the v2 demo replaced it); moved here byte for byte.
+FIXTURES_JS = Path(__file__).resolve().parent / "fixtures" / "v1_fixtures.js"
 SOURCE = {"title": "Maker manual", "url": "https://maker.example.com/manual", "tier": "manufacturer"}
 
 
@@ -35,7 +36,7 @@ def _reject_constant(name: str) -> None:
 
 
 def _load_fixture_cases() -> list[dict]:
-    """Read the public demo fixtures: a JS assignment whose value is JSON."""
+    """Read v1's public demo fixtures: a JS assignment whose value is JSON."""
     text = FIXTURES_JS.read_text(encoding="utf-8")
     marker = "window.BRIEFCASE_FIXTURES"
     start = text.index("{", text.index(marker))

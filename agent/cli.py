@@ -860,7 +860,7 @@ def graph_stats_lines() -> list[str]:
     """
     import json
 
-    from agent.kg import KnowledgeGraph, drops_path
+    from agent.kg import DOCUMENTED_CAUSE, KnowledgeGraph, drops_path
 
     registry = config.REGISTRY_PATH if config.REGISTRY_PATH.exists() else None
     lines: list[str] = []
@@ -874,6 +874,9 @@ def graph_stats_lines() -> list[str]:
             lines.append(f"  saved edges dropped at load (failed a check; see the drop log): {stats['load_drops']}")
         lines.append("  nodes: " + _counts(stats["nodes"]))
         lines.append("  edges: " + _counts(stats["edges"]))
+        # Symptom level knowledge (decision D2): route row 3 needs config.GRAPH_ONLY_MIN_CAUSES of them.
+        lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
+                     f"{stats['nodes'].get('cause', 0)} causes")
         lines.append("  registry nodes (not saved): " + _counts(stats["registry_nodes"]))
         lines.append("  registry edges (not saved): " + _counts(stats["registry_edges"]))
         drops = drops_path(path)

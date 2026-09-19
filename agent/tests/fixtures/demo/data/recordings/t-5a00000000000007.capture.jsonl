@@ -1,0 +1,2 @@
+{"event": "segment", "segment": "ask"}
+{"event": "model", "node": "read_plate", "content": "{\"manufacturer\": null, \"model\": null, \"serial\": null, \"manufacture_date\": null, \"confidence\": {\"manufacturer\": \"unreadable\", \"model\": \"unreadable\", \"serial\": \"unreadable\", \"manufacture_date\": \"unreadable\"}}"}

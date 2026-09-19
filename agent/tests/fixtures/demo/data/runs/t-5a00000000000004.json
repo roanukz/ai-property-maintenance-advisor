@@ -1,0 +1,58 @@
+{
+ "run_id": "t-5a00000000000004",
+ "thread_id": "t-5a00000000000004",
+ "build_id": "0123456789abcdef",
+ "mode": "cheap",
+ "status": "ok",
+ "refusal_origin": null,
+ "stop_reason": null,
+ "route": [
+  "research"
+ ],
+ "route_reason": "Route table row 5: the graph has nothing verified for this synthetic unit, so research runs.",
+ "research_limits": "main",
+ "searches": 1,
+ "fetches": 0,
+ "tavily_credits": 1,
+ "cost_usd": 0.02,
+ "latency_s": 10.0,
+ "generated_at": "2026-09-20T10:04:00+00:00",
+ "grounding": [],
+ "grounding_status": "not_applicable",
+ "brief": {
+  "status": "ok",
+  "matched_identity": "Samplecool SC-2",
+  "observed_code": null,
+  "candidates": [
+   {
+    "code": null,
+    "confirmed": false,
+    "source_index": 0,
+    "evidence": "Check the filter (synthetic).",
+    "why_shown": "A dirty filter reduces cooling (synthetic)."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Fan guide (synthetic)",
+    "url": "https://cool.example.com/fan-guide",
+    "host": "cool.example.com",
+    "tier": "manufacturer",
+    "origin": "search"
+   }
+  ],
+  "no_reliable_answer": null
+ },
+ "graph_edges": {
+  "written": 2,
+  "already_present": 0,
+  "dropped": [],
+  "skipped": null
+ },
+ "html_path": "data/briefs/t-5a00000000000004.html",
+ "sc11": {
+  "result": "pass",
+  "run_cap_usd": 0.15,
+  "run_total_usd": 0.02
+ }
+}

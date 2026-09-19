@@ -6,6 +6,11 @@ collector: never from model text and never from an error ToolMessage. A tool
 cap, the loop guard and the research sub budget end research with what was
 collected; only the ledger's dollar caps, the credit caps and Tavily's plan
 limit end the run as budget_stopped.
+
+Sources follow the order the model issued its tool calls, not the order the
+calls finished: calls issued together run in parallel and finish in no fixed
+order, so a finish ordered source list gave a replayed draft's source_index a
+different page from run to run (decision D4 finding, 18 September 2026).
 """
 
 from __future__ import annotations
@@ -17,7 +22,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 
 from agent import config
@@ -75,6 +80,20 @@ def task_text(state: AdvisorState) -> str:
 
 def source_id(url: str) -> str:
     return "src-" + hashlib.sha256(url.encode("utf-8")).hexdigest()[:12]
+
+
+def in_call_order(artifacts: list[dict[str, Any]], messages: list[Any]) -> list[dict[str, Any]]:
+    """`artifacts` in the order of the agent's ToolMessages, which follow the model's
+    tool call order; any artifact no message holds keeps its place after them."""
+    ordered: list[dict[str, Any]] = []
+    left = list(artifacts)
+    for message in messages:
+        if not isinstance(message, ToolMessage) or message.artifact is None:
+            continue
+        match = next((i for i, a in enumerate(left) if a is message.artifact), None)
+        if match is not None:
+            ordered.append(left.pop(match))
+    return ordered + left
 
 
 def build_sources(ctx: RunContext, artifacts: list[dict[str, Any]], trail: list[dict[str, Any]],
@@ -147,12 +166,16 @@ def research(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any
 
     start = len(ctx.collector)
     out: dict[str, Any] = {}
+    messages: list[Any] = []
     try:
         # The agent has no checkpointer, but it inherits the parent's
         # durability="sync" through the runnable config, and langgraph 1.2.11
         # then waits on a checkpoint write that never started. "exit" writes
         # nothing, which is what an agent without a checkpointer does anyway.
-        agent.graph.invoke({"messages": [HumanMessage(task_text(state))]}, durability="exit")
+        # Streamed values keep the transcript so far when the agent raises.
+        for values in agent.graph.stream({"messages": [HumanMessage(task_text(state))]}, durability="exit",
+                                         stream_mode="values"):
+            messages = values.get("messages") or messages
     except ModelCallLimitExceededError:
         pass  # the loop guard: research ends with what was collected
     except BudgetExceeded as exc:
@@ -163,7 +186,8 @@ def research(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any
             raise
 
     known = {s["url"] for s in state.get("sources") or []}
-    out["sources"] = build_sources(ctx, ctx.collector[start:], trail, known, terms)
+    artifacts = in_call_order(ctx.collector[start:], messages)
+    out["sources"] = build_sources(ctx, artifacts, trail, known, terms)
     out["search_trail"] = [{k: e[k] for k in TRAIL_KEYS} for e in trail]
     out["cost_usd"] = ledger.run_total(ctx.run_id) - cost_before
     out["tavily_credits"] = ledger.run_credits(ctx.run_id) - credits_before

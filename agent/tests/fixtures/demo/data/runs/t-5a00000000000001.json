@@ -1,0 +1,58 @@
+{
+ "run_id": "t-5a00000000000001",
+ "thread_id": "t-5a00000000000001",
+ "build_id": "0123456789abcdef",
+ "mode": "cheap",
+ "status": "ok",
+ "refusal_origin": null,
+ "stop_reason": null,
+ "route": [
+  "research"
+ ],
+ "route_reason": "Route table row 5: the graph has nothing verified for this synthetic unit, so research runs.",
+ "research_limits": "main",
+ "searches": 2,
+ "fetches": 1,
+ "tavily_credits": 2,
+ "cost_usd": 0.03,
+ "latency_s": 20.0,
+ "generated_at": "2026-09-20T10:01:00+00:00",
+ "grounding": [],
+ "grounding_status": "verified",
+ "brief": {
+  "status": "ok",
+  "matched_identity": "Sundance Spas Optima 880",
+  "observed_code": "FLO",
+  "candidates": [
+   {
+    "code": "FLO",
+    "confirmed": true,
+    "source_index": 0,
+    "evidence": "FLO | Flow is restricted (synthetic test text).",
+    "why_shown": "Observed code FLO on the panel (synthetic)."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Spa error codes (synthetic)",
+    "url": "https://spa.example.com/error-codes",
+    "host": "spa.example.com",
+    "tier": "dealer",
+    "origin": "search"
+   }
+  ],
+  "no_reliable_answer": null
+ },
+ "graph_edges": {
+  "written": 1,
+  "already_present": 0,
+  "dropped": [],
+  "skipped": null
+ },
+ "html_path": "data/briefs/t-5a00000000000001.html",
+ "sc11": {
+  "result": "pass",
+  "run_cap_usd": 0.15,
+  "run_total_usd": 0.03
+ }
+}

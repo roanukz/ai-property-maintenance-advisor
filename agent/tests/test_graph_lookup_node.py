@@ -16,8 +16,8 @@ from agent.kg import KnowledgeGraph, model_key
 from agent.nodes.graph_lookup import graph_lookup
 from agent.state import RunContext, check_json_native
 from agent.tests.test_router import (
-    FLO_EVIDENCE, FLO_TITLE, FLO_URL, IDENTITY, MAKER, MODEL, OH_URL, RETRIEVED_AT, SOURCE_RETRIEVED_AT,
-    SYNTHETIC, UPGRADE_URL, _fields, build_kg, install_graph, sha,
+    CAUSE_URL, CAUSES, FLO_EVIDENCE, FLO_TITLE, FLO_URL, IDENTITY, MAKER, MODEL, OH_URL, RETRIEVED_AT,
+    SOURCE_RETRIEVED_AT, SYNTHETIC, UPGRADE_URL, _fields, build_kg, install_graph, sha,
 )
 
 UPGRADE_RETRIEVED_AT = "2026-04-02T08:00:00+00:00"
@@ -161,3 +161,34 @@ def test_a_later_fetch_of_the_same_url_keeps_the_older_edges_time_and_page(tmp_p
                            Runtime(context=ctx))
     [source] = sibling["sources"]
     assert (source["retrieved_at"], source["text_sha256"]) == (later_at, later_sha)
+
+
+def test_documented_causes_are_sources_when_no_code_is_confirmed(tmp_path: Path,
+                                                                 monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mutations: graph_lookup_causes_not_loaded (a covered model's cause edges
+    never reach synthesize); graph_lookup_causes_with_code (a confirmed code
+    also loads every cause, so synthesize sees documentation beside the code's);
+    kg_cause_hash_unchecked (a damaged cause edge is loaded as a source).
+
+    Decision D2: each verified cause edge, on the model or its family, is a
+    graph source with its own retrieved_at and its evidence as the excerpt.
+    """
+    out = _run(tmp_path / "causes", monkeypatch, ["flo", "causes3"], observed_code=None)
+    by_url = {s["url"]: s for s in out["sources"]}
+    assert list(by_url) == [FLO_URL, CAUSE_URL]
+    cause_source = by_url[CAUSE_URL]
+    assert (cause_source["origin"], cause_source["retrieved_at"]) == ("graph", RETRIEVED_AT)
+    assert cause_source["excerpts"] == [evidence for _, _, evidence in CAUSES]
+    causes = [h for h in out["graph_hits"] if h["kind"] == "DOCUMENTED_CAUSE"]
+    assert sorted((h["label"], h["action"], h["evidence"]) for h in causes) == sorted(CAUSES)
+    assert all(h["source_id"] == cause_source["source_id"] and h["retrieved_at"] == RETRIEVED_AT for h in causes)
+    assert {h["src"] for h in causes} == {model_key(MAKER, MODEL), "family:sundance-spas:880series"}
+
+    coded = _run(tmp_path / "coded", monkeypatch, ["flo", "causes3"], observed_code="FLO")
+    assert [s["url"] for s in coded["sources"]] == [FLO_URL]
+    assert [h["kind"] for h in coded["graph_hits"]] == ["HAS_CODE"]
+
+    damaged = _run(tmp_path / "damaged", monkeypatch, ["causes2", "cause_bad_hash"], observed_code=None,
+                   in_memory=True)
+    assert len(damaged["graph_hits"]) == 2
+    assert damaged["sources"][0]["excerpts"] == [evidence for _, _, evidence in CAUSES[:2]]

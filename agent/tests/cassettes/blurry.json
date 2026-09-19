@@ -1,0 +1,66 @@
+{
+  "cassette_version": 1,
+  "case": "blurry",
+  "provenance": {
+    "derived_from": "v1 extract lookup for demo-assets/plate-blurry.jpg",
+    "copied_fields": [
+      "read_plate.extraction.manufacturer",
+      "read_plate.extraction.model",
+      "read_plate.extraction.serial",
+      "read_plate.extraction.manufacture_date",
+      "read_plate.extraction.confidence.manufacturer",
+      "read_plate.extraction.confidence.model",
+      "read_plate.extraction.confidence.serial",
+      "read_plate.extraction.confidence.manufacture_date",
+      "read_plate.usage.input_tokens",
+      "read_plate.usage.output_tokens"
+    ],
+    "public_already": "src/fixtures.js case blurry; demo-assets/plate-blurry.jpg",
+    "synthetic_fields": [
+      "input.symptom (matches the public fixture's symptom; v1 recorded none for this plate)"
+    ],
+    "built_by": "agent/replay/build_cassettes.py",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "input": {
+    "identity": null,
+    "symptom": "not heating",
+    "plate_sha256": "02a3b463dd0f5dec01227081b49a83aa5cf1915917c463c6fd9881e82e565483"
+  },
+  "read_plate": {
+    "extraction": {
+      "manufacturer": "SUNDANCE SPAS",
+      "model": null,
+      "serial": null,
+      "manufacture_date": null,
+      "confidence": {
+        "manufacturer": "low",
+        "model": "unreadable",
+        "serial": "unreadable",
+        "manufacture_date": "unreadable"
+      }
+    },
+    "usage": {
+      "input_tokens": 2798,
+      "output_tokens": 91,
+      "total_tokens": 2889
+    }
+  },
+  "resume": null,
+  "research": {
+    "script": [],
+    "tool_results": []
+  },
+  "synthesize": [],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "halts_at": "confirm_identity",
+    "extraction_model": null,
+    "model_confidence": "unreadable",
+    "research_calls": 0,
+    "synthesize_calls": 0,
+    "search_calls": 0,
+    "budget_stopped": false
+  }
+}

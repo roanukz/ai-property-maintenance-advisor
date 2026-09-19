@@ -55,6 +55,26 @@ quote that matches no pattern proposes no edge (it is not a drop):
 A node whose printed form differs from the target in the quote is never
 reprinted (an older edge's evidence would stop matching it); the edge is
 dropped with reason "printed_form_conflict".
+
+DOCUMENTED_CAUSE (decision D2, 18 September 2026): each candidate of the ok
+brief whose code is null is one cause edge candidate, from the model's family
+when the graph holds a verified IN_FAMILY edge (as for codes), else from the
+model, to the Cause keyed by its documented_meaning. It stores the label
+(documented_meaning) and action (documented_action) beside the usual fields,
+cites a source this run retrieved, and its evidence must pass
+evidence.verify_cause_span against the cited page: conditions 1 to 4, and the
+cause condition 5 (the label, or at least config.CAUSE_MIN_SHARED_WORDS of its
+content words, in the evidence). A candidate that fails is dropped and
+logged like any other edge, never stored with a flag. Cause edges are written
+after this run's HAS_CODE edges and before its IN_FAMILY edges, so they take
+the key the graph gave them when checked.
+
+Word boundaries (decision D3, 18 September 2026): after its check passes, the
+evidence of every edge kind written here goes through
+evidence.snap_span_to_words against the cited page, so a stored span never
+starts or ends inside a word (the Phase 5 FLO edge ended "deactivated and
+filte"). The snapped span must pass the same check again; one that cannot be
+snapped is dropped with reason "span_cut_inside_a_word".
 """
 
 from __future__ import annotations
@@ -64,6 +84,7 @@ import logging
 import os
 import re
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -71,8 +92,10 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from agent import config
+from agent.build_info import build_id
 from agent.kg import (
     CODE_POINTS_TO_PART,
+    DOCUMENTED_CAUSE,
     HAS_CODE,
     IN_FAMILY,
     PART_DISCONTINUED,
@@ -82,6 +105,7 @@ from agent.kg import (
     KnowledgeGraph,
     _edge_id,
     append_drops,
+    cause_key,
     code_key,
     family_key,
     model_key,
@@ -91,13 +115,17 @@ from agent.kg import (
 from agent.ledger import Ledger
 from agent.nodes.validate import page_texts_for
 from agent.registry import Registry
+from agent.research.tools import page_sha256
 from agent.rules.evidence import (
+    CUT_INSIDE_WORD,
     TARGET_MISSING,
     TARGET_NOT_TOKEN,
     anchor_to_target,
     evidence_sha256,
     normalize_for_span,
+    snap_span_to_words,
     target_is_token,
+    verify_cause_span,
     verify_span,
 )
 from agent.rules.grounding import code_forms
@@ -128,6 +156,8 @@ DROP_NO_SOURCE = "cited_source_not_retrieved_this_run"
 DROP_NO_RETRIEVED_AT = "source_without_retrieved_at"
 DROP_PRINTED_CONFLICT = "printed_form_conflict"
 DROP_NO_CODE_NODE = "code_not_in_graph"
+DROP_NO_LABEL = "no_documented_meaning"
+DROP_NO_ACTION = "no_documented_action"
 
 # Phase 4 target patterns, read only from a quote that then passes the span check.
 _PART_TOKEN = r"[A-Z0-9][A-Z0-9-]*\d[A-Z0-9-]*"
@@ -231,6 +261,21 @@ def _printed_target(code: str, evidence: str, page: str | None,
     return None, reason, evidence
 
 
+def _page_hash(found: dict[str, Any], page: str) -> str:
+    """The hash of the page text the evidence was checked against.
+
+    A replayed live recording's source has no text hash of its own; its page
+    text was found by the hash the recorder wrote (decision D4), and the edge
+    names that page all the same.
+    """
+    return found.get("text_sha256") or page_sha256(page)
+
+
+def _code_accepts(page: str | None, target: str) -> Callable[[str], bool]:
+    """The HAS_CODE and Phase 4 check a snapped span must pass again."""
+    return lambda span: verify_span(span, page, target=target).ok and target_is_token(span, page, target=target)
+
+
 def edge_candidates(state: AdvisorState, ctx: RunContext) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """(edges that passed the span check, dropped candidates with their reason) for an ok brief."""
     brief = state.get("brief") or {}
@@ -267,17 +312,103 @@ def edge_candidates(state: AdvisorState, ctx: RunContext) -> tuple[list[dict[str
         if target is None:
             dropped.append({**drop, "reason": reason})
             continue
+        evidence = snap_span_to_words(evidence, texts.get(url), accept=_code_accepts(texts.get(url), target))
+        if evidence is None:
+            dropped.append({**drop, "reason": CUT_INSIDE_WORD})
+            continue
         passed.append({
             "maker": maker, "model": model, "code": target, "page_text": texts[url],
             "source": {"url": url, "host": cited.get("host") or found.get("host") or "",
                        "title": cited.get("title"), "retrieved_at": found.get("retrieved_at"),
-                       "text_sha256": found.get("text_sha256"), "tier": cited.get("tier") or "forum"},
+                       "text_sha256": _page_hash(found, texts[url]), "tier": cited.get("tier") or "forum"},
             "fields": {"source_url": url, "retrieved_at": found["retrieved_at"],
                        "evidence": evidence, "evidence_sha256": evidence_sha256(evidence),
                        "brief_run_id": run_id, "validated_at": _now(),
-                       "text_sha256": found.get("text_sha256") or None},
+                       "text_sha256": _page_hash(found, texts[url])},
         })
     return passed, dropped
+
+
+def _text_or_none(value: Any) -> str | None:
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _cause_accepts(page: str, label: str | None) -> Callable[[str], bool]:
+    """The cause check a snapped span must pass again."""
+    return lambda span: verify_cause_span(span, page, label=label).ok
+
+
+def cause_candidates(state: AdvisorState, ctx: RunContext) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(cause edges that passed the cause span check, dropped candidates with their reason).
+
+    One per candidate of the ok brief whose code is null (decision D2).
+    """
+    brief = state.get("brief") or {}
+    identity = state.get("identity") or {}
+    maker, model = identity.get("manufacturer"), identity.get("model")
+    registry = {s.get("url"): s for s in state.get("sources") or []}
+    texts = page_texts_for(list(registry.values()), ctx)
+    run_id = state.get("run_id") or ctx.run_id
+    passed: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for cand in brief.get("candidates") or []:
+        if _text_or_none(cand.get("code")) is not None:
+            continue
+        label, action = _text_or_none(cand.get("documented_meaning")), _text_or_none(cand.get("documented_action"))
+        url, cited, found, why = _retrieved(state, brief, cand, registry)
+        if why == "graph":
+            continue  # already an edge; its first validated run stays its brief_run_id
+        drop = {"kind": DOCUMENTED_CAUSE, "target": label, "source_url": url, "run_id": run_id}
+        if why is None and label is None:
+            why = DROP_NO_LABEL
+        if why is None and action is None:
+            why = DROP_NO_ACTION
+        evidence = cand.get("evidence")
+        if why is None:
+            check = verify_cause_span(evidence, texts.get(url), label=label)
+            why = None if check.ok else check.reason
+        if why is None:
+            evidence = snap_span_to_words(evidence, texts[url], accept=_cause_accepts(texts[url], label))
+            why = CUT_INSIDE_WORD if evidence is None else None
+        if why is not None:
+            dropped.append({**drop, "reason": why})
+            continue
+        prop = _proposal(DOCUMENTED_CAUSE, ("model", maker, model), ("cause", maker, label), label, url,
+                         cited, found, evidence, texts[url], run_id)
+        passed.append({**prop, "label": label, "action": action})
+    return passed, dropped
+
+
+def write_cause_edges(kg: KnowledgeGraph, proposals: list[dict[str, Any]], identity: dict[str, Any],
+                      report: dict[str, Any], dropped: list[dict[str, Any]]) -> None:
+    """Add each cause edge under the family the graph knows, else the model; count in `report`."""
+    for prop in proposals:
+        maker, model, label = identity.get("manufacturer"), identity.get("model"), prop["label"]
+        fields = prop["fields"]
+        family = kg.family_of(maker, model)
+        scope = family or model
+        src = family_key(maker, family) if family else model_key(maker, model)
+        edge_id = _edge_id(DOCUMENTED_CAUSE, fields["source_url"], fields["evidence_sha256"])
+        # Also under the model: written there before an IN_FAMILY edge named the family.
+        earlier = [(src, cause_key(maker, scope, label)), (model_key(maker, model), cause_key(maker, model, label))]
+        if any(u in kg.g and v in kg.g and kg.g.has_edge(u, v, key=edge_id) for u, v in earlier):
+            report["already_present"] += 1
+            continue
+        if not family:
+            kg.add_model(maker, model)
+        dst = kg.add_cause(maker, scope, label)
+        kg.add_source(**prop["source"])
+        try:
+            # add_edge runs the cause span check again, against the same page text.
+            kg.add_edge(DOCUMENTED_CAUSE, src, dst, page_text=prop["page_text"], label=label,
+                        action=prop["action"], **fields)
+        except EdgeRejected as exc:
+            dropped.append({"kind": DOCUMENTED_CAUSE, "target": label, "source_url": fields["source_url"],
+                            "run_id": fields["brief_run_id"], "reason": exc.reason})
+            continue
+        report["written"] += 1
+        report.setdefault("written_by_kind", {})
+        report["written_by_kind"][DOCUMENTED_CAUSE] = report["written_by_kind"].get(DOCUMENTED_CAUSE, 0) + 1
 
 
 # ---------------------------------------------------------------------------
@@ -314,10 +445,10 @@ def _proposal(kind: str, src: tuple, dst: tuple, target: str, url: str, cited: d
         "kind": kind, "src": src, "dst": dst, "target": target, "page_text": page,
         "source": {"url": url, "host": cited.get("host") or found.get("host") or "",
                    "title": cited.get("title"), "retrieved_at": found.get("retrieved_at"),
-                   "text_sha256": found.get("text_sha256"), "tier": cited.get("tier") or "forum"},
+                   "text_sha256": _page_hash(found, page), "tier": cited.get("tier") or "forum"},
         "fields": {"source_url": url, "retrieved_at": found["retrieved_at"], "evidence": evidence,
                    "evidence_sha256": evidence_sha256(evidence), "brief_run_id": run_id,
-                   "validated_at": _now(), "text_sha256": found.get("text_sha256") or None},
+                   "validated_at": _now(), "text_sha256": _page_hash(found, page)},
     }
 
 
@@ -348,11 +479,14 @@ def document_edge_candidates(state: AdvisorState, ctx: RunContext) -> tuple[list
             # As for HAS_CODE: the target must stand as its own token in the page.
             if why is None and not target_is_token(entry["evidence"], texts[url], target=target):
                 why = TARGET_NOT_TOKEN
+        evidence = entry.get("evidence")
+        if why is None:
+            evidence = snap_span_to_words(evidence, texts[url], accept=_code_accepts(texts[url], target))
+            why = CUT_INSIDE_WORD if evidence is None else None
         if why is not None:
             dropped.append({**drop, "reason": why})
             return
-        passed.append(_proposal(kind, src, dst, target, url, cited, found, entry["evidence"],
-                                texts[url], run_id))
+        passed.append(_proposal(kind, src, dst, target, url, cited, found, evidence, texts[url], run_id))
 
     model_node = ("model", maker, model)
     for option in brief.get("upgrade_options") or []:
@@ -508,6 +642,9 @@ def persist_edges(state: AdvisorState, ctx: RunContext, thread_id: str) -> dict[
         # add_edge runs the full span check again, against the same page text.
         kg.add_edge(HAS_CODE, src_key, c_key, page_text=edge["page_text"], **fields)
         report["written"] += 1
+    causes, cause_dropped = cause_candidates(state, ctx)
+    dropped.extend(cause_dropped)
+    write_cause_edges(kg, causes, identity, report, dropped)
     more, more_dropped = document_edge_candidates(state, ctx)
     dropped.extend(more_dropped)
     write_document_edges(kg, more, identity, report, dropped)
@@ -538,6 +675,7 @@ def run_record(state: AdvisorState, ctx: RunContext, thread_id: str) -> dict[str
     return {
         "run_id": run_id,
         "thread_id": thread_id,
+        "build_id": build_id(),
         "mode": state.get("mode") or ctx.mode,
         "status": state.get("status"),
         "refusal_origin": state.get("refusal_origin"),

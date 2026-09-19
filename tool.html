@@ -3,22 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Property Maintenance Advisor: Recorded Demo</title>
+    <title>AI Property Maintenance Advisor: Recorded Demo v2</title>
     <meta
       name="description"
-      content="A recorded walkthrough of a tool that reads an equipment data plate, searches documentation live, and returns a cited service brief or refuses to answer. Every result here was captured from a real run."
+      content="A recorded walkthrough of the upgraded tool: it reads an equipment data plate, waits for the owner to confirm, researches with a spending cap, remembers what it verified, uses the property's own records, and returns a cited service brief or says there is no reliable answer. Every case replays one recorded live run."
     />
-    <meta property="og:title" content="AI Property Maintenance Advisor: Recorded Demo" />
-    <meta property="og:description" content="Five cases replayed from a real run, including the one where the tool refuses to answer. Makes no API call." />
+    <meta property="og:title" content="AI Property Maintenance Advisor: Recorded Demo v2" />
+    <meta property="og:description" content="Eight cases replayed from recorded live runs: the first question, the same question answered from memory, a made up model the tool refuses to answer, and a blurry plate it will not guess at. Makes no API call." />
     <meta property="og:image" content="https://roanukz.github.io/ai-property-maintenance-advisor/og-image.png" />
     <meta property="og:image:width" content="2400" />
     <meta property="og:image:height" content="1254" />
-    <meta property="og:image:alt" content="A service brief with three claims carrying source tier labels, and a fourth the tool refuses to answer." />
+    <meta property="og:image:alt" content="A service brief with claims carrying source tier labels, and a case the tool refuses to answer." />
     <meta property="og:url" content="https://roanukz.github.io/ai-property-maintenance-advisor/tool.html" />
-    <meta name="author" content="Roanuk Zaman" />
     <meta property="og:type" content="article" />
     <meta property="article:author" content="Roanuk Zaman" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="author" content="Roanuk Zaman" />
     <link rel="stylesheet" href="src/tokens.css" />
     <link rel="stylesheet" href="src/demo.css" />
     <link
@@ -29,6 +29,7 @@
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
+
     <nav class="topbar" aria-label="Site">
       <div class="wrap">
         <a href="index.html">&larr; Read the teardown</a>
@@ -38,36 +39,82 @@
 
     <header class="demo-head">
       <div class="wrap">
-        <p class="eyebrow">Recorded demo</p>
+        <p class="eyebrow">Recorded demo, version 2</p>
         <h1>AI Property Maintenance Advisor</h1>
         <p class="lede">
-          Photograph the data plate on a piece of equipment, say what is wrong,
-          and get back a brief a technician can act on, in which every claim
-          carries a citation and an honest label saying how good the source is.
-          Or get a clear statement that there is no reliable answer.
+          Photograph the data plate on a piece of equipment and say what is
+          wrong. The tool reads the plate, waits for the owner to confirm the
+          unit before it spends anything more, researches within a fixed
+          budget, and remembers what it has verified so the next question can
+          be answered without searching again. It returns a brief a technician
+          can act on, with every claim cited, or it says plainly that there is
+          no reliable answer.
         </p>
+
+        <section class="whats-new" aria-labelledby="newTitle">
+          <h2 id="newTitle">New in version 2</h2>
+          <ul>
+            <li>
+              It remembers what it has verified. A repeat question checks
+              memory before it searches, and each stored fact keeps the exact
+              words from its source.
+              <a href="#c2">See case 2</a>, <a href="#c3">case 3</a>.
+            </li>
+            <li>
+              The confirmation is a real stop. Nothing more is spent until the
+              owner confirms the unit and any code, and a paused run can be
+              finished later.
+              <a href="#c1">See case 1</a>, <a href="#c7">case 7</a>.
+            </li>
+            <li>
+              A hard spending cap on every run and a fixed limit on searches and
+              page fetches, both enforced in code; any call the limit blocked is
+              shown in the research trail.
+              <a href="#c1">See case 1</a>, <a href="#c6">case 6</a>.
+            </li>
+            <li>
+              It can use the property's own records. With the unit's service
+              history attached, the brief says when this has happened before
+              and states the unit's age, worked out by code from its install
+              date. Shown with synthetic records on a live run.
+              <a href="#c8">See case 8</a>.
+            </li>
+          </ul>
+          <p>
+            Reading the plate with a confidence for each field, the cited brief,
+            and the refusal to answer work as they did in version 1. This page
+            replaces the version 1 demo, which replayed five cases from the
+            first version of the tool.
+          </p>
+        </section>
 
         <div class="banner" role="note">
           <p>
-            <strong>Nothing on this page calls an API.</strong> Every result
-            below is the verbatim output of a real run on 18 August 2026,
-            recorded and replayed. That keeps the demo free to visit and free to
-            host, and it means the case that matters most, the one where the
-            tool refuses to answer, is always reachable instead of being
-            something you would have to get lucky to see.
+            <strong>Nothing on this page calls an API or loads anything from another site.</strong>
+            Each case replays one recorded live run, named by its run ID, and
+            shows the brief file that run wrote, unedited. In those runs Claude
+            read the plate and wrote the brief, and Tavily ran the web searches.
+            Every number on the page comes from a live run named next to it, and nothing is estimated.
           </p>
         </div>
       </div>
     </header>
 
     <main id="main" class="wrap">
-      <section class="picker" aria-label="Choose a case">
-        <h2 class="picker-title">Pick a case</h2>
-        <div class="case-buttons" role="tablist" id="caseButtons"></div>
+      <section class="picker" aria-labelledby="pickerTitle">
+        <h2 class="picker-title" id="pickerTitle">Pick a case</h2>
+        <div class="case-buttons" role="tablist" aria-labelledby="pickerTitle" id="caseButtons"></div>
+        <div id="summary"></div>
       </section>
 
-      <section class="flow" id="flow" aria-live="polite">
-        <!-- rendered by demo.js -->
+      <section class="flow" id="flow" role="tabpanel" tabindex="-1">
+        <noscript>
+          <p class="step-note">
+            This page draws each recorded run from its data file with a small
+            script. With scripts turned off, the briefs themselves can still be
+            opened from the briefs/v2 folder.
+          </p>
+        </noscript>
       </section>
     </main>
 

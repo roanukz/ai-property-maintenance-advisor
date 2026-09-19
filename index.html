@@ -6,12 +6,12 @@
     <title>AI Property Maintenance Advisor: A Product Teardown</title>
     <meta
       name="description"
-      content="The product thinking behind a tool that reads an equipment data plate, searches documentation live, and returns a cited service brief: the job, the evidence, five decisions, and the one where refusing to answer is the feature."
+      content="The product thinking behind a tool that reads an equipment data plate and returns a cited service brief, rebuilt to remember past research and each property, split across two APIs so each step uses the cheapest tool that can do it, and still refusing in code when the documentation does not support an answer."
     />
     <meta property="og:title" content="AI Property Maintenance Advisor: A Product Teardown" />
     <meta
       property="og:description"
-      content="A tool that tells a technician what is wrong with a hot tub before they drive out, or says plainly that it does not know. The product thinking behind it."
+      content="A tool that tells a technician what is wrong with a hot tub before they drive out, or says plainly that it does not know. Version two remembers what it has verified, knows the property, and kept every live brief under its spending cap."
     />
     <!-- Share card. og:image is a file in this repo, rendered from og-image.svg
          and served from the same origin. -->
@@ -36,7 +36,7 @@
 
     <nav class="topbar" aria-label="Site">
       <div class="wrap">
-        <a href="tool.html">See the demo &rarr;</a>
+        <a href="tool.html">See the recorded v2 demo &rarr;</a>
         <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">View source</a>
       </div>
     </nav>
@@ -47,22 +47,10 @@
         <h1>AI Property Maintenance Advisor</h1>
         <p class="lede">
           When a short term rental owner lives ninety miles from the property
-          and the hot tub stops working, the guest can only describe the
-          problem and read out an error code. A technician gets called, inspects
-          the panel, looks up the code, identifies the model, and diagnoses the
-          fault. Often that first visit is spent working out which part is
-          needed, and the part is ordered or fetched on a second one.
-        </p>
-        <p class="lede">
-          What made me build this is that none of that information is hard to
-          find. The code is on the panel, the model is on the data plate, and
-          the manufacturer publishes what the code means. It is all available
-          and it is never in the same place at the same time as the person who
-          needs it. So I built a tool that reads the data plate from a photo,
-          searches the manufacturer documentation live, and uses generative AI
-          to write a brief for that exact model, where every claim is cited back
-          to the document it came from. The interesting part is what it does
-          when the documentation does not support an answer.
+          and the hot tub stops working, the guest can only describe the problem
+          and read out an error code. The technician who gets called often
+          spends the first visit working out which part is needed, and the part
+          arrives on a second visit.
         </p>
         <p class="byline">
           Roanuk Zaman &middot; Product teardown of a tool I designed, directed
@@ -70,105 +58,168 @@
         </p>
 
         <div class="cta-row">
-          <a class="btn btn-primary" href="tool.html">See the demo &rarr;</a>
+          <a class="btn btn-primary" href="tool.html">See the recorded v2 demo &rarr;</a>
           <a class="btn btn-secondary" href="https://github.com/Roanukz/ai-property-maintenance-advisor">View the source</a>
         </div>
 
         <div class="facts">
           <div class="fact">
-            <span class="fact-value">51%</span>
-            <span class="fact-label"
-              >Of repeat service visits trace to a missing or wrong part, in
-              Aberdeen Group research widely cited across field service. An
-              information problem before it is a skills problem</span
-            >
+            <span class="fact-value">0 searches</span>
+            <span class="fact-label">On a live repeat hot tub code question answered from memory, against 4 on its first lookup</span>
           </div>
           <div class="fact">
-            <span class="fact-value">1 in 4</span>
-            <span class="fact-label"
-              >Service calls need at least one follow up visit, on the same
-              research</span
-            >
+            <span class="fact-value">180 of 180</span>
+            <span class="fact-label">Test briefs on which v1's validator and v2's reached the same verdict, so no v1 rule was loosened</span>
           </div>
           <div class="fact">
-            <span class="fact-value">1.6</span>
-            <span class="fact-label"
-              >Further visits it takes on average to close a job that was not
-              fixed the first time</span
-            >
+            <span class="fact-value">3 of 3</span>
+            <span class="fact-label">Live runs on an invented model refused by the model itself, meeting a bar of 3 of 3</span>
           </div>
           <div class="fact">
-            <span class="fact-value">Every claim</span>
-            <span class="fact-label"
-              >Cited to a document the tool actually fetched, labeled
-              manufacturer, dealer, or forum</span
-            >
+            <span class="fact-value">$0.0632</span>
+            <span class="fact-label">The most any live brief cost, against a $0.15 cap per brief</span>
           </div>
         </div>
-        </div>
-      
+      </div>
     </header>
+
+    <div class="wrap">
+      <section id="tldr" class="brief" aria-label="TL;DR">
+        <p class="section-kicker">Thirty seconds</p>
+        <h2>TL;DR</h2>
+        <p class="brief-definition">Too long; didn't read. The whole page in five sentences.</p>
+        <p class="brief-body">
+          AI Property Maintenance Advisor turns a photo of an equipment label
+          into a service brief that cites a source for every claim, or says it
+          does not know. The rebuild remembers equipment it has researched and
+          can use property records, so far tested only on synthetic ones.
+          In live tests, repeat questions were held to few or no searches
+          and cost a fraction of a first lookup. Claude handles the judgment
+          and a free search service runs the searches, while every refusal rule
+          and spending cap stays in code. The next step is one brief
+          in front of a technician.
+        </p>
+      </section>
+    </div>
 
     <div class="wrap layout">
       <nav class="toc" aria-label="Contents">
         <p class="toc-title">Contents</p>
         <ol>
-          <li><a href="#tldr">Summary</a></li>
-          <li><a href="#problem">1. The problem</a></li>
-          <li><a href="#evidence">2. What I actually know</a></li>
-          <li><a href="#refusal">3. The decision that shapes the rest</a></li>
-          <li><a href="#built">4. What I built</a></li>
-          <li><a href="#results">5. What the run showed</a></li>
-          <li><a href="#next">6. What I would do next</a></li>
-          <li><a href="#cut">7. What I cut</a></li>
-          <li><a href="#method">Appendix. Method made visible</a></li>
+          <li><a href="#tldr">TL;DR</a></li>
+          <li><a href="#summary">Summary</a></li>
+          <li><a href="#problem">Part 1. The problem</a></li>
+          <li><a href="#evidence">Part 2. What I actually know</a></li>
+          <li><a href="#v1">Part 3. What v1 proved</a></li>
+          <li><a href="#why-v2">Part 4. Where v1 stopped</a></li>
+          <li><a href="#frameworks">Part 5. Why LangGraph and LangChain</a></li>
+          <li><a href="#two-apis">Part 6. Two APIs, each for its job</a></li>
+          <li><a href="#features">Part 7. What v2 lets owners and technicians do</a></li>
+          <li><a href="#results">Part 8. How v2 was tested</a></li>
+          <li><a href="#decisions">Part 9. Design decisions, and one finding about the model</a></li>
+          <li><a href="#next">Part 10. What I would do next</a></li>
+          <li><a href="#cut">Part 11. What I cut</a></li>
+          <li><a href="#method">Appendix A. Method made visible</a></li>
+          <li><a href="#terms">Appendix B. Terms used on this page</a></li>
         </ol>
       </nav>
 
-      <main id="main">
-        <section id="tldr" class="tldr">
-          <p class="section-kicker">The short version</p>
+      <main id="main" tabindex="-1">
+        <section id="summary" class="summary tldr">
+          <p class="section-kicker">Three minutes</p>
           <h2>Summary</h2>
           <ul>
             <li>
-              <strong>The job is not diagnosis, it is packing the van.</strong>
-              A technician who knows the model and the documented failure brings
-              the part. One who knows only "it is not heating" brings a guess
-              and sometimes a second visit.
+              <strong>The problem.</strong> An owner who lives far from a rental
+              property hears about a broken hot tub or air conditioner as one
+              sentence from a guest, and the technician's first visit often goes
+              to finding out which part is needed (<a href="#problem">Part 1</a>).
+              The first version of this tool (v1) turned a photo of the
+              equipment's data plate, the label with its make, model and serial
+              number, into a brief cited to the maker's documents, and refused
+              when the documents did not support an answer. But v1 remembered
+              nothing: every brief paid for 7 to 8 fresh web searches, even for a
+              unit it had researched before, and it knew nothing about the
+              property (<a href="#v1">Part 3</a>, <a href="#why-v2">Part 4</a>).
             </li>
             <li>
-              <strong>Refusing to answer is the feature.</strong> A maintenance
-              tool that invents a plausible repair is worse than no tool,
-              because the cost of a confident wrong answer lands on someone
-              standing in front of live equipment. The tool has a NO RELIABLE
-              ANSWER state, and it is enforced in code rather than requested in
-              a prompt.
+              <strong>The thesis.</strong> A tool that remembers what it has
+              already verified, and knows each property's records, can answer a
+              repeat question with fewer searches and for less money without
+              giving up any of v1's guarantees, as long as those guarantees stay
+              in code rather than in the instructions given to the model. That
+              needed a program that can branch, loop, pause for a person and save
+              its progress, which is what LangGraph (a library that runs an AI
+              workflow as a graph of steps) provides; LangChain (a library of
+              building blocks for AI apps) runs the research step inside it
+              (<a href="#frameworks">Part 5</a>). It also needed each step to go
+              to the cheapest tool that can do it: Anthropic's Claude for reading
+              the plate, choosing what to search and writing the brief, and
+              Tavily, a web search service built for AI tools, on its free tier
+              for search (<a href="#two-apis">Part 6</a>).
             </li>
             <li>
-              <strong>Every claim carries a citation and an honest label.</strong>
-              Sources are tiered manufacturer, dealer, or forum, and a dealer
-              page stays labeled dealer even when it is the best thing found.
-              The label is only worth something if it is allowed to be
-              unflattering.
+              <strong>The method.</strong> The bars were written into the
+              product requirements on 17 September 2026, before any test ran: a
+              repeat question about the same unit uses 2 searches or fewer,
+              compared with the same unit's first v2 lookup; an invented model is
+              refused 3 times out of 3 on the cheaper model; no cheap mode brief
+              spends more than $0.15 and the whole build no more than $5; speed
+              is reported, with no target. Replay (running the whole pipeline on
+              recorded model replies and recorded search results, at no cost)
+              tests the rules, the routing and the spending caps. Small live
+              batches on Claude Haiku 4.5 and Tavily, run on 18 September 2026,
+              test how the model behaves. A differential test sends 180 test
+              briefs through both v1's validator (the code that checks each
+              brief against the rules) and the rewrite's, and compares the
+              verdicts (<a href="#results">Part 8</a>).
             </li>
             <li>
-              <strong>I reviewed the build adversarially before shipping rather
-              than after</strong>, with every finding checked by a second pass
-              whose job was to refute it. It caught a failure that would have
-              hit intermittently on exactly the search heavy cases the product
-              exists for, and which testing the happy path would never have
-              surfaced.
+              <strong>The results.</strong> The three live repeat questions used
+              0 searches (answered from memory), then 2 and 2 (short top ups,
+              held to 2 by the top up limit itself), against 4, 4 and 5 on the
+              same units' first v2 lookups: a pass on the bar of 2 or fewer. v1 ran 7 to 8 on every brief. The
+              invented model was refused 3 of 3 times, each refusal made by the
+              model, against a bar of 3 of 3. Briefs that needed research cost
+              $0.0587 and $0.0632 and briefs answered from memory $0.0065 and
+              $0.0082, against the $0.15 cap and an estimated $0.35 to $0.71
+              for a v1 brief. Briefs took 21.4 and 51.3 seconds with research and
+              4.8 and 5.2 seconds from memory, against 57 to 117 seconds for v1.
+              A live run with synthetic property records attached cited the
+              unit's earlier service record and its age. Offline, v1's and v2's
+              validators agreed on all 180 test briefs (<a href="#results">Part 8</a>).
             </li>
             <li>
-              <strong>It missed one of its own acceptance criteria and I
-              published that</strong> rather than changing a setting to make the
-              number. The setting that buys the speed is the setting that buys
-              the refusal.
+              <strong>What it means.</strong> Remembering pays where it was
+              designed to: an answer from memory cost about a seventh of a first
+              lookup and took about a tenth of the time, though that repeat brief
+              was thinner than the first. The saving comes from
+              several changes made together (a model priced 5 times lower, search
+              on a free tier, a lower search cap, and memory that can skip
+              search), and the tests do not separate them. None of them loosens a
+              rule, because every rule still runs in code. What the tests cannot
+              show is that a cheaper brief is as good: the hot tub repeat from
+              memory left out all 4 steps to try first that its first brief
+              listed, and one live hot tub brief listed a step at the breaker
+              without its safety flag, a finding about the model, not the code (<a href="#decisions">Part 9</a>).
             </li>
             <li>
-              <strong>What it has not done is meet a technician.</strong> This is
-              a validation instrument built to ask one question, and the question
-              is still open.
+              <strong>Cautions, and how to check.</strong> Replay proves the
+              rules, the routing, the spending caps and the page layout; it
+              cannot prove how the model behaves. The live samples are small:
+              three runs for the refusal test and three repeat questions for the
+              memory test, and three refusals out of three is consistent with a
+              true refusal rate as low as about 37%. Two of the three repeat passes were
+              held to 2 searches by the top up limit itself; in both the model
+              asked for more, and only the hot tub code repeat shows memory
+              replacing search.
+              The property records are synthetic, and no technician has used a
+              brief yet. Every live v2 number here comes from a named run on
+              one fixed build (a single frozen version of the code, identified by
+              a fingerprint stored in every run record); v1's come from its own
+              live run of 18 August 2026, and the whole build spend also counts
+              runs on an earlier build that was replaced. The offline suite of 2,245 tests runs with the
+              network blocked, no key and no cost (<a href="#method">Appendix A</a>).
             </li>
           </ul>
         </section>
@@ -178,15 +229,12 @@
           <h2>The problem</h2>
           <p>
             The property is an eight bedroom lake rental with a hot tub, two
-            HVAC systems, a septic system, and a dock. The owner lives ninety
+            heating and air conditioning (HVAC) systems, a septic system, and a dock. The owner lives ninety
             miles away. When something breaks, the report arrives as a sentence
             from a guest or a cleaner: the hot tub is not heating, the upstairs
-            is warm.
-          </p>
-          <p>
-            That sentence is everything the technician gets. It does not carry
-            the model, the age of the unit, the code on the panel, or what was
-            tried the last time this happened. So the first visit is often
+            is warm. That sentence is everything the technician gets. It does not
+            carry the model, the age of the unit, the code on the panel, or what
+            was tried the last time this happened. So the first visit is often
             diagnostic rather than corrective, and the part comes on the second
             one.
           </p>
@@ -206,117 +254,82 @@
         <section id="evidence">
           <p class="section-kicker">Part 2</p>
           <h2>What I actually know</h2>
-          <p>
-            I want to be careful here, because the honest version of this
-            section is shorter than the flattering version.
-          </p>
-
           <div class="evidence">
             <p><strong>Verified.</strong></p>
             <ul>
               <li>
-                <strong>The failure this addresses is documented and it is an
-                information failure.</strong> Aberdeen Group research, cited
-                widely across field service writing, puts about 51 percent of
-                repeat visits down to a missing or wrong part, against 25
-                percent for technician experience and 13 percent for a job
-                scheduled too short. A quarter of service calls need at least
-                one follow up, and a job not fixed the first time takes about
-                1.6 further visits to close. Stated as I found it: I am citing
-                secondary sources quoting Aberdeen rather than the original
-                report, which I could not reach.
+                <strong>The failure this addresses is an information
+                failure.</strong> Aberdeen Group research, cited widely across
+                field service writing, puts about 51 percent of repeat visits
+                down to a missing or wrong part, against 25 percent for
+                technician experience and 13 percent for a job scheduled too
+                short. I am citing secondary sources quoting Aberdeen rather than
+                the original report, which I could not reach.
                 <a href="https://delight.ai/blog/ai-for-cx/how-to-prevent-second-truck-rolls-in-field-service">Source</a>,
                 <a href="https://www.industrility.com/blog/first-time-fix-rate-repeat-repairs/">second source</a>.
               </li>
               <li>
                 The operations tools in this category track the schedule, not the
                 house. One of the leading products stores make, model, and serial
-                as fields and does nothing further with them. The data is already
-                being collected and is not being used.
+                as fields and does nothing further with them.
               </li>
               <li>
                 Manufacturer error code tables for this equipment exist publicly
                 and are findable. The Sundance 880 series documentation the tool
-                retrieves is real, and so is the family match.
-              </li>
-              <li>
-                A competing tool in the adjacent workflow is free at one property
-                and pays the cleaner. Anything that asks a vendor to do more work
-                for no money is competing against that.
+                retrieves is real.
               </li>
             </ul>
           </div>
-
           <div class="evidence">
             <p><strong>Inferred, and worth saying so.</strong></p>
             <ul>
-              <li>
-                That a cited brief reduces second visits. This is the thesis. It
-                is not measured, and the whole build exists to test it.
-              </li>
-              <li>
-                That owners will photograph a data plate. It takes ten seconds,
-                but nobody has been asked to do it yet.
-              </li>
+              <li>That a cited brief reduces second visits. This is the thesis, and it is not measured.</li>
+              <li>That owners will photograph a data plate. It takes ten seconds, but nobody has been asked to do it yet.</li>
             </ul>
           </div>
-
           <div class="evidence">
             <p><strong>Not known.</strong></p>
             <ul>
               <li>
                 Whether a technician changes what they load in the van because a
-                brief told them to. That is the question. One tradesperson
-                answering it converts this from a build into a finding.
+                brief told them to. One tradesperson answering that converts this
+                from a build into a finding. Version two does not answer it
+                either.
               </li>
             </ul>
           </div>
-
           <p class="callout callout-notice">
-            The demand signal I found while researching pointed somewhere
-            slightly different from where I started: local forums are full of
-            owners asking <em>who to call</em>, not what is wrong. Discovery, not
-            dispatch. I noted it, kept building the narrower thing, and left the
+            The demand signal I found pointed somewhere slightly different: local
+            forums are full of owners asking <em>who to call</em>, not what is
+            wrong. I noted it, kept building the narrower thing, and left the
             larger question open rather than quietly redefining the product to
             match the evidence I happened to find.
           </p>
         </section>
 
-        <section id="refusal">
+        <section id="v1">
           <p class="section-kicker">Part 3</p>
-          <h2>The decision that shapes the rest</h2>
+          <h2>What v1 proved</h2>
           <p>
-            Every other decision in this build follows from one: <strong>the
-            tool is allowed to say it does not know, and that is a success
-            state, not an error.</strong>
-          </p>
-          <p>
-            The reasoning is about where the cost of being wrong lands. A search
-            engine that returns a bad result wastes a few seconds. A maintenance
-            tool that returns a confident, wrong, plausible looking repair
-            instruction sends someone to open an equipment bay on live
-            electrical, or to order a part that was never the problem. The
-            asymmetry is not close.
-          </p>
-          <p>
-            So the product has a NO RELIABLE ANSWER state, and it is not a
-            fallback for when things break. It is a first class output with its
-            own layout, showing what was searched, what was found, and why that
-            was not enough. In the demo you can trigger it deliberately, because
-            a guarantee you cannot watch fail is not a guarantee.
+            Every decision in both versions follows from one: <strong>the tool
+            is allowed to say it does not know, and that is a success state, not
+            an error.</strong> A maintenance tool that returns a confident, wrong,
+            plausible looking repair instruction sends someone to open an
+            equipment bay on live electrical, or to order a part that was never
+            the problem. So the product has a NO RELIABLE ANSWER state, with its
+            own layout showing what was searched, what was found, and why that
+            was not enough.
           </p>
           <p class="pullquote">
             A tool that is right most of the time and silent about which times is
             not a tool a technician can use.
           </p>
-        </section>
-
-        <section id="built">
-          <p class="section-kicker">Part 4</p>
-          <h2>What I built</h2>
           <p>
-            Photograph the plate, confirm what was read, get a brief. Two model
-            calls and no database. The decisions worth defending are below.
+            v1 worked like this: photograph the plate, confirm what was read, get
+            a brief. It made two calls to Claude Opus 5, the highest priced of
+            the three Claude models priced in the build, using Anthropic's own
+            built in web search capped at 8 searches, and kept no database. Five
+            decisions shaped it, and all carry into v2.
           </p>
 
           <div class="decision">
@@ -324,15 +337,13 @@
             <h3>The refusal lives in code, not in the prompt</h3>
             <p class="decision-risk">Risk addressed: trust</p>
             <p>
-              I could have written "refuse when sources are insufficient" in the
-              instructions and trusted it. Instead the response passes through
-              validation that clears any candidates and any suggested steps when
-              the state is NO RELIABLE ANSWER, whatever the model returned.
-              Seventeen tests hold that behavior with no API key and no network,
-              so the guarantee is testable on a laptop offline.
+              Instead of writing "refuse when sources are insufficient" into the
+              instructions and trusting it, validation code clears any candidates
+              and suggested steps when the state is NO RELIABLE ANSWER, whatever
+              the model returned.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>More code, and a schema the model must satisfy exactly.</span></li>
+              <li><span class="k">Cost</span><span>More code, and a schema (the exact shape the answer must have) that the model must satisfy exactly.</span></li>
               <li><span class="k">Bought</span><span>The promise holds on a bad day, when the model is having one.</span></li>
             </ul>
           </div>
@@ -342,12 +353,9 @@
             <h3>Label every source honestly, including when the honest label is weak</h3>
             <p class="decision-risk">Risk addressed: trust, and usefulness</p>
             <p>
-              Sources are tiered manufacturer, dealer, or forum, and the rule is
-              that a dealer blog stays labeled dealer even when it is the best
-              source found. If everything located is forum content, the brief
-              says so at the top rather than burying it. A reader who cannot
-              tell an owner's manual from a stranger's guess is not better off
-              for having both.
+              Sources are tiered manufacturer, dealer, or forum. A dealer page
+              stays labeled dealer even when it is the best source found, and a
+              brief built only on forum content says so at the top.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>Some briefs look thinner than a tool that quietly promoted its sources.</span></li>
@@ -360,11 +368,10 @@
             <h3>An observed code stops the search from widening</h3>
             <p class="decision-risk">Risk addressed: usefulness</p>
             <p>
-              If the reported symptom includes a code visible on the panel, that
-              code overrides symptom matching and the tool returns one confirmed
-              candidate instead of a list. Same equipment, same model: the vague
-              symptom returns six documented possibilities, and the observed code
-              returns one. A list of six is research. One is a part number.
+              If the symptom includes a code visible on the panel, the code
+              overrides symptom matching. On the same hot tub, the vague symptom
+              returned six documented possibilities and the observed code
+              returned one. A list of six is research. One is a part number.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>A misread code produces a confident single answer, so the brief tells the reader to confirm it on the unit.</span></li>
@@ -377,15 +384,13 @@
             <h3>Search at the moment of the question, instead of building a corpus first</h3>
             <p class="decision-risk">Risk addressed: feasibility</p>
             <p>
-              The earlier design pre parsed manuals into a knowledge pack, and
-              its own notes concluded that acquiring primary sources at scale was
-              the open problem. That is a warehouse to build before answering a
-              single question. Searching live at request time inverted it: the
-              corpus becomes a byproduct of questions people actually asked, and
-              every lookup is logged for exactly that purpose.
+              An earlier design parsed manuals into a knowledge pack in advance,
+              and acquiring primary sources at scale was its open problem.
+              Searching live at request time inverted that: the corpus would
+              become a byproduct of questions people actually asked.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>Each brief costs money and takes a minute or two, and quality depends on what is public.</span></li>
+              <li><span class="k">Cost</span><span>Each brief costs money and time, and quality depends on what is public.</span></li>
               <li><span class="k">Bought</span><span>A working, testable product instead of a data acquisition project with no end date.</span></li>
             </ul>
           </div>
@@ -397,28 +402,29 @@
             <p>
               The brief never states a cause. It lists documented candidates,
               each with the documented meaning, the documented action, who should
-              do it, and why it surfaced. Suggested first steps must be
-              documented, safe for an untrained person, and actually actionable,
-              which rules out "call a professional" as a step. Anything
-              electrical or heat related is flagged and sorted to the top.
+              do it, and why it surfaced. First steps must be documented, safe
+              for an untrained person, and actionable. Anything electrical or
+              heat related is flagged and sorted to the top.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>Reads as less impressive than a tool that names the fault.</span></li>
               <li><span class="k">Bought</span><span>It stays inside what the sources support, which is the only place it has any authority.</span></li>
             </ul>
           </div>
-        </section>
 
-        <section id="results">
-          <p class="section-kicker">Part 5</p>
-          <h2>What the run showed</h2>
+          <h3>What the v1 run showed</h3>
           <p>
-            Six acceptance cases, defined in the spec before the build. All six
-            passed on content. One criterion did not.
+            Six acceptance cases were defined in the spec before the build. All
+            six passed on content; the speed criterion did not. The four v1
+            briefs remain published as the evidence for this table:
+            <a href="briefs/549892815cb6.html">hot tub, code on panel</a>,
+            <a href="briefs/db572cf7b81b.html">hot tub, vague symptom</a>,
+            <a href="briefs/c45b900046bf.html">air conditioner</a> and
+            <a href="briefs/a601fd524225.html">the invented model</a>.
           </p>
-
-          <div class="table-scroll">
+          <div class="table-scroll" tabindex="0" role="region" aria-label="v1 acceptance cases, live run of 18 August 2026">
             <table>
+              <caption>v1 acceptance cases, live run of 18 August 2026</caption>
               <thead>
                 <tr><th>Case</th><th>Expected</th><th>Result</th></tr>
               </thead>
@@ -428,150 +434,741 @@
                 <tr><td>Hot tub, vague symptom</td><td>Cited candidates, filter and water level checks</td><td class="yes">Six candidates, seven sources</td></tr>
                 <tr><td>Hot tub, code on panel</td><td>One confirmed candidate, not a list</td><td class="yes">Exactly one</td></tr>
                 <tr><td>HVAC, different category</td><td>Grounded, or a clean partial</td><td class="yes">Grounded, and invented no error codes for a category that does not display them</td></tr>
-                <tr><td>A model that does not exist</td><td>NO RELIABLE ANSWER</td><td class="yes">Refused, with its search trail</td></tr>
-                <tr><td>Any brief, under sixty seconds</td><td>Under 60s</td><td class="no">57 to 117 seconds. Missed on three of four</td></tr>
+                <tr><td>A model that does not exist</td><td>NO RELIABLE ANSWER</td><td class="yes">Refused, with its search trail, although generic advice for the brand was available</td></tr>
+                <tr><td>Any brief, under sixty seconds</td><td>Under 60 seconds</td><td class="no">Missed: 57 to 117 seconds, over the target on three of four</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="callout callout-warning">
+            <strong>On the criterion v1 missed.</strong> Reducing how much
+            reasoning each brief gets would have made the sixty seconds. I did
+            not make that change, because the same setting buys the refusal
+            behavior. v1 had not earned the right to say whether the criterion
+            was wrong or the product too slow.
+          </p>
+        </section>
+
+        <section id="why-v2">
+          <p class="section-kicker">Part 4</p>
+          <h2>Where v1 stopped</h2>
+          <p>
+            Running v1 showed three limits that no prompt could fix, because each
+            is about what the tool remembers and knows, not about how well the
+            model writes.
+          </p>
+          <ul>
+            <li>
+              <strong>It forgot everything.</strong> Every brief ran 7 to 8 live
+              searches and read 42,000 to 91,000 tokens of input (a token is a
+              word fragment, the unit models are billed in). A second question
+              about the same hot tub paid the full price again. v1 logged every
+              lookup but never stored what it verified.
+            </li>
+            <li>
+              <strong>It knew nothing about the property.</strong> The brief has
+              a "this has happened before" field. It was empty in all 4 recorded
+              v1 briefs, because v1 had no service history to fill it from.
+            </li>
+            <li>
+              <strong>It had no path for aging equipment.</strong> When a part is
+              discontinued, the useful answer is a documented successor model,
+              and v1 had nowhere to put one.
+            </li>
+          </ul>
+          <p>
+            Cost made the first limit sharper. v1 never computed its own cost;
+            its logged usage, priced at current list prices, puts a v1 brief at
+            an estimated $0.35 to $0.71 (<a href="#two-apis">Part 6</a>). Version
+            two sets out to remember what it has verified, to know each property,
+            and to spend less per brief, without moving any of the five decisions
+            above out of code. Two items from v1's cut list come back for that
+            reason: several properties, and warranty tracking.
+          </p>
+        </section>
+
+        <section id="frameworks">
+          <p class="section-kicker">Part 5</p>
+          <h2>Why LangGraph and LangChain</h2>
+          <p>
+            <strong>LangGraph</strong> is a library that runs an AI workflow as a
+            graph of steps. Each step reads and writes a shared record of the
+            run, and arrows between the steps, called edges, decide what runs
+            next. <strong>LangChain</strong> is a library of building blocks for
+            AI apps: connectors to model providers, tools, and a ready made agent
+            loop in which the model calls a tool, reads the result, and decides
+            what to do next.
+          </p>
+          <p>
+            v1 was a fixed sequence of steps, and plain code was the right tool
+            for it. v2 adds four things a fixed sequence cannot express cleanly:
+            routing (answer from memory, top up with a few searches, or research
+            in full), a bounded retry loop, a pause for a person to confirm the
+            unit, and saved state for each property. Those four are a real reason
+            to use a graph runtime, not a way to show off a framework.
+          </p>
+
+          <h3>The split: LangGraph runs the flow, LangChain runs one step</h3>
+          <p>
+            LangChain's ready made agent, <code>create_agent</code>, was
+            considered for the whole flow and rejected: it cannot hold a
+            confirmation pause that survives the program being closed and started
+            again, the validation retry loop, or state kept per property. So
+            LangGraph runs the whole flow, and <code>create_agent</code> runs only
+            the research step inside it, where a model and tool loop is exactly
+            what is needed.
+          </p>
+
+          <div class="table-scroll" tabindex="0" role="region" aria-label="What each capability is, and what the owner or technician gets from it">
+            <table>
+              <caption>What each capability is, and what the owner or technician gets from it</caption>
+              <thead>
+                <tr><th>Capability</th><th>What it means</th><th>What the user gets</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Interrupt and checkpoint (LangGraph)</td>
+                  <td>An interrupt is a deliberate pause that waits for a person's answer. A checkpoint is a saved snapshot of the run, written after each step to a small database file.</td>
+                  <td>The owner checks the unit and the code before anything is spent on research, and can finish later, even after a restart, without paying for the plate reading twice.</td>
+                </tr>
+                <tr>
+                  <td>Conditional edges (LangGraph)</td>
+                  <td>Arrows whose destination is chosen by a small function.</td>
+                  <td>The tool answers what it already knows and searches only when it has to. A failed check gets one smaller second pass, only if the budget allows.</td>
+                </tr>
+                <tr>
+                  <td>Parallel branches and typed state (LangGraph)</td>
+                  <td>Several steps run at once, and the run's record has a fixed shape with a merge rule for each value they write.</td>
+                  <td>Service history, stored facts and live research are gathered together, and the cost and the "what was searched" list on each brief include every call.</td>
+                </tr>
+                <tr>
+                  <td><code>create_agent</code> and middleware (LangChain)</td>
+                  <td>The ready made loop of model and tools, and code that wraps every call in it and can stop a call before it happens.</td>
+                  <td>A known worst case for each lookup: at most 5 searches and 3 page fetches on the first pass, and 2 more searches on the one smaller retry (v1 allowed 8 searches), and no model call once the money is gone.</td>
+                </tr>
+                <tr>
+                  <td>Structured output (LangChain)</td>
+                  <td>The model answers in a fixed, typed form, like filling in a form, not in free text.</td>
+                  <td>Every citation in a brief points to a page the tool actually retrieved, because the model can refer to a source only by its number and code builds the list.</td>
+                </tr>
+                <tr>
+                  <td>Provider connectors (LangChain)</td>
+                  <td>Ready made connections to Claude and to Tavily's search and fetch.</td>
+                  <td>Search runs on a free tier while Claude does only the judgment, so the owner pays for one model at its cheapest adequate setting, and the recorded demo shows exactly the calls that were made live.</td>
+                </tr>
               </tbody>
             </table>
           </div>
 
+          <h3>The tradeoffs actually paid</h3>
+          <ul>
+            <li>
+              <strong>The names move fast.</strong> Many functions were renamed
+              or moved after the 1.0 releases, and the documentation and the
+              source code disagree in three places. Every name was checked
+              against the current release, the source was taken as correct, and
+              v2 relies on none of the three disputed behaviors.
+            </li>
+            <li>
+              <strong>No stock fake model could drive the agent.</strong> A fake
+              model returns scripted replies so tests cost nothing. None of
+              LangChain's supports tool calling (the model asking the code to run
+              a search or fetch), and one silently loops back to the start of its
+              script. v2 wrote its own, which fails loudly. Because it never
+              checks the form the way the real API does, one paid check covered
+              that gap.
+            </li>
+            <li>
+              <strong>The structured output ceiling.</strong> Anthropic limits a
+              form to 24 optional and 16 either or fields, and LangChain passes
+              the form through unchanged. A draft modeled on v1's lenient form
+              would have failed on the first paid call, so the form is now flat,
+              with every field required.
+            </li>
+            <li>
+              <strong>Defaults that had to be overridden.</strong> The agent's
+              loop limit defaults to 9,999 steps, so the middleware caps are the
+              only real guard; LangChain's own search limit leaves no reason in
+              the run's record, so v2 wrote two small middleware pieces of its
+              own. The Claude connector defaults to the model's maximum output,
+              which on Haiku would reserve $0.32 against a $0.15 cap, and neither
+              connector has a timeout until one is set.
+            </li>
+            <li>
+              <strong>A rewrite in a second language.</strong> v1 is TypeScript
+              and v2 is Python, because Python has the more complete LangGraph
+              ecosystem (an inference, not a measurement). The price was porting
+              v1's validator; the differential test pays it back (<a href="#results">Part 8</a>).
+            </li>
+            <li>
+              <strong>Model lifetime.</strong> Haiku 4.5 retires no sooner than
+              15 October 2026, and the live command refuses Haiku runs from that
+              date until the model list is rechecked. A Sonnet 5 fallback would
+              cost about 2.6 times as much, an estimate.
+            </li>
+          </ul>
+
+          <h3>Alternatives rejected</h3>
+          <ul>
+            <li><strong>A vector store beside the graph.</strong> It finds text by similarity of meaning. In my earlier project on documentation gaps, vector search scored 24 correct against 23 for graph retrieval, a gap too small to justify a third way to look things up.</li>
+            <li><strong>A hosted graph database.</strong> At the size this build was planned for (about 50 nodes, an estimate), a Python library that holds the graph in memory and saves it as a plain file does the same job, with no account and nothing to pay.</li>
+            <li><strong>Building the corpus up front.</strong> v1 already rejected it. v2 grows memory only from lookups that really happened, so early questions pay for full research.</li>
+          </ul>
+        </section>
+
+        <section id="two-apis">
+          <p class="section-kicker">Part 6</p>
+          <h2>Two APIs, each for its job</h2>
           <p>
-            The fabricated model case is the one I care about, and it passed for
-            the right reason rather than by luck. The search established that the
-            brand is real and has real manuals, that the model designation does
-            not fit that brand's documented naming, and that generic
-            troubleshooting advice for the brand <em>was available</em>. It
-            declined to use it. Refusing when there is nothing to find is easy.
-            Refusing when there is something adjacent and tempting is the actual
-            behavior under test.
+            An API is a service the code calls over the internet and pays for by
+            use. v1 used one API for everything: Claude Opus 5 read the plate,
+            ran Anthropic's own web search, and wrote the brief. v2 splits the
+            work by what each step actually needs.
           </p>
 
-          <p class="callout callout-warning">
-            <strong>On the criterion I missed.</strong> Briefs took fifty seven
-            to one hundred seventeen seconds against a sixty second target. One
-            settings change would have made the number by reducing how much
-            reasoning each brief gets. I did not make it, because that setting is
-            also what buys the refusal behavior, and a brief that arrives in
-            fifty seconds and occasionally invents a repair is a worse product
-            than one that takes ninety and says it does not know. The honest
-            record is that the criterion was wrong, or the product is too slow,
-            and I have not yet earned the right to say which.
+          <div class="errc">
+            <div class="errc-cell">
+              <h4>Claude, for judgment</h4>
+              <ul>
+                <li>Reads the plate photo.</li>
+                <li>Decides what to search and which pages to fetch.</li>
+                <li>Classifies a vague symptom, only when the routing rules cannot decide.</li>
+                <li>Writes the brief.</li>
+                <li>Cheap mode, the one run live, uses Haiku 4.5, the lowest priced of the three models priced in the build, for every step. Full mode hands only the writing to Sonnet 5, at about $0.09 more per brief (estimate); it is tested in replay only.</li>
+              </ul>
+            </div>
+            <div class="errc-cell">
+              <h4>Tavily, for finding pages</h4>
+              <ul>
+                <li>Runs the web searches and fetches page text.</li>
+                <li>Free tier: 1,000 credits a month. A basic search costs 1 credit; the 2 credit advanced search is switched off.</li>
+                <li>A page fetch costs 1 credit per 5 successful pages; failed fetches are free.</li>
+                <li>Paid overage is switched off, so a search costs $0.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3>Why the split is cheaper</h3>
+          <p>
+            Per million tokens, Haiku 4.5 costs $1 in and $5 out, Sonnet 5 costs
+            $2 and $10, and Opus 5 costs $5 and $25; Anthropic's server search
+            adds $0.01 per search. So the model price alone is 5 times lower on
+            Haiku, and the search line, an estimated $0.07 to $0.08 per v1 brief
+            (7 to 8 searches at $0.01), falls to $0 on Tavily's free tier. The $0 holds only on the free
+            tier: at Tavily's pay as you go rate of $0.008 a credit, a worst case
+            first pass of 8 credits would cost about $0.064 (arithmetic, not
+            measured). So at volume most of the saving comes from the model and
+            from memory skipping search.
+          </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Cost per brief: v1 computed from its logged usage (estimates), v2 planned (estimates) beside the measured live cost">
+            <table>
+              <caption>Cost per brief: v1 computed from its logged usage (estimates), v2 planned (estimates) beside the measured live cost</caption>
+              <thead>
+                <tr><th>Brief</th><th>Estimate</th><th>Measured, live</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>v1, any case (Opus 5, 7 to 8 paid searches)</td><td class="num">$0.35 to $0.71</td><td>Not measured; v1 never logged its cost</td></tr>
+                <tr><td>v2 research route (read plate, research, write)</td><td class="num">$0.083 typical, $0.113 at the caps</td><td class="num">$0.0587 hot tub, $0.0632 air conditioner (no plate photo)</td></tr>
+                <tr><td>v2 research route ending in a refusal</td><td class="num">about $0.080 (no plate reading)</td><td class="num">$0.0353 to $0.0490 (3 runs, no plate photo)</td></tr>
+                <tr><td>v2 top up of 2 searches after a memory check</td><td class="num">$0.048</td><td class="num">$0.0217 air conditioner (no plate photo), $0.0234 hot tub</td></tr>
+                <tr><td>v2 answered from memory, no search</td><td class="num">$0.031</td><td class="num">$0.0065 with property records (no plate photo), $0.0082 hot tub</td></tr>
+                <tr><td>v2 full mode (Sonnet writes the brief)</td><td class="num">about $0.17</td><td>Replay only; not run live</td></tr>
+              </tbody>
+                        </table>
+          </div>
+          <p>
+            Runs marked "no plate photo" were given the model directly, so their
+            cost includes no plate reading (about $0.003); the other hot tub runs
+            include it.
+          </p>
+          <p>
+            The hard caps are $0.15 per cheap mode brief and $5 for the whole
+            build. Every live run stayed under its cap; the highest cost $0.0632.
+            The fixed build's live runs cost about $0.32 in total, and the whole
+            build spent $0.59 of its $5, a figure that includes runs on an
+            earlier build that was replaced. On credits, a first pass uses at
+            most 8 (5 searches and 3 fetches) and the one smaller retry up to 2
+            more, so a brief uses at most 10, and 1,000 free credits cover about
+            100 research briefs a month at the worst case (arithmetic, not
+            measured).
+          </p>
+
+          <h3>The second payoff: the rules stay in code</h3>
+          <p>
+            In v1, Anthropic's built in search returned its citations in a way
+            that did not work together with structured output, so v1 could not
+            have code build the source list; it relied on an instruction to the
+            model not to pad the bibliography. In v2, the search and fetch
+            wrappers hand code the raw results. Code builds the source list only
+            from searches and fetches that actually succeeded, the model can
+            point to a source only by its number, and because code holds the
+            raw page text it can check that every quote appears word for word on
+            its page and that a cited error code appears there as a whole word.
+            The instruction became a rule enforced in code.
+          </p>
+
+          <h3>How LangChain and LangGraph carry the split</h3>
+          <ul>
+            <li><strong>LangChain puts both providers in one loop.</strong> The agent runs Claude's tool calling over Tavily's search and fetch, and one configuration file names the model for each step.</li>
+            <li><strong>Middleware counts both bills in one place.</strong> It counts Tavily searches and fetches against their limits and reserves each Claude call in a spending ledger before the call is made.</li>
+            <li><strong>LangGraph decides whether either API is called at all.</strong> Routing skips search when memory holds enough verified facts and sends a top up of 2 searches when it holds some. The confirmation pause sits before any research spend, so the only paid call before the owner confirms is the plate reading, which cost $0.0028 and $0.0029 live.</li>
+          </ul>
+          <p class="callout callout-info">
+            <strong>The tradeoffs.</strong> Citation mapping, the page evidence
+            checks and the credit count all became v2's own code, which is more
+            to maintain than one provider, and it is the part that keeps the
+            source list honest. The second tradeoff is quality: Haiku was picked
+            because it is cheapest, and a cheaper model can write a less complete
+            brief while every rule passes. So "cheaper" and "as good" are
+            separate claims, and this page supports only the first
+            (<a href="#decisions">Part 9</a>).
           </p>
         </section>
 
+        <section id="features">
+          <p class="section-kicker">Part 7</p>
+          <h2>What v2 lets owners and technicians do</h2>
+          <p>
+            Each feature is described by what the person gets and why it matters
+            on the day something breaks. Where a live run shows it working, the
+            demo case that replays it is named; the recorded
+            <a href="tool.html">v2 demo</a> replays those runs.
+          </p>
+
+          <div class="decision">
+            <span class="decision-num">Feature 1</span>
+            <h3>Remember equipment it has already researched</h3>
+            <p class="decision-risk">For: the owner paying for the lookup, and the technician waiting on it</p>
+            <p>
+              v2 keeps a knowledge graph: facts stored as things and the links
+              between them, such as "this model shows this code", "this model has
+              this documented cause", "this model replaced that one". Every fact
+              carries its page address, the date it was retrieved, and the exact
+              sentence from the page that supports it, and is stored only from a
+              validated brief on a live run.
+            </p>
+            <p>
+              Live, a repeat of the hot tub's FLO code question (FLO is the
+              panel's flow switch code) was answered from memory with no search,
+              for $0.0082 in 5.2 seconds, against $0.0587 and 51.3 seconds for
+              its first lookup (demo cases 1 and 2). The repeat brief was
+              thinner, though: it gave the code and its documented meaning but
+              none of the 4 steps to try first that the first brief listed, and
+              it named a technician rather than anyone as the person to act.
+            </p>
+            <p>
+              The air conditioner's first lookup stored 3 documented causes. A
+              new question about it, a fan that would not spin, checked those
+              first, but the symptom check could not match any of them, so the
+              run was held to a short top up of 2 searches and the brief used
+              none of the stored causes: $0.0217 in 15.5 seconds, against
+              $0.0632 and 21.4 seconds (demo cases 4 and 5). That saving came
+              from the smaller top up limit, not from reused facts.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>A repeat question about the same unit skips or shortens search, so it is faster and cheaper, though an answer from memory alone can be thinner.</span></li>
+              <li><span class="k">Why</span><span>Rental properties see the same equipment fail again, and v1 paid full price every time.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 2</span>
+            <h3>Know the property: history, age and warranty</h3>
+            <p class="decision-risk">For: the technician, before the visit</p>
+            <p>
+              A matching earlier service record fills "this has happened before",
+              cited to that record; a record for a different appliance is thrown
+              out. Code computes the unit's age from the install date in the
+              records, and the model is told not to. Warranty terms are quoted
+              only from the property records, with the record number.
+            </p>
+            <p>
+              <strong>Shown live, on synthetic records.</strong> A live run on
+              the hot tub with seeded synthetic property records attached (the
+              model and the documentation were real; the records were made up for
+              testing and are labeled so) cited the earlier service record ("Panel
+              showed FLO and heater would not run; cleared after filter cleaning
+              and water level top-up"), stated the unit was installed on 10 June
+              2021 and about 5 years old, and quoted the record's warranty terms,
+              which say they are synthetic. It used 0 searches and cost $0.0065 in
+              4.8 seconds (run t-550f902f22f846d5, demo case 8).
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>What was tried last time, how old the unit is, and whether it is under warranty, on one page.</span></li>
+              <li><span class="k">Why</span><span>That is the context the one sentence report from a guest never carries.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 3</span>
+            <h3>A confirmation pause before any money is spent</h3>
+            <p class="decision-risk">For: the owner</p>
+            <p>
+              After the plate is read, the run pauses. The owner confirms or
+              corrects the model and the code. If the model number is unreadable,
+              the run stays paused until someone types it, so a guess is never
+              treated as confirmed. Live, the clear plate was read exactly, every
+              field at high confidence, and the blurry plate came back with every
+              field, model, serial and date included, marked unreadable rather
+              than guessed (demo case 7).
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>A check on what was read, before the lookup is paid for.</span></li>
+              <li><span class="k">Why</span><span>A wrong model or a misread code wastes the whole lookup and can point to the wrong part.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 4</span>
+            <h3>Spending capped in code, and reported honestly</h3>
+            <p class="decision-risk">For: the owner paying the bill</p>
+            <p>
+              Every paid call is reserved in a ledger (a running record of spend)
+              before it is made, so a cheap mode brief stops at its $0.15 cap,
+              give or take one call's estimate error. The ledger is never deleted,
+              so a reset cannot grant a fresh budget. Running out of money is its
+              own "budget stopped" status and never counts as NO RELIABLE ANSWER,
+              because an empty wallet is not a finding about the documentation.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>A known worst case per brief.</span></li>
+              <li><span class="k">Why</span><span>A tool that can run up an open bill is not one an owner leaves running.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 5</span>
+            <h3>The refusal and the honest labels, kept</h3>
+            <p class="decision-risk">For: the technician deciding what to trust</p>
+            <p>
+              NO RELIABLE ANSWER is still enforced in validation code, and code
+              can lower a source's tier label but never raise one. The badge now
+              names the website that hosted the document beside it, so a maker's
+              manual found on a third party archive is not a surprise. Live, the
+              invented model was refused on all 3 runs, each time by the model
+              itself after it had reached the brand's real documentation (demo
+              case 6).
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>The same guarantees as v1, plus the host behind every badge.</span></li>
+              <li><span class="k">Why</span><span>Cheaper is only useful if the brief is still safe to act on.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 6</span>
+            <h3>Upgrade options and maintenance, cited or absent</h3>
+            <p class="decision-risk">For: the owner deciding whether to repair, and planning prevention</p>
+            <p>
+              A successor model appears only when a fetched page names it as a
+              whole word ("Optima 880" is not taken from "Optima 880X"), and a
+              price only when the cited page states that exact amount. A
+              maintenance interval is kept only from the manufacturer, and code
+              computes the due date from the property's maintenance log. Upgrade
+              options are tested in replay only; no live run needed one. Live,
+              the air conditioner's second brief quoted two maintenance intervals
+              from Trane's own pages, and with no property records attached it
+              left the due date uncomputed rather than guess.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>A cited path to a replacement when parts run out, and a due date from the maker's own interval.</span></li>
+              <li><span class="k">Why</span><span>A guessed successor sends someone shopping for the wrong unit.</span></li>
+            </ul>
+          </div>
+
+          <div class="decision">
+            <span class="decision-num">Feature 7</span>
+            <h3>A brief a technician opens with no app</h3>
+            <p class="decision-risk">For: the technician</p>
+            <p>
+              The brief is a single self contained page. Nothing loads from
+              anywhere else, and all model text is escaped so it cannot run as
+              code.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">Gets</span><span>A file to text or email, with no login.</span></li>
+              <li><span class="k">Why</span><span>The person who needs the brief is not the person who has the tool.</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="results">
+          <p class="section-kicker">Part 8</p>
+          <h2>How v2 was tested</h2>
+          <p>
+            <strong>Replay</strong> runs the whole pipeline on recorded model
+            replies and recorded search results, at no cost and with the network
+            blocked. It proves the rules, the routing, the ledger and the page
+            renderer, but not how the model behaves. Small <strong>live</strong>
+            batches on Claude Haiku 4.5 and Tavily, run on 18 September 2026 on
+            one fixed build, test the model. The bars were written into the
+            requirements on 17 September 2026, before any test ran.
+          </p>
+
+          <h3>The rules stayed in code</h3>
+          <ul>
+            <li>14 of v1's 17 guardrail behaviors are ported. The other 3 tested parsing a block of text the model returned, which structured output removed, and are marked obsolete.</li>
+            <li>v1's and v2's validators agree on the decision, the reason and the cleaned brief for all 180 differential test briefs: 16 from v1's guardrail tests and 164 new edge cases. The test needs v1's private source, so it skips on a fresh copy of the repository.</li>
+            <li>A refusal or a budget stop clears candidates, steps, upgrade options and maintenance items; tier labels can be lowered by code, never raised; an observed code still narrows the answer.</li>
+            <li>A stored fact needs a word for word evidence sentence from its page; a fact that fails is dropped, not downgraded.</li>
+            <li>The offline suite of 2,245 tests runs with the network blocked, and all 918 planted bugs are caught. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
+          </ul>
+
+          <h3>Criteria, bars and results</h3>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced">
+            <table>
+              <caption>Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced</caption>
+              <thead>
+                <tr><th>Criterion</th><th>Bar</th><th>Result</th><th>How measured</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rewrite agrees with v1's validator (SC1b)</td><td>All test briefs agree</td><td class="yes">180 of 180</td><td>Replay</td></tr>
+                <tr><td>Refusal clears the brief (SC3a)</td><td>Candidates and steps empty on refusal or budget stop</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>Pause survives a restart (SC5)</td><td>Resume without repeating the plate reading</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>Sources come from what search returned (SC6)</td><td>Source list built only from successful results</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>"This has happened before" (SC8)</td><td>Filled from a matching record, cited</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>Upgrade options (SC9)</td><td>Only when a fetched page names the successor</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>Self contained brief (SC10)</td><td>Nothing loads from outside; model text escaped</td><td class="yes">Pass</td><td>Replay</td></tr>
+                <tr><td>Invented model refused (SC3b)</td><td>3 of 3 on Haiku</td><td class="yes">Pass: 3 of 3, every refusal by the model</td><td>Live</td></tr>
+                <tr><td>Repeat question searches less (SC7b)</td><td>2 searches or fewer on every repeat</td><td class="yes">Pass: 0 (answered from memory), 2 and 2 (short top ups, held to 2 by the top up limit), against 4, 4 and 5 on the first v2 lookups</td><td>Live</td></tr>
+                <tr><td>Plate reading</td><td>Clear plate read; blurry plate left empty, not guessed</td><td class="yes">Pass: clear plate read exactly; blurry plate's model, serial and date marked unreadable</td><td>Live</td></tr>
+                <tr><td>Every run within its cap (SC11)</td><td>$0.15 or less per cheap mode run</td><td class="yes">Pass on all 11 live runs; highest $0.0632</td><td>Live, from the ledger</td></tr>
+                <tr><td>Whole build spend</td><td>$5 or less</td><td class="yes">$0.59, including runs on an earlier build that was replaced (the fixed build's runs cost about $0.32)</td><td>Live, from the ledger</td></tr>
+                <tr><td>Time for a research brief</td><td>No target; reported</td><td>21.4 s and 51.3 s (refusals 17.0 s to 35.0 s)</td><td>Live, measured</td></tr>
+                <tr><td>Time for a brief from memory, and for a top up</td><td>No target; reported</td><td>4.8 s and 5.2 s from memory alone; 12.6 s and 15.5 s for the short top ups</td><td>Live, measured</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="callout callout-warning">
+            <strong>What the live numbers can and cannot say.</strong> Three
+            refusals out of three is consistent with a true refusal rate as low
+            as about 37% (one sided, 95% confidence), and three repeat questions
+            are three. Two of the three repeat passes are held to 2 searches by
+            the top up limit itself: in both runs the model asked for more, and
+            the demo's research trail shows the blocked calls. Only the hot tub
+            code repeat shows memory replacing search outright. The speed and cost figures sit beside v1's (57 to 117
+            seconds, and an estimated $0.35 to $0.71), but v2 changed the model,
+            the search provider, the search cap and the pipeline at once, so they
+            do not say which change made the difference.
+          </p>
+        </section>
+
+        <section id="decisions">
+          <p class="section-kicker">Part 9</p>
+          <h2>Design decisions, and one finding about the model</h2>
+          <p>
+            Four design choices shape how memory and replay behave. Each is
+            there for a reason an owner or a technician would recognize. How
+            they came about is recorded in the project's decision log
+            (DECISION-LOG.md in the <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">source</a>).
+          </p>
+
+          <div class="decision">
+            <span class="decision-num">Decision 6</span>
+            <h3>Store documented causes as well as codes</h3>
+            <p class="decision-risk">For: owners of equipment that shows no codes</p>
+            <p>
+              An air conditioner rarely displays an error code; what its
+              documentation lists is causes, such as a blocked outdoor coil or low
+              refrigerant. So memory keeps a documented cause, with its documented
+              action, under the same word for word evidence rule as a code, and a
+              cause label must share at least 2 content words with its quote.
+              Live, the air conditioner's first lookup stored 3 documented causes
+              and dropped a fourth whose quote was not on its page. The next
+              question about the unit, a fan that would not spin, matched none
+              of the 3, so they only sent it to a 2 search top up, and all 3
+              causes in that brief came from search.
+            </p>
+          </div>
+          <div class="decision">
+            <span class="decision-num">Decision 7</span>
+            <h3>Never answer a question with no confirmed code from stored codes alone</h3>
+            <p class="decision-risk">For: the technician, who needs the full list when there is no code</p>
+            <p>
+              "Not heating" can have several documented causes. Answering it
+              from the one code memory happens to hold would narrow the list to a
+              single part the symptom never pointed to. Answering from memory
+              alone needs at least 3 distinct verified causes and a match from
+              the symptom classifier; anything less gets a top up of 2 searches.
+              Live, the vague hot tub question found no stored causes, so it
+              topped up with 2 searches. The brief still listed only 1 documented
+              possibility, the stored FLO code, left unconfirmed, where v1 listed
+              six for the same symptom: the top up added a source but no other
+              cause, and its limit blocked 2 more searches and 2 fetches.
+            </p>
+          </div>
+          <div class="decision">
+            <span class="decision-num">Decision 8</span>
+            <h3>Whole word excerpts</h3>
+            <p class="decision-risk">For: anyone reading a quote in a brief</p>
+            <p>
+              Excerpts of a page start and end on word boundaries. A quote cut in
+              the middle of a word can change its meaning, as "$12" cut from
+              "$129" would, and cannot be checked word for word.
+            </p>
+          </div>
+          <div class="decision">
+            <span class="decision-num">Decision 9</span>
+            <h3>Live recordings are replayable offline</h3>
+            <p class="decision-risk">For: checking the results</p>
+            <p>
+              Replay reads the real page text saved from a live run, and marks
+              grounding "unverifiable" when that text was not saved. On the build
+              machine, every live run can be rerun offline for free, and the
+              recorded demo replays the live runs verbatim. The live recordings
+              stay on that machine, out of the public repository, so a reader can
+              check each run ID and build fingerprint in the demo's data file but
+              cannot yet rerun them.
+            </p>
+          </div>
+
+          <h3>A finding about the model: a step at the breaker without its safety flag</h3>
+          <p>
+            The instructions ask the model to flag any electrical or heat related
+            step as a safety step, and code sorts flagged steps to the top. On
+            the fixed build, the hot tub's first lookup (run t-267045726dd04118)
+            listed "Turn off power at the breaker, wait 20 minutes, then restore
+            power" as its fourth step with no safety flag. The air conditioner's
+            second question did flag its breaker step, so the model does it
+            sometimes, not always.
+          </p>
+          <p>
+            Code cannot fix this on its own terms. It can reorder the steps the
+            model flagged, but deciding what counts as a safety step means
+            either trusting the model's judgment or writing a rule that judges
+            the step's wording, and every step must come from a cited source, so
+            code cannot add one. I report it as a finding about Haiku on this
+            build, not a code failure, and it is the first item in
+            <a href="#next">Part 10</a>.
+          </p>
+
+          <h3>Rules that stand</h3>
+          <ul>
+            <li>Speed is reported, not scored.</li>
+            <li>A budget stop never counts as a refusal.</li>
+            <li>The retry is one smaller second pass, taken only if affordable.</li>
+            <li>Misses are published as misses, and only runs on the fixed build are reported.</li>
+          </ul>
+        </section>
+
         <section id="next">
-          <p class="section-kicker">Part 6</p>
+          <p class="section-kicker">Part 10</p>
           <h2>What I would do next</h2>
           <ol>
             <li>
+              <strong>Decide how safety steps get flagged.</strong> Test a code
+              rule that flags any step naming a breaker, power or heat, against a
+              change to the instructions, and measure both on new live runs,
+              accepting that a word rule will sometimes flag a harmless step.
+            </li>
+            <li>
               <strong>Put one brief in front of one technician</strong> and ask a
-              single question: did this change what you would bring. Everything
-              above is process quality. That question is the only one that turns
-              it into evidence, and it needs one tradesperson and an afternoon.
+              single question: did this change what you would bring. Neither
+              version has answered it, and it is the only question that turns
+              process quality into evidence.
             </li>
             <li>
-              <strong>Settle what a tier label describes.</strong> Running it
-              live surfaced a real ambiguity: a manufacturer's manual rehosted on
-              a third party archive currently gets labeled manufacturer, because
-              the document is genuinely the manufacturer's. But a reader scanning
-              badges sees that label next to an unfamiliar host. Document origin
-              or publisher identity, and I have to pick one.
+              <strong>Run v2 on a real property.</strong> The seed data is 2
+              properties and 6 appliances, all labeled synthetic. Three use real
+              equipment models (the hot tub, the air conditioner and the water
+              heater), and three have invented makers and model names.
             </li>
             <li>
-              <strong>Measure the latency question properly</strong> rather than
-              arguing it from principle. Run the suite at reduced reasoning and
-              see whether the fabricated model case still refuses. If it does,
-              the criterion was right and I was being precious. If it does not, I
-              have a number that justifies the criterion being wrong.
+              <strong>Measure speed and quality with one thing changed at a
+              time</strong>, rather than inferring either from a comparison that
+              changed four.
             </li>
+            
           </ol>
         </section>
 
         <section id="cut">
-          <p class="section-kicker">Part 7</p>
+          <p class="section-kicker">Part 11</p>
           <h2>What I cut</h2>
           <p>
-            The spec named these as out of scope before the build started, which
-            is the only time a cut list is honest:
+            v1's spec named these as out of scope before its build started, which
+            is the only time a cut list is honest. Two came back in v2, for the
+            reason given in <a href="#why-v2">Part 4</a>.
           </p>
           <ul>
-            <li><strong>Accounts, and anything resembling a funnel.</strong> This is a validation instrument. Email capture would have told me nothing about the question.</li>
-            <li><strong>Multi property, and integration with existing operations tools.</strong> Both are real, both are the business rather than the test.</li>
-            <li><strong>Warranty deadline tracking and prevention scheduling.</strong> The most requested adjacent feature, and the one most likely to hide whether the core idea works.</li>
-            <li><strong>The cleaner capture workflow.</strong> The right long term entry point, and a second unproven assumption stacked on the first.</li>
-            <li><strong>A name and any branding.</strong> Deliberately unbranded during the test so nothing rode on presentation.</li>
+            <li><strong>Accounts, and anything resembling a funnel.</strong> Still cut. This is a validation instrument, and email capture would say nothing about the question.</li>
+            <li><strong>Several properties.</strong><span class="shipped">Back in v2</span> Memory and service history only pay off per property.</li>
+            <li><strong>Warranty tracking and prevention scheduling.</strong><span class="shipped">Back in v2</span> Warranty terms quoted from records, and maintenance due from the maker's intervals.</li>
+            <li><strong>Integration with existing operations tools.</strong> Still cut. That is the business, not the test.</li>
+            <li><strong>The cleaner capture workflow.</strong> Still cut. The right long term entry point, and a second unproven assumption stacked on the first.</li>
+            <li><strong>A name and any branding.</strong> Still cut, so nothing rides on presentation.</li>
+          </ul>
+          <p>Out of v2's scope from the start:</p>
+          <ul>
+            <li><strong>Paid databases, a hosted graph database, vector stores and hosted servers.</strong> None buys anything at this size (<a href="#frameworks">Part 5</a>).</li>
+            <li><strong>Repair versus replace dollar amounts.</strong> The tool never estimates a price a source does not give.</li>
+            <li><strong>A live demo.</strong> The <a href="tool.html">recorded v2 demo</a> replays the fixed build's live runs verbatim and makes no API call, so it is free to visit and free to host.</li>
+            <li><strong>A mobile capture flow, and full mode live.</strong></li>
           </ul>
         </section>
 
         <section id="method">
-          <p class="section-kicker">Appendix</p>
+          <p class="section-kicker">Appendix A</p>
           <h2>Method made visible</h2>
 
-          <h3>Reviewing my own build adversarially</h3>
+          <h3>v1: reviewing my own build adversarially</h3>
           <p>
-            Before shipping I ran a structured review of the build against its
-            own spec, across three independent lenses: does it match the
-            specification, does it use the platform correctly, and what breaks.
-            Every finding was then checked by a separate pass whose instruction
-            was to refute it. Thirty five claims, thirty one confirmed, four
-            refuted and dropped.
+            Before shipping v1 I reviewed the build against its own spec across
+            three lenses: does it match the specification, does it use the
+            platform correctly, and what breaks. A separate pass tried to refute
+            every finding. Thirty five claims, thirty one confirmed. The ones
+            that mattered were an intermittent failure on exactly the search
+            heavy cases the product exists for, output budgets that would have
+            cut a brief off mid sentence, a bug that corrupted citations when
+            reassembling the response, and a script injection hole in the shared
+            brief, the file handed to a third party.
           </p>
-          <p>The four that mattered:</p>
+
+          <h3>v2: gates, replay first, and a typed "proceed"</h3>
           <ul>
-            <li>
-              <strong>An intermittent failure on exactly the cases the product
-              exists for.</strong> A long running search can pause and expect to
-              be resumed. Unhandled, the request would fail after paying for
-              every search, and only on the search heavy briefs, which are the
-              real ones.
-            </li>
-            <li>
-              <strong>Output budgets that ignored how the model actually
-              behaves</strong> and would have truncated a brief mid sentence.
-            </li>
-            <li>
-              <strong>A reassembly bug</strong> where citations split the
-              response into pieces and rejoining them incorrectly corrupted the
-              result.
-            </li>
-            <li>
-              <strong>A script injection hole in the shared brief</strong>, which
-              is the file handed to a third party, and therefore the worst place
-              in the system to have one.
-            </li>
+            <li>The build ran in phases. Replay phases came first, at no cost; live phases ran only after a typed "proceed", with the planned calls and spend printed first.</li>
+            <li>The ledger reserves each call before it is made, against a $5 cap for the whole build.</li>
+            <li>Every library name was checked against the current release before use.</li>
+            <li>Planted bugs test the tests: all 918 are caught.</li>
+            <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to one build. The whole build spend is the one total that also counts runs on the earlier build that was replaced.</li>
           </ul>
-          <p>
-            I am including this because the review found things I would not have
-            found by testing the happy path, and because the four refuted claims
-            matter as much as the thirty one confirmed. A review that confirms
-            everything it suspects is not reviewing.
-          </p>
 
           <h3>What I got wrong</h3>
           <ul>
-            <li>
-              <strong>I pinned a dependency version from memory instead of
-              checking</strong>, and the build failed on the first compile
-              because the feature I needed did not exist in it.
-            </li>
-            <li>
-              <strong>I ran a production build while the dev server was
-              running</strong>, which corrupted its cache and made every route
-              fail until I cleared it.
-            </li>
-            <li>
-              <strong>One of my own tests was wrong.</strong> It asserted a
-              string never appears, when that string legitimately appears in
-              correctly escaped output. I checked the actual behavior in a
-              browser before changing the assertion, because the tempting move is
-              to edit the test until it goes green.
-            </li>
+            <li><strong>v1: I pinned a dependency version from memory instead of checking</strong>, and the build failed on the first compile.</li>
+            <li><strong>v1: one of my own tests was wrong.</strong> I checked the actual behavior in a browser before changing the assertion.</li>
+            <li><strong>v2: the price check once accepted "$12" from a page that said "$129"</strong>, caught before any live run.</li>
           </ul>
 
           <h3>Honest limits of this write up</h3>
           <ul>
-            <li>No technician has used it yet. Everything here describes the build and the documented failure it targets, not a measured result, and the next step is the one that changes that.</li>
-            <li>The demo is recorded, not live, so you are seeing real output but not exercising the system.</li>
-            <li>The property, the owner, and the commercial detail are genericized. The equipment and the retrieved documentation are real and unaltered.</li>
+            <li>No technician has used either version.</li>
+            <li>The recorded v2 demo replays live runs of 18 September 2026 with no API call. The four v1 briefs linked in <a href="#v1">Part 3</a> remain the record of v1.</li>
+            <li>The v2 property records are synthetic. The property, the owner and the commercial detail are genericized; the equipment and the retrieved documentation are real.</li>
+            <li>Cost comparisons with v1 are estimates computed from v1's logged usage, not measurements of v1's bill.</li>
+          </ul>
+        </section>
+
+        <section id="terms">
+          <p class="section-kicker">Appendix B</p>
+          <h2>Terms used on this page</h2>
+          <ul>
+            <li><strong>API:</strong> a service the code calls over the internet, paid for by use.</li>
+            <li><strong>LangGraph:</strong> a library that runs an AI workflow as a graph of steps; each step reads and writes a shared record of the run, and edges decide what runs next.</li>
+            <li><strong>LangChain:</strong> a library of building blocks for AI apps: model connectors, tools, and a ready made agent loop.</li>
+            <li><strong>Checkpoint:</strong> a saved snapshot of the run, so a run can stop and continue later.</li>
+            <li><strong>Interrupt:</strong> a deliberate pause that waits for a person's answer.</li>
+            <li><strong>Middleware:</strong> code that wraps every model call or tool call and can check or stop it before it happens.</li>
+            <li><strong>Schema:</strong> the exact shape an answer must have: which fields, of which types.</li>
+            <li><strong>Validator:</strong> the code that checks each brief against the rules and clears or rejects what fails.</li>
+            <li><strong>Tool calling:</strong> the model asking the code to run a tool, here a search or a page fetch, and reading the result.</li>
+            <li><strong>Structured output:</strong> the model answers in a fixed, typed form instead of free text.</li>
+            <li><strong>Knowledge graph:</strong> facts stored as things and the links between them, each here carrying the exact sentence that supports it.</li>
+            <li><strong>Replay:</strong> running the whole pipeline on recorded model replies and search results, at no cost.</li>
+            <li><strong>Ledger:</strong> the running record of spend, checked before every paid call.</li>
+            <li><strong>Planted bug:</strong> a deliberate small break in the code, used to check that the tests notice it.</li>
+            <li><strong>Token:</strong> a word fragment; models are billed per million tokens.</li>
+            <li><strong>Build:</strong> a single frozen version of the code, identified by a fingerprint stored in every run record. "The fixed build" is the one every live v2 result on this page comes from; "the whole build" spend is the project's total.</li>
+            <li><strong>HVAC:</strong> heating, ventilation and air conditioning equipment.</li>
           </ul>
         </section>
       </main>
@@ -579,7 +1176,7 @@
 
     <footer class="wrap">
       <p>
-        Roanuk Zaman. See the <a href="tool.html">recorded demo</a> or the
+        Roanuk Zaman. See the <a href="tool.html">recorded v2 demo</a> or the
         <a href="https://github.com/Roanukz/ai-property-maintenance-advisor">source</a>.
       </p>
     </footer>

@@ -1,0 +1,241 @@
+{
+  "cassette_version": 1,
+  "case": "cause_repeat",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the maker Synthetic Cooling Co., the model SC-16 (synthetic), queries, example.org/example.com URLs, page text, drafts, usage",
+      "Decision D1 and the SC7b shape: the repeat of cause_first_lookup, run against the graph that lookup wrote (three verified DOCUMENTED_CAUSE edges, no code); no code is confirmed and the classifier says no_match, so route row 4 tops up with research (at most 2 searches); the script asks for three searches, one more than the top up allows; the graph source is index 0 and the new page index 1"
+    ],
+    "built_by": "hand written for the documented cause tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Synthetic Cooling Co.",
+      "model": "SC-16 (synthetic)",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "air conditioner runs but the house does not cool",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SC-16 short cycling"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SC-16 humidity"
+              },
+              "id": "call_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "synthetic SC-16 oversized"
+              },
+              "id": "call_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "synthetic SC-16 short cycling",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/cooling/sc16-short-cycling",
+            "title": "Synthetic SC-16 short cycling page",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/cooling/sc16-short-cycling\n\nSC-16 (synthetic) short cycling\nAn oversized outdoor unit cools the house too fast and shuts off before it removes humidity.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/cooling/sc16-short-cycling\n\nSC-16 (synthetic) short cycling\nAn oversized outdoor unit cools the house too fast and shuts off before it removes humidity.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic SC-16 humidity",
+        "results": [
+          {
+            "url": "https://example.org/replay/cause_repeat/decoy-01",
+            "title": "Synthetic decoy 01 (cause_repeat)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "synthetic SC-16 oversized",
+        "results": [
+          {
+            "url": "https://example.org/replay/cause_repeat/decoy-02",
+            "title": "Synthetic decoy 02 (cause_repeat)",
+            "content": "Synthetic decoy result. No brief may cite it.",
+            "raw_content": null,
+            "score": 0.5
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 9000,
+        "output_tokens": 1500,
+        "total_tokens": 10500
+      },
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Synthetic match",
+        "warranty_caution": null,
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Replace the air filter",
+            "detail": "",
+            "safety_flag": false,
+            "source_index": 0
+          }
+        ],
+        "candidates": [
+          {
+            "code": null,
+            "documented_meaning": "A dirty air filter restricts airflow.",
+            "documented_action": "Replace the air filter.",
+            "who": "anyone",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "A dirty air filter restricts airflow across the indoor coil, so the system cannot cool the house."
+          },
+          {
+            "code": null,
+            "documented_meaning": "The outdoor breaker has tripped.",
+            "documented_action": "Reset the outdoor breaker once.",
+            "who": "anyone",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 0,
+            "confirmed": false,
+            "evidence": "A tripped outdoor breaker stops the outdoor unit while the indoor fan keeps running."
+          },
+          {
+            "code": null,
+            "documented_meaning": "An oversized outdoor unit shuts off too soon.",
+            "documented_action": "Ask a technician whether the unit is oversized.",
+            "who": "technician",
+            "why_shown": "The house does not cool while the system runs.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": "An oversized outdoor unit cools the house too fast and shuts off before it removes humidity."
+          }
+        ],
+        "warranty": null,
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "route": [
+      "graph",
+      "research"
+    ],
+    "research_limits": "top_up",
+    "searches": 2,
+    "sources": [
+      "https://example.com/synthetic/cooling/sc16-not-cooling",
+      "https://example.com/synthetic/cooling/sc16-short-cycling"
+    ]
+  },
+  "classifier": [
+    {
+      "structured": {
+        "verdict": "no_match"
+      },
+      "usage": {
+        "input_tokens": 600,
+        "output_tokens": 10,
+        "total_tokens": 610
+      }
+    }
+  ]
+}

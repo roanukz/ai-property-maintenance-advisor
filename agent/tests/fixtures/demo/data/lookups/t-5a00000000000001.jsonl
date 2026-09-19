@@ -1,0 +1,3 @@
+{"tool": "search", "query": "Sundance Spas Optima 880 FLO code", "status": "ok", "credits": 1, "n_results": 2}
+{"tool": "search", "query": "Optima 880 flow switch", "status": "ok", "credits": 1, "n_results": 2}
+{"tool": "fetch", "query": "https://spa.example.com/error-codes", "status": "ok", "credits": 0}

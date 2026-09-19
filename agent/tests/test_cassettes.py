@@ -558,3 +558,38 @@ def test_blocked_calls_account_for_scripted_calls_without_results() -> None:
     data["research"]["blocked_calls"] = {"browse": 1}
     with pytest.raises(CassetteError, match="blocked_calls"):
         cassette_from_dict(data)
+
+
+def test_result_text_hash_names_the_local_page_text() -> None:
+    """Mutations: cassettes_text_hash_unknown_key (a result's text_sha256 is an
+    unknown key, so no live recording that keeps it can load);
+    cassettes_text_hash_format_unchecked; cassettes_text_hash_mismatch_accepted
+    (a hash that does not name the recorded text loads). D4: a live recording
+    keeps each saved page's hash, never its text, on a real URL."""
+    import hashlib
+
+    base = sample()
+    text = base["research"]["tool_results"][1]["results"][0]["raw_content"]
+    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    data = copy.deepcopy(base)
+    real = data["research"]["tool_results"][0]["results"][0]
+    real.update({"url": "https://www.trane.com/x", "content": "", "raw_content": None, "text_sha256": "a" * 64})
+    data["research"]["tool_results"][1]["results"][0]["text_sha256"] = sha
+    loaded = cassette_from_dict(data)
+    assert loaded.tool_results_for("search")[0]["results"][0]["text_sha256"] == "a" * 64
+    assert loaded.tool_results_for("fetch")[0]["results"][0]["text_sha256"] == sha
+
+    for bad in ("A" * 64, "a" * 63, None, 7):
+        wrong = copy.deepcopy(data)
+        wrong["research"]["tool_results"][0]["results"][0]["text_sha256"] = bad
+        with pytest.raises(CassetteError, match=r"results\[0\]\.text_sha256: must be 64"):
+            cassette_from_dict(wrong)
+    wrong = copy.deepcopy(data)
+    wrong["research"]["tool_results"][1]["results"][0]["text_sha256"] = "b" * 64
+    with pytest.raises(CassetteError, match="does not match the sha256 of raw_content"):
+        cassette_from_dict(wrong)
+    wrong = copy.deepcopy(data)
+    wrong["research"]["tool_results"][0]["results"][0]["page_sha"] = "a" * 64
+    with pytest.raises(CassetteError, match="unknown key"):
+        cassette_from_dict(wrong)

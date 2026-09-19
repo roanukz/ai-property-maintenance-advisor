@@ -118,7 +118,7 @@
     "verdict": "obsolete",
     "phase": 2,
     "node_ids": [],
-    "approved_obsolete_on": null
+    "approved_obsolete_on": "2026-09-18"
   },
   {
     "v1_test": 12,
@@ -126,7 +126,7 @@
     "verdict": "obsolete",
     "phase": 2,
     "node_ids": [],
-    "approved_obsolete_on": null
+    "approved_obsolete_on": "2026-09-18"
   },
   {
     "v1_test": 13,
@@ -144,7 +144,7 @@
     "verdict": "obsolete",
     "phase": 2,
     "node_ids": [],
-    "approved_obsolete_on": null
+    "approved_obsolete_on": "2026-09-18"
   },
   {
     "v1_test": 15,

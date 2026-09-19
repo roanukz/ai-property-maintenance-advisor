@@ -6,7 +6,9 @@ live; decision 37) and loads, for the confirmed identity:
 
 - with a confirmed code: the edges for that code on the model or its family
   (HAS_CODE, and the code's CODE_POINTS_TO_PART edges);
-- with no confirmed code: those edges for every code the model and family have;
+- with no confirmed code: those edges for every code the model and family
+  have, and the model's and family's verified DOCUMENTED_CAUSE edges
+  (decision D2), whose evidence is the excerpt synthesize sees;
 - in both cases: the model's SUPERSEDED_BY edges (upgrade_check reads them
   from graph_hits in Phase 4).
 
@@ -34,7 +36,7 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from agent import config
-from agent.kg import KnowledgeGraph
+from agent.kg import KnowledgeGraph, norm_label
 from agent.rules.tiers import host_of
 from agent.state import AdvisorState, RunContext, latency_entry
 
@@ -87,10 +89,25 @@ class Coverage:
     code_edges: list[dict[str, Any]] = field(default_factory=list)  # for the confirmed code
     model_edges: list[dict[str, Any]] = field(default_factory=list)  # every code's edges, model or family
     upgrade_edges: list[dict[str, Any]] = field(default_factory=list)  # SUPERSEDED_BY
+    cause_edges: list[dict[str, Any]] = field(default_factory=list)  # DOCUMENTED_CAUSE, model or family
 
     @property
     def has_model(self) -> bool:
-        return self.model_known or bool(self.model_edges)
+        return self.model_known or bool(self.model_edges) or bool(self.cause_edges)
+
+    @property
+    def cause_count(self) -> int:
+        """Distinct verified causes, never more than the distinct quotes behind them.
+
+        A cause is its normalized label (the part of the Cause key that is not
+        the scope), so one cause stored under the model and again under its
+        family, or found on two pages, counts once. One quote stored under
+        several paraphrased labels documents one cause, so the count is also
+        capped by the distinct (page, evidence) pairs.
+        """
+        labels = len({norm_label(edge["label"]) for edge in self.cause_edges})
+        quotes = len({(edge["source_url"], edge["evidence_sha256"]) for edge in self.cause_edges})
+        return min(labels, quotes)
 
 
 def graph_coverage(kg: KnowledgeGraph, identity: dict[str, Any] | None, code: str | None) -> Coverage:
@@ -108,6 +125,7 @@ def graph_coverage(kg: KnowledgeGraph, identity: dict[str, Any] | None, code: st
             code_edges=_unique(kg.edges_for_code(maker, model, code)) if code else [],
             model_edges=_unique(model_edges),
             upgrade_edges=_unique(kg.superseded_by(maker, model)),
+            cause_edges=_unique(kg.causes_for(maker, model)),
         )
     except ValueError:
         # The graph's key helpers refuse a missing maker or model, or one that
@@ -173,9 +191,11 @@ def graph_sources(kg: KnowledgeGraph, edges: list[dict[str, Any]], known_urls: s
 
 
 def lookup_edges(coverage: Coverage, code: str | None) -> list[dict[str, Any]]:
-    """The edges graph_lookup loads: the code's edges (or every code edge), then upgrades."""
+    """The edges graph_lookup loads: the code's edges (or every code edge and every
+    documented cause), then upgrades."""
     edges = coverage.code_edges if code else coverage.model_edges
-    return _unique([*edges, *coverage.upgrade_edges])
+    causes = [] if code else coverage.cause_edges
+    return _unique([*edges, *causes, *coverage.upgrade_edges])
 
 
 def graph_lookup(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:

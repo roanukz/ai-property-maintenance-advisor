@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "data_status": "rerun",
+  "note": "The recorded v2 demo's runs, by role: the fixed build rerun of 18 September 2026. Built with agent/replay/build_demo.py, which refuses any run whose own records name another build.",
+  "build_id": "839b1854a0aaf25e",
+  "recorded_on": "2026-09-18",
+  "roles": {
+    "hot_tub_code_first": "t-267045726dd04118",
+    "hot_tub_code_repeat": "t-274c71d4e47f481e",
+    "hot_tub_vague": "t-43ffbe945ce64f29",
+    "ac_first": "t-32b097b6a454440e",
+    "ac_new_symptom": "t-a6cc7b63e63b41d0",
+    "no_such_model": "t-ea3dc31aae684e5a",
+    "blurry_plate": "t-d3f71b57c5c048f4",
+    "hot_tub_with_history": "t-550f902f22f846d5"
+  },
+  "also_count": {
+    "no_such_model": [
+      "t-34c911e1f5384a68",
+      "t-cf986eb8dda9472d"
+    ]
+  },
+  "compare": {
+    "hot_tub_code_repeat": "hot_tub_code_first",
+    "hot_tub_vague": "hot_tub_code_first",
+    "ac_new_symptom": "ac_first"
+  }
+}

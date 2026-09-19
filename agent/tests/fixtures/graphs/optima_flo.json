@@ -1,6 +1,45 @@
 {
   "edges": [
     {
+      "action": "Rinse the filter cartridge.",
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "cause:sundance-spas:880series:12035639e97c",
+      "evidence": "Rinse the filter cartridge every 2 weeks and replace it every 12 months.",
+      "evidence_sha256": "1d87b50cfa67e19628f2d458ea5411dd10e9c80663c958ded8a424c97194c44e",
+      "kind": "DOCUMENTED_CAUSE",
+      "label": "The filter cartridge is overdue for rinsing.",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "src": "family:sundance-spas:880series",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    },
+    {
+      "action": "Check the set point on the panel.",
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "cause:sundance-spas:880series:3598fb5720f5",
+      "evidence": "COOL: Water is 20 degrees below the set point.",
+      "evidence_sha256": "0b762b8e022618d2517e79539c8c8c4dbbbb99a981fae2d61f1aa3dcbee92eeb",
+      "kind": "DOCUMENTED_CAUSE",
+      "label": "The water is below the set point.",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "src": "family:sundance-spas:880series",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    },
+    {
+      "action": "Keep the cover on and let the pumps run.",
+      "brief_run_id": "synthetic-fixture-run-1",
+      "dst": "cause:sundance-spas:880series:a2c6278fec0e",
+      "evidence": "Water is near freezing; the pumps run to protect the plumbing.",
+      "evidence_sha256": "b23ccaf32d6d7941b6a0de0d52ce1c404759c45b62ede8fbbb888f119d6c4dfa",
+      "kind": "DOCUMENTED_CAUSE",
+      "label": "The water is near freezing.",
+      "retrieved_at": "2026-09-18T00:00:00+00:00",
+      "source_url": "https://example.com/synthetic/sundance/optima-880-manual",
+      "src": "family:sundance-spas:880series",
+      "validated_at": "2026-09-18T00:00:00+00:00"
+    },
+    {
       "brief_run_id": "synthetic-fixture-run-1",
       "dst": "code:sundance-spas:880series:FLO",
       "evidence": "FLO: The heater senses no water flow. Clean or replace the filter cartridge, then check that the circulation pump runs.",
@@ -36,10 +75,34 @@
   ],
   "graph_version": 1,
   "meta": {
-    "_about": "Synthetic graph fixture for Phase 3 tests (SC7a, route rows 1 to 5). Every edge's evidence is a verbatim span of a synthetic page text in agent/tests/fixtures/pages, served only at an example.com URL; no fact here comes from a real document. The Optima 880 and its 880 Series family carry a HAS_CODE edge for FLO; the Trane XR16 4TTR6036 has a verified IN_FAMILY edge and no code edge, for the top up rows.",
+    "_about": "Synthetic graph fixture for Phase 3 tests (SC7a, route rows 1 to 5). Every edge's evidence is a verbatim span of a synthetic page text in agent/tests/fixtures/pages, served only at an example.com URL; no fact here comes from a real document. The Optima 880 and its 880 Series family carry a HAS_CODE edge for FLO and three DOCUMENTED_CAUSE edges (route row 3 needs config.GRAPH_ONLY_MIN_CAUSES of them); the Trane XR16 4TTR6036 has a verified IN_FAMILY edge and no code or cause edge, for the top up rows.",
     "synthetic": true
   },
   "nodes": [
+    {
+      "key": "cause:sundance-spas:880series:12035639e97c",
+      "label": "The filter cartridge is overdue for rinsing.",
+      "label_norm": "the filter cartridge is overdue for rinsing",
+      "maker": "Sundance Spas",
+      "scope": "880 Series",
+      "type": "cause"
+    },
+    {
+      "key": "cause:sundance-spas:880series:3598fb5720f5",
+      "label": "The water is below the set point.",
+      "label_norm": "the water is below the set point",
+      "maker": "Sundance Spas",
+      "scope": "880 Series",
+      "type": "cause"
+    },
+    {
+      "key": "cause:sundance-spas:880series:a2c6278fec0e",
+      "label": "The water is near freezing.",
+      "label_norm": "the water is near freezing",
+      "maker": "Sundance Spas",
+      "scope": "880 Series",
+      "type": "cause"
+    },
     {
       "code": "FLO",
       "code_norm": "FLO",

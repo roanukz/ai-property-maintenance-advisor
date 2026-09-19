@@ -1,0 +1,31 @@
+{
+ "cassette_version": 1,
+ "case": "live_t_5a00000000000008",
+ "input": {
+  "identity": {
+   "manufacturer": "Sundance Spas",
+   "model": "Optima 880",
+   "serial": "SYN-OPT-000001",
+   "manufacture_date": null
+  },
+  "symptom": "panel shows FLO",
+  "plate_sha256": null
+ },
+ "read_plate": null,
+ "classifier": [],
+ "resume": {
+  "identity": {
+   "manufacturer": "Sundance Spas",
+   "model": "Optima 880",
+   "serial": "SYN-OPT-000001",
+   "manufacture_date": null
+  },
+  "observed_code": "FLO"
+ },
+ "research": {
+  "script": [],
+  "tool_results": []
+ },
+ "synthesize": [],
+ "page_texts": {}
+}

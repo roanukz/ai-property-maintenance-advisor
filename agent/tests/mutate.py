@@ -177,6 +177,9 @@ def child_env(extra: dict[str, str]) -> dict[str, str]:
     }
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env.pop("ADVISOR_GATE", None)
+    # The copies leave data out; the Phase 5 recording test reads (never
+    # writes) the repo's own data folder through this variable.
+    env.setdefault("ADVISOR_PHASE5_DATA_DIR", str(REPO_ROOT / "data"))
     env.update(extra)
     return env
 

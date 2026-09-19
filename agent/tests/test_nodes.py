@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -483,3 +484,24 @@ def test_render_budget_stop_without_a_brief(make_ctx, tmp_path: Path) -> None:
     check_json_native(out)
     with pytest.raises(ValueError, match="needs a brief"):
         render(dict(state, status="ok"), _rt(make_ctx()))
+
+
+def test_sources_block_never_cuts_a_word(tmp_path: Path) -> None:
+    """Mutations synth_block_cut_mid_word and synth_share_cut_mid_word: fitting the
+    sources to the budget cuts a word in half, and the model copies the cut text
+    into the brief (the Phase 6 "deactivated and filte")."""
+    from agent.nodes.synthesize import build_sources_block, cut_at_word
+
+    assert cut_at_word("The heater is deactivated and filter", 34) == "The heater is deactivated and"
+    assert cut_at_word("short text", 50) == "short text"
+    assert cut_at_word("one two", 3) == "one"
+    assert cut_at_word("unbroken", 4) == "unbr"  # no boundary exists, so the plain cut stands
+    budget = config.SYNTH_SOURCE_TOKEN_BUDGET * config.CHARS_PER_TOKEN_ESTIMATE
+    words = " ".join(f"word{i:05d}" for i in range(budget // 5))
+    sources = [{"title": f"Synthetic page {i}", "url": f"https://example.com/{i}", "host": "example.com",
+                "excerpts": [words]} for i in range(3)]
+    block = build_sources_block(sources, tmp_path)
+    assert len(block) <= budget
+    for part in block.split("\n\n"):
+        last = part.split()[-1]
+        assert re.fullmatch(r"word\d{5}", last) or last == "Excerpts:", last

@@ -1,0 +1,585 @@
+{
+  "cassette_version": 1,
+  "case": "hvac",
+  "provenance": {
+    "derived_from": "v1 lookup c45b900046bf",
+    "copied_fields": [
+      "input.symptom",
+      "research.tool_results[*].results[*].url",
+      "research.tool_results[*].results[*].title",
+      "synthesize[*].draft.status",
+      "synthesize[*].draft.matched_identity",
+      "synthesize[*].draft.warranty_caution.text",
+      "synthesize[*].draft.try_first[*].step",
+      "synthesize[*].draft.try_first[*].detail",
+      "synthesize[*].draft.try_first[*].safety_flag",
+      "synthesize[*].draft.candidates[*].code",
+      "synthesize[*].draft.candidates[*].documented_meaning",
+      "synthesize[*].draft.candidates[*].documented_action",
+      "synthesize[*].draft.candidates[*].who",
+      "synthesize[*].draft.candidates[*].why_shown",
+      "synthesize[*].draft.candidates[*].confirmed",
+      "synthesize[*].draft.warranty.cautions[*].text",
+      "synthesize[*].draft.warranty.age_statement",
+      "synthesize[*].draft.warranty.verify[*]",
+      "synthesize[*].draft.source_tiers[*].tier",
+      "expect.cited_urls.try_first[*]",
+      "expect.cited_urls.candidates[*]",
+      "input.identity.manufacturer",
+      "input.identity.model",
+      "input.identity.serial",
+      "input.identity.manufacture_date"
+    ],
+    "public_already": "src/fixtures.js case hvac; briefs/c45b900046bf.html",
+    "synthetic_fields": [
+      "research.script (one search per turn, then a final message)",
+      "research.tool_results[*].query (differ from v1's recorded searched strings)",
+      "research.tool_results[*].results on example hosts (decoys, interleaved between cited sources)",
+      "research.tool_results[*].results[*].score and credits",
+      "research.tool_results[*].results[*].content (empty on real URLs; v1 recorded no text)",
+      "research.script[*].message.usage and synthesize[*].usage (PLAN section 9 typical split)",
+      "synthesize[*].draft evidence, authorship_quote (empty), upgrade_options and maintenance_due (empty)",
+      "synthesize[*].draft source_index values (remapped by URL into the code built registry)",
+      "expect"
+    ],
+    "built_by": "agent/replay/build_cassettes.py",
+    "reviewed": "2026-09-18: privacy diff CLEAN (391 copied strings, 11 denylist entries, 0 hits); approved by Roanuk (delegated to Claude)"
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Trane",
+      "model": "XR16 (4TTR6036)",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "AC not cooling upstairs",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane XR16 4TTR6036 not cooling troubleshooting"
+              },
+              "id": "call_hvac_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane 4TTR6 outdoor unit owner guide"
+              },
+              "id": "call_hvac_search_2"
+            }
+          ],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane air conditioner upstairs warm causes"
+              },
+              "id": "call_hvac_search_3"
+            }
+          ],
+          "usage": {
+            "input_tokens": 6300,
+            "output_tokens": 250,
+            "total_tokens": 6550
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane XR16 condenser coil cleaning guidance"
+              },
+              "id": "call_hvac_search_4"
+            }
+          ],
+          "usage": {
+            "input_tokens": 8450,
+            "output_tokens": 250,
+            "total_tokens": 8700
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane residential AC warranty registration terms"
+              },
+              "id": "call_hvac_search_5"
+            }
+          ],
+          "usage": {
+            "input_tokens": 10600,
+            "output_tokens": 250,
+            "total_tokens": 10850
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research finished after 5 searches; the results above are what I found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 12750,
+            "output_tokens": 250,
+            "total_tokens": 13000
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Trane XR16 4TTR6036 not cooling troubleshooting",
+        "results": [
+          {
+            "url": "https://example.org/replay/hvac/decoy-01",
+            "title": "Synthetic decoy result 01 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.95
+          },
+          {
+            "url": "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting",
+            "title": "Trane Air Conditioner Troubleshooting \u2014 Parts Town Resource Center (states it applies to Trane 4TT units)",
+            "content": "",
+            "raw_content": null,
+            "score": 0.94
+          },
+          {
+            "url": "https://example.net/replay/hvac/decoy-02",
+            "title": "Synthetic decoy result 02 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.93
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-03",
+            "title": "Synthetic decoy result 03 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.92
+          },
+          {
+            "url": "https://example.org/replay/hvac/decoy-04",
+            "title": "Synthetic decoy result 04 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.91
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Trane 4TTR6 outdoor unit owner guide",
+        "results": [
+          {
+            "url": "https://example.net/replay/hvac/decoy-05",
+            "title": "Synthetic decoy result 05 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.948
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-06",
+            "title": "Synthetic decoy result 06 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.938
+          },
+          {
+            "url": "https://example.org/replay/hvac/decoy-07",
+            "title": "Synthetic decoy result 07 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.928
+          },
+          {
+            "url": "https://example.net/replay/hvac/decoy-08",
+            "title": "Synthetic decoy result 08 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.918
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-09",
+            "title": "Synthetic decoy result 09 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.908
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Trane air conditioner upstairs warm causes",
+        "results": [
+          {
+            "url": "https://example.org/replay/hvac/decoy-10",
+            "title": "Synthetic decoy result 10 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.946
+          },
+          {
+            "url": "https://example.net/replay/hvac/decoy-11",
+            "title": "Synthetic decoy result 11 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.936
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-12",
+            "title": "Synthetic decoy result 12 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.926
+          },
+          {
+            "url": "https://www.searshomeservices.com/symptom/trane-central-air-not-cooling",
+            "title": "Trane Air Conditioner Not Cooling: Common Causes & Easy Troubleshooting \u2014 Sears Home Services",
+            "content": "",
+            "raw_content": null,
+            "score": 0.916
+          },
+          {
+            "url": "https://example.org/replay/hvac/decoy-13",
+            "title": "Synthetic decoy result 13 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.906
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Trane XR16 condenser coil cleaning guidance",
+        "results": [
+          {
+            "url": "https://example.net/replay/hvac/decoy-14",
+            "title": "Synthetic decoy result 14 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.944
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-15",
+            "title": "Synthetic decoy result 15 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.934
+          },
+          {
+            "url": "https://example.org/replay/hvac/decoy-16",
+            "title": "Synthetic decoy result 16 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.924
+          },
+          {
+            "url": "https://example.net/replay/hvac/decoy-17",
+            "title": "Synthetic decoy result 17 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.914
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-18",
+            "title": "Synthetic decoy result 18 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.904
+          }
+        ],
+        "credits": 1
+      },
+      {
+        "tool": "search",
+        "query": "Trane residential AC warranty registration terms",
+        "results": [
+          {
+            "url": "https://example.org/replay/hvac/decoy-19",
+            "title": "Synthetic decoy result 19 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.942
+          },
+          {
+            "url": "https://example.net/replay/hvac/decoy-20",
+            "title": "Synthetic decoy result 20 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.932
+          },
+          {
+            "url": "https://example.com/replay/hvac/decoy-21",
+            "title": "Synthetic decoy result 21 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.922
+          },
+          {
+            "url": "https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/",
+            "title": "Air Conditioner Troubleshooting: Why Your AC Is Not Cooling \u2014 Trane Residential",
+            "content": "",
+            "raw_content": null,
+            "score": 0.912
+          },
+          {
+            "url": "https://example.org/replay/hvac/decoy-22",
+            "title": "Synthetic decoy result 22 (hvac)",
+            "content": "Synthetic decoy search result for replay tests. It is not a real page, and no brief may cite it.",
+            "raw_content": null,
+            "score": 0.902
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "draft": {
+        "status": "ok",
+        "matched_identity": "Trane split-system air conditioner, 4TT-series outdoor unit family (guidance fetched covers Trane residential ACs generally and 4TT units specifically; no 4TTR6036-specific manual or error-code table was fetched in this session)",
+        "warranty_caution": {
+          "text": "No warranty document for this unit was fetched. Residential HVAC warranties commonly require registration within a set window after installation and commonly limit or exclude coverage when equipment is used in a commercial or rental application \u2014 the owner must verify this against their own Trane registration certificate and warranty document rather than relying on this brief.",
+          "source_index": null
+        },
+        "happened_before": null,
+        "try_first": [
+          {
+            "step": "Kill power before touching filters or any panel",
+            "detail": "Trane's own troubleshooting guidance for an AC that is not cooling: \"Set your AC to 'OFF' and turn off the breakers that supply it with power\" before cleaning or replacing filters. Do this before opening any filter door or approaching the outdoor unit.",
+            "safety_flag": true,
+            "source_index": 23
+          },
+          {
+            "step": "Confirm the thermostat is in cooling mode and set below room temperature",
+            "detail": "Trane: check the thermostat setting and make sure it is set to cool; if it is set to cool, confirm the temperature setting is at the desired temperature. If it is not set to cool, switch to cooling operation.",
+            "safety_flag": false,
+            "source_index": 23
+          },
+          {
+            "step": "Check for a schedule or energy-saving mode that is delaying cooling",
+            "detail": "Documented check: confirm that no one changed the schedule or turned on energy-saving modes that delay cooling. Relevant at a rental where guests or a prior cleaner may have altered settings.",
+            "safety_flag": false,
+            "source_index": 13
+          },
+          {
+            "step": "Replace dead thermostat batteries",
+            "detail": "Documented remedy for a system that will not run/cool: turn on the thermostat or replace the batteries.",
+            "safety_flag": false,
+            "source_index": 1
+          },
+          {
+            "step": "Clean or replace the air filter",
+            "detail": "With power off at the breaker, clean or replace the filters. Consult a local Trane Comfort Specialist if you are unsure where the filters are located.",
+            "safety_flag": false,
+            "source_index": 23
+          },
+          {
+            "step": "Clear debris from the outdoor condenser coil",
+            "detail": "Documented remedy when the outdoor cooling coil is clogged or blocked: clean up the debris in the outside cooling coil. Keep power off at the breaker while doing this.",
+            "safety_flag": true,
+            "source_index": 1
+          },
+          {
+            "step": "Check whether the circuit breaker is tripped",
+            "detail": "Documented remedy: reset the circuit breaker. If it trips again after reset, stop and leave it off for a technician.",
+            "safety_flag": true,
+            "source_index": 1
+          }
+        ],
+        "candidates": [
+          {
+            "code": null,
+            "documented_meaning": "Clogged or dirty air filter restricting airflow. A clogged filter restricts airflow, causing the evaporator coil to freeze and the system to lose cooling capacity; the AC may run constantly but barely cool.",
+            "documented_action": "Turn off the system at the thermostat, then clean or replace the filter.",
+            "who": "anyone",
+            "why_shown": "Listed as one of the most common documented causes of a Trane central AC not cooling, which is the reported symptom.",
+            "source_index": 13,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Blocked or clogged condenser coil at the outdoor unit \u2014 when operating correctly the condenser fan draws air through the condenser coil to pull heat energy out of the home.",
+            "documented_action": "Clean up the debris in the outside cooling coil.",
+            "who": "anyone",
+            "why_shown": "Trane lists a blocked/clogged condenser coil among documented causes of an AC running but not lowering indoor temperature.",
+            "source_index": 23,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Indoor air handler coil clogged or blocked with dust buildup.",
+            "documented_action": "Wipe away any buildup of dust on the coil or change the air filter.",
+            "who": "technician",
+            "why_shown": "Documented cause of no-cool on Trane air conditioners; accessing the indoor coil is beyond a cleaner's scope, so routed to a technician.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Refrigerant low or leaking.",
+            "documented_action": "Contact an authorized service technician.",
+            "who": "technician",
+            "why_shown": "Trane lists leaking or low refrigerant among the common causes when an AC is not cooling the house.",
+            "source_index": 1,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Failed capacitor, or a failed motor/compressor \u2014 indicated when the outdoor unit is not running or is unusually loud.",
+            "documented_action": "These require professional diagnosis and repair; schedule AC repair service.",
+            "who": "technician",
+            "why_shown": "A bad capacitor is listed among the most common reasons a Trane central AC is not cooling; surfaced by the no-cool symptom.",
+            "source_index": 13,
+            "confirmed": false,
+            "evidence": ""
+          },
+          {
+            "code": null,
+            "documented_meaning": "Thermostat controls set incorrectly, or thermostat electronics/wiring failing (no response after fresh batteries and correct settings).",
+            "documented_action": "Reset the thermostat; if it still does not respond after fresh batteries and proper settings, schedule AC repair service.",
+            "who": "anyone",
+            "why_shown": "Thermostat problems are listed among the most common documented causes of a Trane AC not cooling.",
+            "source_index": 13,
+            "confirmed": false,
+            "evidence": ""
+          }
+        ],
+        "warranty": {
+          "age_statement": "Age cannot be stated. The serial number and manufacture date on the data plate are not readable, so no manufacture-date-to-today (2026-08-18) age calculation is possible for this unit.",
+          "cautions": [
+            {
+              "text": "Residential HVAC warranties commonly carry registration deadlines and commonly restrict coverage for commercial or short-term-rental use. No warranty document was fetched in this session, so nothing here should be read as a statement that any repair is or is not covered.",
+              "source_index": null
+            }
+          ],
+          "verify": [
+            "Locate the outdoor unit's full serial number (data plate on the condenser cabinet, often behind or beside the service panel) and photograph it \u2014 the manufacture date is encoded there.",
+            "Retrieve the original Trane warranty registration certificate and the installing dealer's invoice with the install date.",
+            "Read the warranty document's own terms on commercial / non-owner-occupied / rental use before authorizing any paid repair.",
+            "Confirm the full model number on the data plate (e.g. 4TTR6036xxxxxx) so a technician can pull the correct model-specific service literature."
+          ]
+        },
+        "no_reliable_answer": null,
+        "upgrade_options": [],
+        "maintenance_due": [],
+        "source_tiers": [
+          {
+            "source_index": 23,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 13,
+            "tier": "dealer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 13000,
+        "output_tokens": 3000,
+        "total_tokens": 16000
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "ok",
+    "budget_stopped": false,
+    "candidates": 6,
+    "try_first": 7,
+    "confirmed": 0,
+    "candidate_codes": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "safety_first": true,
+    "cited_urls": {
+      "warranty_caution": null,
+      "try_first": [
+        "https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/",
+        "https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/",
+        "https://www.searshomeservices.com/symptom/trane-central-air-not-cooling",
+        "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting",
+        "https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/",
+        "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting",
+        "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting"
+      ],
+      "candidates": [
+        "https://www.searshomeservices.com/symptom/trane-central-air-not-cooling",
+        "https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/",
+        "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting",
+        "https://www.partstown.com/cm/resource-center/guides/gd2/trane-air-conditioner-troubleshooting",
+        "https://www.searshomeservices.com/symptom/trane-central-air-not-cooling",
+        "https://www.searshomeservices.com/symptom/trane-central-air-not-cooling"
+      ],
+      "warranty_cautions": [
+        null
+      ]
+    },
+    "observed_code": null,
+    "grounding": "unverifiable"
+  }
+}
