@@ -413,6 +413,8 @@ environment.
 | Replay graph isolation (decision 37) | `test_persist.py::test_cli_replay_leaves_runtime_graph_unchanged` | replay | 3 | a temp copy of `data/graph.json` | a CLI replay run leaves it byte identical and writes edges only to the replay graph path | persist ignores the mode |
 | Key scan (PRD:20) | `test_privacy.py::test_no_key_patterns_in_tracked_files` | offline | 1 | every tracked file under `agent/` and `seed/`, except this plan and the scan's own pattern list | no `sk-ant-`, `lsv2_`, Tavily key prefix (likely `tvly-`, unverified), `Authorization` or `x-api-key` header, or long high entropy token | a fixture containing a fake key pattern |
 | Latency (reported, no target) | `test_ledger.py::test_latency_recorded_per_node` | replay | 2 | any cassette | every node has a recorded duration | timing wrapper removed |
+| SC12a (safety flags on a fixed labeled set) | `advisor eval sc12a --live` (`agent/live/sc12a.py`) records Jev replies; `advisor eval sc12a` and `advisor eval sc12a --heldout` score offline (`agent/safety_eval/harness.py`, `agent/safety_eval/stats.py`); held by `test_safety_eval.py::test_heldout_scoring_refused_without_a_lock`, `::test_heldout_scoring_refused_when_the_lock_does_not_match`, `::test_heldout_scored_once_then_only_with_a_reason`, `::test_threshold_selection_follows_the_brief`, `::test_choice_rule_and_its_ties`, `::test_wilson_interval_matches_published_values` | LIVE (Jev replies), then offline scoring | safety (10.11) | `data/eval/sc12a/` (untracked: items, the three blind readers' labels, the lock, replies, held out scores); `agent/safety_eval/item_ids.json`, `labels.json` and `maker_documents.json` (in the repo, no page text) | thresholds from the tune half only (the highest that flags every in scope positive); `lock.json` written before any held out number; the held out half scored once, reporting recall and precision with Wilson 95% intervals for the word rule as published, the tuned word rule, Jev, the tuned word rule plus Jev, and the writer's own flags on all of pool G (held back from the published results: pool G mixes v1's briefs, the replaced build's and the fixed build's, so it waits for a rescore without the replaced build's items); the choice rule (drop precision below 0.60, then highest recall, then higher precision, then no model call) picks what ships. Result, held out (31 positives): word rule as published 20 of 31 (0.645), precision 0.714; tuned 22 of 31 (0.710), 0.647; Jev at 0.51 30 of 31 (0.968), 0.732; tuned word rule plus Jev 30 of 31 (0.968), 0.600. Jev picked (decision 62) | the lock check cut, or its hash comparison cut; a second held out scoring allowed without a recorded reason; the lowest full recall threshold chosen instead of the highest; a candidate below the precision floor kept; the precision tie break reversed |
+| SC12b (every safety step flagged on new live briefs) | `advisor eval sc12b --live` (`agent/live/sc12b.py`), scored by `advisor eval sc12b --score` (`agent/safety_eval/sc12b.py`); held by `test_safety_eval.py::test_sc12b_first_lookup_graph_is_restored_by_hash`, `::test_sc12b_inputs_photo_and_score`, `::test_sc12b_score_reads_like_sc12a`, `::test_sc12b_refuses_a_config_the_choice_rule_did_not_pick`, `::test_sc12b_gate3_prints_the_credit_plan_before_any_refusal`, `::test_sc12b_reports_the_stop_line_after_the_last_run` | LIVE | safety (10.11) | the inputs of runs `t-267045726dd04118` and `t-a6cc7b63e63b41d0` from their live recordings, the photo matched by `plate_sha256`; `data/graph.json` stripped of that model before each run and restored by hash after | 10 first lookups in `cheap`, after the lock and with arm A in; every in scope safety step in the final briefs carries a flag and any miss is published verbatim; each layer's recall and precision on these steps; the writer against its 18 September v2 baseline, counted on the fixed build's briefs only (a step only the replaced build wrote is left out) and held back until Roanuk reviews it; spend checked against the $1.50 stop line after each run. Result: final flags 14 of 14, precision 14 of 16; writer (arm A) 14 of 14, 14 of 14; Jev at 0.51 14 of 14, 14 of 16; word rule, tuned (not shipped) 14 of 14, 14 of 16 | the graph not restored; the photo not matched by hash; a positive left unflagged not listed; SC12b run under a configuration the choice rule did not pick; the credit plan printed after a refusal; the stop line not checked after the last run |
 
 ---
 
@@ -1699,6 +1701,117 @@ changes, and `test_published_files_unchanged` holds the new hashes.
 - `agent/tests/test_teardown.py` holds the teardown's front matter format and
   the no dash rule for `index.html` and `tool.html`.
 - The zero API call invariant (C10) is unchanged and still tested.
+
+### 10.11 Safety step flagging as built (29 and 30 September 2026)
+
+Roanuk's brief for flagging safety steps with Jev, TypeSafe's typed judgment
+model, answers the miss recorded in 10.9 (the FLO first lookup's breaker step
+carried no safety flag) and replaces D5 (decision 60). Every layer is raise
+only: a layer can set `safety_flag`, none can clear one, and none adds, drops
+or reorders a step beyond rule 5's stable sort. DECISION-LOG, from "Safety step
+flagging, Gate 0" on, is the record; where this section and the log differ,
+the log wins.
+
+**What was built.**
+
+- **The `safety_check` node** (`agent/nodes/safety_check.py`), wired
+  `synthesize -> safety_check -> validate`. One Jev call per `try_first` step,
+  with the state filtered to appliance type, step and detail. It writes
+  `safety_signals` (per step: the probability, the returned model string, the
+  request ID and the question hash), keyed by `step_key`, a hash of the
+  normalized step plus detail. It skips with no draft, on `budget_stopped`, or
+  when `JEV_SAFETY_ENABLED` is False, and a resumed thread never asks Jev twice.
+- **The word rule** (`agent/rules/step_text.py::word_rule`): whole words in
+  any case, from a word list. The published list and the tuned list are both
+  pinned in the lock.
+- **Raise only rules** (`agent/rules/safety.py::raise_flags`), called by
+  `run_rules` just before rule 5 so the sort sees raised flags. `run_rules`
+  stays pure. Only the layers in `config.SAFETY_LAYERS` may raise; every
+  layer's answer, the final flag and the layer that set it are kept per step
+  in the run record.
+- **The judge wrapper** (`agent/safety_judge.py`). `LiveJudge` reserves each
+  call in the ledger under provider `typesafe`, charges `usage.input_tokens`
+  with output at $0, pins `jev-1.13.0`, allows 5 seconds and 1 retry, and turns
+  every failure (API error, timeout, 429, unparseable reply, another model
+  string, refused reservation, missing key, any other exception) into a failed
+  check. `ReplayJudge` serves recorded answers by step hash and refuses a
+  reply recorded under another question hash or model.
+- **Cassette and recorder support**: an optional `safety_check` key, covered
+  by the strict loader, the recorder and the privacy diff. A replay whose
+  cassette has no recorded answers gets no signal and no notice line, and its
+  run record says the check was not recorded.
+- **The notice line** (`agent/render/brief_html.py`), shown only when the
+  check was enabled, attempted and failed: "An automatic safety check did not
+  run on this brief. Treat any step at a breaker, a panel, a heater or a gas
+  valve as a safety step." Legacy render is unchanged.
+- **The evaluation harness**: `agent/safety_eval/` (pools, labels, stats, the
+  SC12a harness and the SC12b scorer), `agent/live/sc12a.py`,
+  `agent/live/sc12b.py`, and the commands `advisor safety-set
+  build|packet|labels|lock`, `advisor eval sc12a` (with `--live` or
+  `--heldout`) and `advisor eval sc12b` (with `--live` or `--score`). Page
+  text stays in `data/`; `agent/safety_eval/` holds only item IDs, labels by
+  ID, the protocol, the wordings and the maker manual list.
+- **Arm A**: the last sentence of item 5 in `SYNTHESIS_SYSTEM` is Roanuk's
+  revised wording, in place before SC12b.
+
+**Decisions 53 to 63** (DECISION-LOG, 29 and 30 September 2026).
+
+| # | Decision |
+|---|---|
+| 53 | Pool D order: maker site pages, then a fixed list of maker written manuals on other hosts (recorded before labeling), then dealer pages, until the held out half has 30 in scope positives or the pages run out |
+| 54 | Pin `jev-1.13.0`; a reply from any other version is a failed check |
+| 55 | The check catches TypeSafe's base error class and any other exception; every failure leaves the word rule and the writer's flag in place (with Jev alone shipped, the writer's flag) and shows the notice line |
+| 56 | Jev's answers are matched to steps by the step's own text, not its position |
+| 57 | Each Jev call gets 5 seconds and 1 retry |
+| 58 | Sampling: at most 25 sentences from one page, pages grouped into families that never straddle the split, halves balanced by item count |
+| 59 | Halves balanced within each appliance; the writer's own flags are scored on all of pool G, because the held out half has no generated steps |
+| 60 | Arm A: the writer instruction's safety sentence is Roanuk's revised wording, replacing D5; measured in SC12b |
+| 61 | The production question is wording 3 and the shipped word list is the tuned list, both as locked |
+| 62 | What ships: Jev alone, `SAFETY_LAYERS = ("jev",)`, `JEV_THRESHOLD = 0.51`, `JEV_SAFETY_ENABLED = True` |
+| 63 | The build credit cap rises from 150 to 300 Tavily credits; the dollar caps are unchanged |
+
+**Results.**
+
+- **Gate 1, the labeled set.** 345 items, 170 tune and 175 held out; in scope
+  positives 45 tune (electrical 42, heat 3) and 31 held out (electrical 27,
+  heat 3, gas 1). The three blind readers agreed on 338 of 345 safety answers
+  (0.980), and on 320 with the hazard too (0.928). The labels come from three
+  model readers, not from people.
+- **Tuning** (tune half only, 680 Jev calls, $0.0167): wording 3 at threshold
+  0.51 kept recall 45 of 45 with Jev precision 0.865 and no flag on an "other"
+  step. The tuned word list reached recall 42 of 45 and precision 0.955,
+  against 29 of 45 and 0.853 for the published list.
+- **SC12a, held out** (175 Jev calls, $0.0049, scored once after the lock):
+  see the section 5 row. The choice rule kept all three candidates; Jev and
+  the tuned word rule plus Jev tied on recall and Jev had the higher precision. Every
+  held out item Jev scored 0.8 or more (23) is a positive. The published
+  breaker step scores 0.98. SC12a in total: 855 Jev calls, $0.0216.
+- **SC12b** (build `9a64835e86a5a6c8`): ten first lookups, all ok, every Jev
+  call answered, no notice line. 31 steps (23 distinct), 14 in scope
+  positives, all 14 flagged, 2 false flags (both mechanical fan steps raised
+  by Jev at 0.72 and 0.58). The writer under arm A caught all 14 alone; Jev
+  added no catch. The tuned word rule, not shipped, caught 14 of 14 with 2
+  false flags of its own (14 of 16). $0.4662 and 47 Tavily credits.
+- **Spend.** This work: $0.4878, under its $1.50 stop line. Build total:
+  $1.0785 of $5 and 110 of 300 Tavily credits.
+- The replay goldens keep the writer's own flags: the replay cassettes hold no
+  Jev answers, so under the shipped configuration nothing is raised in replay.
+
+**Open questions.**
+
+1. Whether a failed check should fall back to the word rule. With Jev alone
+   shipped, a failed call leaves the writer's flags and the notice line, and no
+   word rule backs them up. The brief's choice rule allows this; Roanuk
+   decides.
+2. The tuned word list over-fit: precision 0.955 on the tune half, 0.647 held
+   out, below the published list's 0.714, for 2 more positives. Words such as
+   "door" and "box" found harmless steps in unseen pages. It is not a
+   production layer today; if it becomes the fallback, which list to use is
+   part of question 1.
+3. The ten SC12b recordings passed the privacy scan and stay untracked until
+   Roanuk approves the privacy diff.
+4. The labels come from three model readers, not people. No human labeled any
+   item, so every recall and precision figure here is against model labels.
 
 ---
 

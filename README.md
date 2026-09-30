@@ -40,10 +40,13 @@ product.
 
 Every result on `tool.html` is verbatim output from a live run of v2 on 18
 September 2026 (build `839b1854a0aaf25e`), captured into `src/fixtures.js` and
-replayed. Each case names its run ID. Three reasons:
+replayed. Each case names its run ID. That build predates the safety step check
+described below, so the demo's briefs carry the writing model's own safety flags
+only. Three reasons:
 
 1. **It costs nothing to visit and nothing to host.** The working build calls
-   two paid APIs, Claude and Tavily, on every question it has not seen before.
+   Claude and Tavily on every question it has not seen before, and TypeSafe's
+   Jev on every step to try first that it writes, all billed by use.
    A public demo wired to that is a bill that scales with strangers.
 2. **The case that matters is always reachable.** A visitor on a live tool would
    have to invent a fake model number to see the refusal behavior. Here it is a
@@ -98,6 +101,11 @@ remembers. Its source is in `agent/`.
   were actually retrieved, tier labels can be lowered but never raised, a panel
   code narrows the answer, a refusal clears every candidate, and a price appears
   only when a cited page states it.
+- **A safety check outside the writer.** Jev, a judgment model from TypeSafe,
+  reads each step to try first and answers how likely it is to be a safety step
+  (electrical, heat or gas). It can raise a safety flag the writing model left
+  off, never clear one, and never add a step. If the check fails, the brief says
+  so in one line.
 - **Spend capped in code.** Every paid call is reserved in a ledger before it is
   made: $0.15 per brief and $5 for the whole build, and every paid command shows
   its planned calls and cost and waits for a typed "proceed".
@@ -108,11 +116,15 @@ Each criterion was set before the build. "Replay" means the whole graph ran on
 recorded model replies at no cost: it proves the rules, routing, ledger and
 renderer, and says nothing about the model. "Live" means real calls to Claude
 Haiku 4.5 and Tavily on 18 September 2026, all on one build
-(`839b1854a0aaf25e`).
+(`839b1854a0aaf25e`), except the two safety step rows (SC12a and SC12b): their
+Jev calls and ten live lookups ran on 30 September 2026, the lookups on the
+later build that added the check (`9a64835e86a5a6c8`). Recall is the share of
+real safety steps a check flagged; precision is the share of its flags that
+were real safety steps.
 
 | Criterion | Result | How it was measured |
 | --- | --- | --- |
-| The offline suite passes with no key and no network | Pass | 2,245 tests; all 2,245 pass with the network blocked on the build machine. A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. |
+| The offline suite passes with no key and no network | Pass | 2,584 tests; all 2,584 pass with the network blocked on the build machine. A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. |
 | v1's and v2's validators agree | Pass | 180 payloads through v1's own TypeScript validator and v2's Python port; every accept and reject decision matches. Run against v1's private source on 18 September 2026. |
 | The five v1 cases give v1's outcome | Pass, replay | One confirmed candidate for a panel code, several for a vague symptom, no invented codes, NO RELIABLE ANSWER for an invented model, a halt on a blurry plate. |
 | A refusal never carries candidates | Pass | Unit and property tests. |
@@ -125,18 +137,22 @@ Haiku 4.5 and Tavily on 18 September 2026, all on one build
 | Service history is cited | Pass, replay and live | Live, with the synthetic property records attached, the hot tub brief cited the prior service record under "this has happened before", stated the unit's age as worked out in code from its install date, and quoted the synthetic warranty terms: 0 searches, $0.0065, 4.8 s. |
 | Upgrade options are cited or absent | Pass, replay | A discontinued model lists only successors that a fetched page names. |
 | The brief is self contained and escaped | Pass | Nothing loads from outside the page, all model text is escaped, and a legacy mode reproduces the four published v1 briefs byte for byte. |
-| Spend stays under the caps | Pass, live | All 11 live runs stayed under $0.15 (the highest was $0.0632). The rerun that produced these results cost about $0.32; the whole build spent $0.59 of $5, including runs on an earlier build that was replaced. |
+| Spend stays under the caps | Pass, live | All 11 live runs stayed under $0.15 (the highest was $0.0632), and so did the ten SC12b lookups (the highest was $0.0589). The rerun that produced these results cost about $0.32; by 18 September the whole build had spent $0.59 of $5, including runs on an earlier build that was replaced. The safety step work of 29 and 30 September cost $0.4878, and the whole build now stands at $1.0785 of $5 and 110 of its 300 Tavily credits. |
+| Safety steps are flagged, on a fixed labeled set (SC12a) | Measured, live: the choice rule picked Jev, which flagged 30 of 31 held out safety steps | 345 steps, labeled before any scoring: sentences from maker and dealer documentation and steps the tool wrote in earlier briefs. Three model readers, not people, labeled each one blind; they agreed on 338 of 345. The set was split into a tune half (170) and a held out half (175, with 31 safety steps); each check's settings were chosen on the tune half and locked in a file before the held out half was scored, once. Held out, against the 31 safety steps: the word rule as published (breaker, power, heat) flagged 20 (recall 0.645, precision 0.714); the word rule tuned on the tune half (it drops the bare word heat and adds wire, panel, door, disconnect, electrical, jumper and box), 22 (0.710, 0.647); Jev flagging when its answer, a probability from 0 to 1, is 0.51 or higher, 30 (0.968, 0.732); the tuned word rule plus Jev, 30 (0.968, 0.600). The held out half has no steps the tool wrote, so the writing model is measured by SC12b below. The choice rule, written before any result, drops a candidate (tuned word rule, Jev, or the tuned word rule plus Jev) below precision 0.60, then takes the highest recall, then the higher precision: all three stayed, Jev and the tuned word rule plus Jev tied on recall, and Jev had the higher precision, so Jev ships at 0.51. The tuned word list did not hold up: precision 0.955 on its tune half, 0.647 held out. 855 Jev calls, $0.0216. |
+| Every safety step in new live briefs is flagged (SC12b) | Pass, live: 14 of 14 | Ten first lookups in cheap mode on 30 September 2026, five with the hot tub FLO input of run `t-267045726dd04118` and five with the air conditioner input of run `t-a6cc7b63e63b41d0`. Their briefs held 31 steps; the same three model readers called 14 of them safety steps, and all 14 were flagged, with 2 false flags (16 flagged). The writing model, under the revised instruction that spells out which steps count, flagged all 14 by itself with no false flag. Jev flagged the same 14 and added the two false flags, both fan blade steps, so it caught nothing the writer missed. The tuned word rule, which is not shipped, also flagged all 14, with 2 false flags on other steps (14 of 16). There is no clean comparator for the writer before the revised instruction: most of the safety steps in the 18 September briefs that would give one came from the build that was replaced, so that comparison is held back. The sample is small: 14 safety steps from two inputs, mostly breaker steps, so the lower end of recall's 95% interval is 0.78; SC12a's held out half is the stronger evidence for Jev itself. $0.4662 and 47 Tavily credits. |
 
 Latency had no target. Live briefs that researched from scratch took 21.4 and
 51.3 s, and refusals 17.0 to 35.0 s. Briefs answered from the graph alone took 4.8
 and 5.2 s, and the two short top ups of 2 searches took 12.6 and 15.5 s.
 
 One finding about the model: on the hot tub's first lookup, a step that says to
-turn off power at the breaker was not flagged as a safety step. The teardown
-puts safety flagging first in what comes next.
+turn off power at the breaker was not flagged as a safety step. SC12a and SC12b
+above test the fix: Jev scores that step 0.98, so it is now flagged. With Jev
+alone shipped, a failed check falls back to the writer's own flags and a notice
+line, not to the word rule; whether it should is an open question.
 
 Every test is paired with a planted bug in `agent/tests/mutations.toml` that it
-must catch, and all 918 are caught. What was decided, what it cost, and what
+must catch, and all 1,105 are caught. What was decided, what it cost, and what
 went wrong on the way is in `DECISION-LOG.md`.
 
 ### The recorded v2 demo
@@ -182,7 +198,8 @@ command:
 uv run advisor ask --symptom "panel shows FLO" --appliance appl-optima880 --cassette agent/tests/cassettes/synthetic/optima_history.json
 ```
 
-A live run needs `ANTHROPIC_API_KEY` and `TAVILY_API_KEY` in a `.env` file (see
+A live run needs `ANTHROPIC_API_KEY`, `TAVILY_API_KEY` and, while the safety
+check is on, `TYPESAFE_API_KEY` in a `.env` file (see
 `.env.example`; `.env` is never committed), `ADVISOR_MODE=cheap` set in the
 shell, and `--live`. The first live run on a new checkout also needs
 `--new-ledger` to create the spend ledger. Every live command prints what it

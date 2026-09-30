@@ -838,3 +838,347 @@ is still untested, because the classifier matched none of them.
 **Next:** put one brief in front of a working technician; decide whether code
 should flag steps that cut power; tighten the cause rule so a quote naming only
 a component cannot pass.
+
+---
+
+## Safety step flagging, Gate 0: facts checked, 29 September 2026
+
+Roanuk's brief for flagging safety steps with Jev, TypeSafe's typed judgment
+model, starts with a gate that only reads and checks. Every fact it relies on
+was checked against the repo, TypeSafe's live docs, the published SDK and the
+local data, and each disputed fact was checked again by a second reader.
+
+**One test call:** with Roanuk's "proceed", one Jev call asked the brief's
+safety question about the published breaker step. It answered 0.97, used 384
+input tokens, cost $0.000016 and came back as model `jev-1.13.0`. The ledger
+could not yet reserve a TypeSafe call, because `reserve()` assumed Anthropic,
+so its reserve, charge and release rows were written from a scratch script
+under provider `typesafe`.
+
+**Corrected facts:** the published briefs hold 32 steps, 8 flagged, not 34.
+The rerun inputs are in the live recordings, not the run records. TypeSafe
+paused signups from 22 to 27 September. "jev" is not a documented model name.
+Timeouts, connection failures and a missing key raise TypeSafe errors that
+`TypeSafeAPIError` does not catch.
+
+**Decided:**
+- **53. Where the labeled set comes from.** Pages written on the maker's own
+  site cannot supply 30 safety steps for the held out half: they hold about
+  111 usable sentences, and a keyword count suggests about 19 safety steps.
+  The Sundance Optima 880 manuals are written by the maker but hosted on other
+  sites. Roanuk chose the order: maker site pages, then maker written manuals
+  on other hosts (a fixed list recorded before any labeling), then dealer
+  pages, until the held out half has 30 safety steps or the pages run out.
+- **54.** The check pins `jev-1.13.0`. A reply from any other version counts
+  as a failed check, because the thresholds belong to the version they were
+  set on.
+- **55.** The check catches TypeSafe's base error class and any other
+  exception, so every failure leaves the word rule and the writer's flag in
+  place and shows the notice line.
+- **56.** Jev's answers are matched to steps by the step's own text, not its
+  position, because the upgrade pass revalidates without a new draft.
+- **57.** Each call gets 5 seconds and 1 retry, so a failing check cannot hold
+  a brief for half a minute per step.
+
+**Cost:** $0.000016. The build has spent $0.5907 of its $5 cap and 63 of its
+150 Tavily credits.
+
+---
+
+## Safety step flagging: the labeled set and the writer instruction, 29 September 2026
+
+The build of the check, the word rule and the evaluation harness came first,
+with no paid call. Three reviewers raised 16 problems, all confirmed by a
+second reader and fixed; the most serious was that every live SC12b run would
+have crashed after its paid calls. The full suite passes and all 1,062 planted
+bugs are caught. Before any item was labeled, the first build of the labeled
+set showed the brief's sampling could not give two comparable halves, so it
+was changed; no reader, score or lock existed yet.
+
+**Decided:**
+- **58. Sampling.** At most 25 sentences from any one page (a single hot tub
+  manual had filled 138 of the 300 items), pages grouped into families for the
+  split so the same manual across years, and runs that answered the same
+  question, never straddle it, and halves balanced by item count, families
+  taken in the order of a stable hash.
+- **59. Balance by appliance, and where the writer is scored.** Halves are
+  balanced within each appliance (the first balanced build put 85% air
+  conditioner text in the held out half), and two revisions of one Trane
+  manual share a family. Every question the writer answered holds a worked
+  example, which the brief sends to the tune half, so the held out half has no
+  generated steps. The writer's own flags are therefore scored on all of pool
+  G; the writer has no tuned setting, so the tune half is fair for it, and the
+  report says the writer arm is measured on different items from the others.
+  The set: 300 items, 158 tune and 142 held out; air conditioner 85 and 68,
+  hot tub 73 and 74.
+- **60. Arm A.** The writer instruction's safety sentence is Roanuk's revised
+  wording, word for word. This replaces design change 5 ("no prompt change
+  for safety steps"). It is measured in SC12b, against the 18 September
+  writer.
+
+**The fixed list of maker manuals** (decision 53) was reviewed by Claude
+against the stored pages before labeling: 3 Sundance 880 owner's manuals, 2
+Trane documents and 3 AquaRest owner's manuals, with 10 off topic or forum
+pages left out of pool D. Its hash is pinned in the set and the lock.
+
+**Goldens:** the published word rule raises three flags in the replay goldens,
+pending Roanuk's review. v2_flo "Remove the filter cartridge and see whether
+the FLO message clears" (heater in the detail; probably a false positive under
+the label protocol); v2_hvac "Clean or replace the air filter" (power and
+breaker in the detail; moves from 7th to 2nd); v2_notheating "Raise the
+temperature setpoint with the filter out and see whether the heater engages"
+(moves from 6th to 3rd).
+
+**Cost:** $0.
+
+---
+
+## Safety step flagging, Gates 1 and 2: labels, tuning and the lock, 30 September 2026
+
+**Gate 1.** Three blind readers labeled every item with the protocol and worked
+examples only; each reader returned its answers without opening any file. The
+first 300 items left the held out half 6 short of 30 in scope positives, so
+the stopping rule added the remaining 45 items (the pages then ran out) and the
+same readers labeled them before anything was scored. Final set: 345 items,
+170 tune and 175 held out; in scope positives 45 tune (electrical 42, heat 3)
+and 31 held out (electrical 27, heat 3, gas 1). The readers agreed on 338 of
+345 safety answers (0.980), and on 320 with the hazard too (0.928). The labels
+come from three model readers, not from people.
+
+**Tuning, tune half only.** 680 Jev calls, $0.0167. Each configuration's
+threshold is the highest that still flags every in scope positive.
+
+| Wording | Jev threshold | Jev precision | Word rule plus Jev precision | Flags on "other" steps |
+|---|---|---|---|---|
+| 1, the brief's starting wording | 0.24 | 0.375 | 0.542 | 23 |
+| 2, plus criteria from the protocol's yes and no lists | 0.34 | 0.577 | 0.776 | 16 |
+| 3, plus two boundary cases from the protocol (an equipment access door or panel is yes; refrigerant or pressure work and running with the filter out are no) | 0.51 | 0.865 | 0.833 | 0 |
+| 4, wording 3 asked as a question | 0.45 | 0.750 | 0.726 | 5 |
+
+Recall is 45 of 45 in every row. Wording 3 is locked.
+
+The word rule, tuned: each word that gained recall with no new false flag was
+added, in order of gain, then published words were tested for removal.
+Published list: recall 29 of 45, precision 0.853. Add "wire": 32, 0.865. Add
+"panel": 35, 0.875. Add "door": 38, 0.884. Add "disconnect": 39, 0.886. Add
+"electrical": 40, 0.889. Add "jumper": 41, 0.891. Add "box": 42, 0.894. Plurals
+of the added words: no change. Drop "heat" (it caught only a thermostat step
+and two cover and siting steps): 42, 0.955. No other published word could go
+without losing a positive. Tuned list: recall 42 of 45, precision 0.955.
+
+**Decided:**
+- **61.** The production question is wording 3 and the shipped word list is
+  the tuned list, both as locked below. A test checking the layer mechanics
+  now pins the published list it was written against.
+
+**Gate 2, the lock** (`data/eval/sc12a/lock.json`, written before any held out
+number existed):
+
+```json
+{
+  "criteria": {
+    "false": "Ordinary use of the controls (pressing a button, changing a mode or setpoint for normal use), checking water level or water chemistry, cleaning or swapping a filter, or a step whose only hazard is mechanical, chemical, pressure, water or a fall, unless the step or its detail brings in one of the yes cases. Refrigerant, nitrogen, vacuum or other pressure work, and running the equipment with the filter out, are no unless the step or its detail brings in one of the yes cases.",
+    "true": "The step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset (a circuit breaker, a disconnect, a GFCI, unplugging the unit, a power switch used to cut power for service, or a gas valve); it has the reader open, touch or work near something that can be electrically live, hot or carrying gas (an equipment panel or cabinet, wiring, a heater or heating element, a burner, hot water or a hot surface); it checks one of those hazards before contact, such as reading an indicator light before touching anything; or it runs or tests a heater or burner as a diagnostic. Removing or opening an access door, panel, cover or control box on the equipment counts as working near something that can be live."
+  },
+  "locked_at": "2026-09-30T15:56:57+00:00",
+  "maker_documents": "dd513bf70a30b54eb88c5fe0fc2a77b5ecaca42333945aa739c047443abc8f78",
+  "model": "jev-1.13.0",
+  "question_hash": "34fb2f3b18541662",
+  "sha256": {
+    "criteria": "3b51fe2098ef198b3b7d7d9be6f5b82e02690456be8a15a7c654a7039b5fcd69",
+    "item_ids": "686e00ee6934cd777f4b749163eea4c9c98d77cf7b27f84f2b011fd059001576",
+    "labels": "5c34a7c92a89b2729c23e790ea37bed7019581ebbca0796011c3b88fe45b71a1",
+    "maker_documents": "502c0dc318b2af55dcd734dbf5c4fa0e00e3badf90779e37cae5e4283b0efe2d",
+    "model": "3b144d5e6bb7bf4cafa48404341aafa9ada977d2f3425ee65a4a0e800d2cc00c",
+    "split": "9884207337762e9d4c9d94d2b6f84e731d7c8cbe2a699449efa1538f7c097b78",
+    "thresholds": "1405a875b43315e3f565a3c8707682d3e1b9ea80e11b910616e05becdc2c16e1",
+    "word_list_published": "03cb1ffc13b4e5ba9b997f170e7bc4323502139bd91245d62ac4b5ecf0550dba",
+    "word_list_tuned": "95b49beef0eb765f4ee570e2661ce19bd070481d00374cc25ffe325eb3b462a8",
+    "wording": "25a5448c3af6a71bf6204f419c65c1aca7a77d50b8ab64aaee2e17b2e8e19cb4"
+  },
+  "thresholds": {
+    "jev": {
+      "rule": "full_recall",
+      "threshold": 0.51
+    },
+    "word+jev": {
+      "rule": "full_recall",
+      "threshold": 0.51
+    }
+  },
+  "word_list_published": [
+    "breaker",
+    "breakers",
+    "power",
+    "powered",
+    "powering",
+    "heat",
+    "heater",
+    "heaters",
+    "heating",
+    "heated"
+  ],
+  "word_list_tuned": [
+    "breaker",
+    "breakers",
+    "power",
+    "powered",
+    "powering",
+    "heater",
+    "heaters",
+    "heating",
+    "heated",
+    "wire",
+    "wires",
+    "panel",
+    "panels",
+    "door",
+    "doors",
+    "disconnect",
+    "disconnects",
+    "electrical",
+    "jumper",
+    "box"
+  ],
+  "wording": "Doing this step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset; it has the reader open, touch or work near something that can be electrically live, hot or carrying gas; it checks such a hazard before contact; or it runs or tests a heater as a diagnostic."
+}
+```
+
+**Cost:** $0.0167 for the tune half. The build has spent $0.6074 of its $5
+cap and 63 of its 150 Tavily credits.
+
+---
+
+## Safety step flagging: the held out half and what ships, 30 September 2026
+
+The held out half was asked once, under the lock (175 Jev calls, $0.0049), and
+scored once. It holds 31 in scope positives. Wilson 95% intervals in brackets.
+
+| Arm | Recall | Precision |
+|---|---|---|
+| Word rule, as published | 20 of 31, 0.645 [0.469, 0.789] | 0.714 [0.529, 0.847] |
+| Word rule, tuned | 22 of 31, 0.710 [0.534, 0.839] | 0.647 [0.479, 0.785] |
+| Jev, wording 3 at 0.51 | 30 of 31, 0.968 [0.838, 0.994] | 0.732 [0.581, 0.843] |
+| Word rule plus Jev | 30 of 31, 0.968 [0.838, 0.994] | 0.600 [0.462, 0.724] |
+| Writer's own flags, on all of pool G (decision 59) | 10 of 14, 0.714 [0.454, 0.883] | 0.909 [0.623, 0.984] |
+
+No held out item carries a writer flag, so each candidate equals its layer
+alone. Flags on steps whose only hazard is "other": 4 for Jev and for word
+rule plus Jev, 0 for either word rule.
+
+**Decided:**
+- **62. What ships: Jev.** The choice rule kept all three candidates (each at
+  precision 0.60 or more), Jev and word rule plus Jev tied on recall, and Jev
+  has the higher precision. `SAFETY_LAYERS = ("jev",)`, `JEV_THRESHOLD = 0.51`,
+  `JEV_SAFETY_ENABLED = True`. The published breaker step scores 0.98 under the
+  locked wording, so the published miss is flagged.
+
+**Worth recording:**
+- The tuned word list did not hold up. On the tune half it scored precision
+  0.955; held out it scored 0.647, below the published list's 0.714, for 2
+  more positives. It was tuned on 45 positives, and words such as "door" and
+  "box" found harmless steps in pages it had not seen.
+- With Jev alone shipped, the word rule is not a production layer. When a Jev
+  call fails, the brief keeps the writer's flags and shows the notice line
+  telling the reader to treat any step at a breaker, a panel, a heater or a
+  gas valve as a safety step; no word rule backs it up. The brief's choice rule
+  allows this; whether a failed check should fall back to the word rule is a
+  question for Roanuk.
+- Jev's highest answers are reliable on this set: every held out item it
+  scored 0.8 or more (23) is a positive. Between 0.5 and 0.8 it is mixed.
+- The replay goldens go back to the writer's own flags: the replay cassettes
+  hold no Jev answers, so under the shipped configuration nothing is raised.
+  The three word rule flags recorded on 29 September no longer apply.
+
+**Cost:** $0.0049. SC12a in total: 855 Jev calls, $0.0216. The build has spent
+$0.6123 of its $5 cap and 63 of its 150 Tavily credits.
+
+---
+
+## Safety step flagging, Gate 3: the credit cap, 30 September 2026
+
+At Gate 3 the 87 Tavily credits left covered the 80 planned for SC12b's first
+passes but not the ceiling of 100 if every run reached its per run cap.
+
+**Decided:**
+- **63.** Roanuk raised the build credit cap from 150 to 300, the alternative
+  his brief offered under decision 1. It costs nothing on Tavily's free tier
+  of 1,000 credits a month. The dollar caps are unchanged. The test that checks
+  Gate 3's credit plan now pins the old cap it was written for.
+
+---
+
+## Safety step flagging, SC12b: ten live first lookups, 30 September 2026
+
+Ten first lookups ran on the new build in cheap mode, after the lock and with
+arm A's revised instruction in: five with the hot tub FLO input of run
+t-267045726dd04118 and five with the air conditioner input of run
+t-a6cc7b63e63b41d0. Before each run that model's facts left the graph, and the
+graph file was restored afterward; its hash was the same before and after the
+batch. Every run finished ok, every Jev call was answered, and no brief showed
+the notice line.
+
+**Measured:** the runs wrote 31 steps (23 distinct). The same three blind
+readers labeled the 20 not already labeled in SC12a: 14 of the 31 steps are in
+scope safety steps.
+
+| Layer on the 31 steps | Recall | Precision |
+|---|---|---|
+| Final flags, as the briefs show them | 14 of 14 | 14 of 16 |
+| Writer, revised instruction (arm A) | 14 of 14 | 14 of 14 |
+| Jev at 0.51, the shipped layer | 14 of 14 | 14 of 16 |
+| Word rule, tuned (not shipped) | 14 of 14 | 14 of 16 |
+
+The writer on 18 September, before arm A, flagged 3 of the 5 safety steps in
+its v2 briefs; search results drift between runs, so that comparison is loose.
+
+**Worth recording:** every in scope step was flagged, so there is no miss to
+publish. On these runs the revised instruction alone caught all 14; Jev added
+no catch and raised two steps the readers did not call safety steps ("Check
+for a broken fan blade in the outdoor unit" at 0.72 and "Spin the fan blade by
+hand to see if it rotates freely" at 0.58, both mechanical). The sample is
+small and repetitive: 14 positives from two inputs, mostly breaker steps, so
+the lower bound of recall's 95% interval is 0.78. SC12a's held out half, where
+Jev caught 30 of 31, is the stronger evidence for the code layer; SC12b shows
+the instruction change doing most of the work on familiar questions.
+
+**Cost:** $0.4662 and 47 Tavily credits for the ten runs, against a plan of
+about $0.65. This work in total: $0.4878, under its $1.50 stop line. The build
+has spent $1.0785 of its $5 cap and 110 of its 300 Tavily credits. The ten
+recordings passed the privacy scan and stay untracked until Roanuk approves
+the privacy diff.
+
+---
+
+## Safety step flagging: what is published, and a correction, 30 September 2026
+
+The README, the teardown (Part 9's safety finding, with the held out table,
+and Part 10's first item, now done) and the plan (section 5 rows and section
+10.11) report SC12a and SC12b. A fact check and a house style review raised
+15 problems, each checked by a second reader, and all were fixed.
+
+**Correction to the three entries above.** Pool G, the tool's own earlier
+steps, pools v1's briefs (Claude Opus 5, 18 August), the replaced v2 build of
+18 September and the fixed v2 build, as the brief defined it ("every live run,
+both builds"). Using those steps as text to score Jev and the word rule is
+sound. But the writer arm scored on them (10 of 14, decision 59) and the "18
+September writer" comparator for SC12b (3 of 5) partly measure the replaced
+build, which is never a result. Both are withdrawn and appear on no published
+page; the SC12b scorer now counts the fixed build's briefs only, which gives
+1 of 2, too few to report. The writer's own measure on this work is SC12b:
+under the revised instruction it flagged all 14 safety steps.
+
+**Decided:**
+- **64.** The writer arm and the 18 September comparator are not reported,
+  for the reason above. What the page reports for the writer is SC12b alone.
+
+**Worth recording:** the SC12b runs carry build `9a64835e86a5a6c8`. Since
+then only the evaluation scorer and the committed labels under
+`agent/safety_eval/` changed; the agent's runtime files did not. The build
+fingerprint counts both, so the tree's fingerprint differs from the runs'.
+
+**Final checks on this tree:** 2,584 tests pass, with the network blocked and
+no keys, in normal and gate mode; all 1,105 planted bugs are caught.
+
+**Cost:** $0. Nothing is committed; the SC12b recordings stay untracked until
+Roanuk approves the privacy diff.

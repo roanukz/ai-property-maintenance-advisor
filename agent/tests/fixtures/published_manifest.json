@@ -1,8 +1,8 @@
 {
-  "note": "sha256 of every published file. v1's four briefs/*.html, demo-assets/ and src/tokens.css are unchanged from commit 1abffe9; index.html, tool.html, src/demo.js, src/demo.css, src/fixtures.js, src/teardown.css and briefs/v2/ were changed on purpose on 18 September 2026 for the v2 teardown and the recorded v2 demo, with Roanuk's approval. Regenerate only when a published page is changed on purpose.",
+  "note": "sha256 of every published file. v1's four briefs/*.html, demo-assets/ and src/tokens.css are unchanged from commit 1abffe9; index.html, tool.html, src/demo.js, src/demo.css, src/fixtures.js, src/teardown.css and briefs/v2/ were changed on purpose on 18 September 2026 for the v2 teardown and the recorded v2 demo, with Roanuk's approval. index.html was changed again on purpose on 30 September 2026 for the safety step results, as Roanuk's brief for that work asks. Regenerate only when a published page is changed on purpose.",
   "algorithm": "sha256",
   "files": {
-    "index.html": "0e3b337f2f4f71d1b9818d0dea2f988136f6835f0fea8de7a37a4b2470956066",
+    "index.html": "1869b24c773ad84b8c02c4ceab1e14a15dd717505da4ee7aaa70b667d3c9600d",
     "tool.html": "5d0c6d5ef7c8d5068e2db52b9c43c827c51a8094a693f69a9e6203537654b483",
     "src/demo.css": "c50f7812ea7abe4557ebe1e3789c670c74a3e9848f27856867489c95abc8e8c2",
     "src/demo.js": "fe4ea4d29c7346f30572d26d347baa09c52cf619a55375fa90a43e30b6d8de2b",

@@ -91,13 +91,13 @@
         <p class="brief-body">
           AI Property Maintenance Advisor turns a photo of an equipment label
           into a service brief that cites a source for every claim, or says it
-          does not know. The rebuild remembers equipment it has researched and
-          can use property records, so far tested only on synthetic ones.
-          In live tests, repeat questions were held to few or no searches
-          and cost a fraction of a first lookup. Claude handles the judgment
-          and a free search service runs the searches, while every refusal rule
-          and spending cap stays in code. The next step is one brief
-          in front of a technician.
+          does not know. The rebuild remembers researched equipment and can
+          use property records, so far only synthetic ones. Live repeat
+          questions were held to few or no searches and cost a fraction of a
+          first lookup. Claude handles the judgment, a second model flags
+          safety steps, and a free search service runs the searches, while
+          every refusal rule and spending cap stays in code. The next step is
+          one brief in front of a technician.
         </p>
       </section>
     </div>
@@ -172,7 +172,10 @@
               test how the model behaves. A differential test sends 180 test
               briefs through both v1's validator (the code that checks each
               brief against the rules) and the rewrite's, and compares the
-              verdicts (<a href="#results">Part 8</a>).
+              verdicts (<a href="#results">Part 8</a>). Safety step flagging
+              was tested later, on 29 and 30 September, against 345 steps
+              labeled before any scoring, with the rule for choosing what ships
+              written before any result (<a href="#decisions">Part 9</a>).
             </li>
             <li>
               <strong>The results.</strong> The three live repeat questions used
@@ -188,6 +191,12 @@
               A live run with synthetic property records attached cited the
               unit's earlier service record and its age. Offline, v1's and v2's
               validators agreed on all 180 test briefs (<a href="#results">Part 8</a>).
+              A code check by Jev, a judgment model from TypeSafe, flagged 30 of
+              the 31 safety steps in the half of the labeled set kept aside for
+              the final score, against 20 for a rule matching the words breaker,
+              power and heat, and on ten new live lookups every safety step was
+              flagged, 14 of 14, the same as the writing model managed alone
+              under its revised instruction (<a href="#decisions">Part 9</a>).
             </li>
             <li>
               <strong>What it means.</strong> Remembering pays where it was
@@ -201,7 +210,11 @@
               show is that a cheaper brief is as good: the hot tub repeat from
               memory left out all 4 steps to try first that its first brief
               listed, and one live hot tub brief listed a step at the breaker
-              without its safety flag, a finding about the model, not the code (<a href="#decisions">Part 9</a>).
+              without its safety flag, a finding about the model. A code check
+              now flags such steps, though on the ten new live lookups the
+              writing model, under a revised instruction that spells out which
+              steps count, caught every safety step by itself; there is no clean
+              figure from before that instruction to compare it with (<a href="#decisions">Part 9</a>).
             </li>
             <li>
               <strong>Cautions, and how to check.</strong> Replay proves the
@@ -216,9 +229,14 @@
               The property records are synthetic, and no technician has used a
               brief yet. Every live v2 number here comes from a named run on
               one fixed build (a single frozen version of the code, identified by
-              a fingerprint stored in every run record); v1's come from its own
-              live run of 18 August 2026, and the whole build spend also counts
-              runs on an earlier build that was replaced. The offline suite of 2,245 tests runs with the
+              a fingerprint stored in every run record), with two exceptions
+              from the safety check: its ten live lookups ran on the later build
+              that added it, and its labeled set scores trace to a locked
+              settings file and the Jev model version (jev-1.13.0), not to a
+              build fingerprint. v1's come from its own live run of 18 August
+              2026, and the whole build spend also counts runs on an earlier
+              build that was replaced. The safety step labels came from three
+              model readers, not from people. The offline suite of 2,584 tests runs with the
               network blocked, no key and no cost (<a href="#method">Appendix A</a>).
             </li>
           </ul>
@@ -622,7 +640,9 @@
             An API is a service the code calls over the internet and pays for by
             use. v1 used one API for everything: Claude Opus 5 read the plate,
             ran Anthropic's own web search, and wrote the brief. v2 splits the
-            work by what each step actually needs.
+            work by what each step actually needs. Since 30 September a third
+            service, TypeSafe's Jev, also checks each step to try first in a
+            brief for safety (<a href="#decisions">Part 9</a>).
           </p>
 
           <div class="errc">
@@ -683,9 +703,11 @@
           <p>
             The hard caps are $0.15 per cheap mode brief and $5 for the whole
             build. Every live run stayed under its cap; the highest cost $0.0632.
-            The fixed build's live runs cost about $0.32 in total, and the whole
-            build spent $0.59 of its $5, a figure that includes runs on an
-            earlier build that was replaced. On credits, a first pass uses at
+            The fixed build's live runs cost about $0.32 in total, and by 18
+            September the whole build had spent $0.59 of its $5, a figure that
+            includes runs on an earlier build that was replaced; after the
+            safety step work of 29 and 30 September it stands at $1.0785
+            (<a href="#decisions">Part 9</a>). On credits, a first pass uses at
             most 8 (5 searches and 3 fetches) and the one smaller retry up to 2
             more, so a brief uses at most 10, and 1,000 free credits cover about
             100 research briefs a month at the worst case (arithmetic, not
@@ -910,13 +932,13 @@
             <li>v1's and v2's validators agree on the decision, the reason and the cleaned brief for all 180 differential test briefs: 16 from v1's guardrail tests and 164 new edge cases. The test needs v1's private source, so it skips on a fresh copy of the repository.</li>
             <li>A refusal or a budget stop clears candidates, steps, upgrade options and maintenance items; tier labels can be lowered by code, never raised; an observed code still narrows the answer.</li>
             <li>A stored fact needs a word for word evidence sentence from its page; a fact that fails is dropped, not downgraded.</li>
-            <li>The offline suite of 2,245 tests runs with the network blocked, and all 918 planted bugs are caught. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
+            <li>The offline suite of 2,584 tests runs with the network blocked, and all 1,105 planted bugs are caught. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
           </ul>
 
           <h3>Criteria, bars and results</h3>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced">
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced and the safety step work of 29 and 30 September">
             <table>
-              <caption>Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced</caption>
+              <caption>Offline results are replay; live results are from the runs of 18 September 2026 on the fixed build, except the whole build spend, which also counts runs on an earlier build that was replaced and the safety step work of 29 and 30 September</caption>
               <thead>
                 <tr><th>Criterion</th><th>Bar</th><th>Result</th><th>How measured</th></tr>
               </thead>
@@ -932,7 +954,7 @@
                 <tr><td>Repeat question searches less (SC7b)</td><td>2 searches or fewer on every repeat</td><td class="yes">Pass: 0 (answered from memory), 2 and 2 (short top ups, held to 2 by the top up limit), against 4, 4 and 5 on the first v2 lookups</td><td>Live</td></tr>
                 <tr><td>Plate reading</td><td>Clear plate read; blurry plate left empty, not guessed</td><td class="yes">Pass: clear plate read exactly; blurry plate's model, serial and date marked unreadable</td><td>Live</td></tr>
                 <tr><td>Every run within its cap (SC11)</td><td>$0.15 or less per cheap mode run</td><td class="yes">Pass on all 11 live runs; highest $0.0632</td><td>Live, from the ledger</td></tr>
-                <tr><td>Whole build spend</td><td>$5 or less</td><td class="yes">$0.59, including runs on an earlier build that was replaced (the fixed build's runs cost about $0.32)</td><td>Live, from the ledger</td></tr>
+                <tr><td>Whole build spend</td><td>$5 or less</td><td class="yes">$0.59 by 18 September, including runs on an earlier build that was replaced (the fixed build's runs cost about $0.32); $1.0785 after the safety step work (Part 9)</td><td>Live, from the ledger</td></tr>
                 <tr><td>Time for a research brief</td><td>No target; reported</td><td>21.4 s and 51.3 s (refusals 17.0 s to 35.0 s)</td><td>Live, measured</td></tr>
                 <tr><td>Time for a brief from memory, and for a top up</td><td>No target; reported</td><td>4.8 s and 5.2 s from memory alone; 12.6 s and 15.5 s for the short top ups</td><td>Live, measured</td></tr>
               </tbody>
@@ -1023,7 +1045,7 @@
 
           <h3>A finding about the model: a step at the breaker without its safety flag</h3>
           <p>
-            The instructions ask the model to flag any electrical or heat related
+            On that build, the instructions asked the model to flag any electrical or heat related
             step as a safety step, and code sorts flagged steps to the top. On
             the fixed build, the hot tub's first lookup (run t-267045726dd04118)
             listed "Turn off power at the breaker, wait 20 minutes, then restore
@@ -1032,13 +1054,106 @@
             sometimes, not always.
           </p>
           <p>
-            Code cannot fix this on its own terms. It can reorder the steps the
-            model flagged, but deciding what counts as a safety step means
-            either trusting the model's judgment or writing a rule that judges
-            the step's wording, and every step must come from a cited source, so
-            code cannot add one. I report it as a finding about Haiku on this
-            build, not a code failure, and it is the first item in
+            Code could not fix this on its own terms. It can reorder the steps
+            the model flagged, but deciding what counts as a safety step means
+            either trusting a judgment or writing a rule that judges the step's
+            wording, and every step must come from a cited source, so code
+            cannot add one. I reported it as a finding about Haiku on that
+            build, not a code failure, and made testing a fix the first item in
             <a href="#next">Part 10</a>.
+          </p>
+
+          <h3>The fix, tested before it shipped: a safety check in code</h3>
+          <p>
+            On 29 and 30 September I tested three ways to catch such a step,
+            each able to add a safety flag but never remove one or add a step:
+            a word rule that flags any step naming certain words (the published
+            list was breaker, power and heat; a tuned list, chosen on the tune
+            half described below, drops the bare word heat but keeps heater and
+            heating, and adds wire, panel, door, disconnect, electrical, jumper
+            and box); Jev, a judgment model from TypeSafe that reads each step
+            and answers how likely it is to be a safety step, as a probability
+            from 0 to 1; and Jev together with the tuned word rule. The test set was 345 steps, taken
+            from maker and dealer documentation and from the tool's own earlier
+            briefs, and labeled before anything was scored by three model
+            readers working blind, who agreed on 338 of them. The set was split
+            into a tune half, where each check's settings were chosen, and a
+            held out half of 175 steps, 31 of them safety steps, which no
+            setting ever saw. The settings were locked in a file before the held
+            out half was scored, once, and the rule for choosing what ships was
+            written before any result: of the tuned word rule, Jev, and Jev
+            together with the tuned word rule, drop any whose precision
+            (the share of its flags that were real safety steps) is below 0.60,
+            then take the highest recall (the share of real safety steps it
+            flagged), then the higher precision. Separately, on 29 September,
+            before the live check, the instruction to the writing model was
+            revised to spell out which steps count as safety steps: power or
+            gas switched off, on or reset; working near anything that can be
+            live, hot or carrying gas; and running or testing a heater.
+          </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Safety step flags on the held out half: 175 steps, 31 of them safety steps, scored once after the lock">
+            <table>
+              <caption>Safety step flags on the held out half: 175 steps, 31 of them safety steps, scored once after the lock</caption>
+              <thead>
+                <tr><th>Check</th><th>Recall: safety steps flagged</th><th>Precision: flags that were safety steps</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Word rule, as published (breaker, power, heat)</td><td class="num">20 of 31 (0.645)</td><td class="num">20 of 28 (0.714)</td></tr>
+                <tr><td>Word rule, tuned on the tune half</td><td class="num">22 of 31 (0.710)</td><td class="num">22 of 34 (0.647)</td></tr>
+                <tr><td>Jev, flagging at 0.51 or higher (shipped)</td><td class="num">30 of 31 (0.968)</td><td class="num">30 of 41 (0.732)</td></tr>
+                <tr><td>Tuned word rule plus Jev</td><td class="num">30 of 31 (0.968)</td><td class="num">30 of 50 (0.600)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The held out half has no steps the tool wrote, so the writing
+            model's own flags are not in this table; the ten live lookups below
+            measure the writing model. With 31 safety steps the sample is
+            modest. A 95% interval is the range the true rate probably falls in,
+            given how few steps were tested. In those intervals, Jev's recall
+            (0.838 to 0.994) sits clear of the published word rule's (0.469 to
+            0.789) and barely overlaps the top of the tuned rule's (0.534 to 0.839),
+            and the precision intervals of all four checks overlap. The tuned
+            word rule plus Jev flags every step Jev flags; its extra flags
+            caught no safety step Jev missed, which is why its precision is
+            lower.
+          </p>
+          <p>
+            <strong>What shipped, and the live check.</strong> Jev and the tuned
+            word rule plus Jev tied on recall, and Jev alone had the higher
+            precision, so Jev ships, flagging a step when it answers 0.51 or
+            higher; the published breaker step scores 0.98. Then ten new first
+            lookups ran live on the build that added the check, five with the
+            hot tub's FLO question and five with the air conditioner's fan
+            question. Their briefs held 31 steps, 14 of them safety steps by the
+            same three readers, and all 14 were flagged. The writing model,
+            under a revised instruction that spells out which steps count,
+            flagged all 14 by itself; Jev flagged the same 14 and added two
+            false flags on fan blade steps, so on these runs it caught nothing
+            the writer missed. The tuned word rule, which is not shipped, also
+            flagged all 14, with 2 false flags on other steps (14 of 16). There
+            is no clean figure for the writer before the revised instruction:
+            most of the safety steps in the 18 September briefs that would give
+            one came from the build that was replaced, so that comparison is
+            held back. The safety step work cost $0.4878 in
+            all, most of it the ten live lookups.
+          </p>
+          <p class="callout callout-warning">
+            <strong>What these numbers cannot say.</strong> The labels came
+            from three model readers, not from people. The tuned word list did
+            not hold up: it scored precision 0.955 on the half it was tuned on
+            and 0.647 on the held out half, below the published list, because
+            words such as "door" and "box" found harmless steps in pages it had
+            not seen. The live check is small, 14 safety steps from two
+            questions, mostly at a breaker, and the revised instruction alone
+            caught all of them, so the held out half is the stronger evidence
+            for the check itself. With Jev alone shipped, a failed check falls
+            back to the writer's own flags and one line in the brief telling the
+            reader to treat any step at a breaker, a panel, a heater or a gas
+            valve as a safety step, not to the word rule; whether it should is
+            an open question. The recorded demo still shows build
+            839b1854a0aaf25e from 18 September, so its briefs carry the
+            writer's flags only.
           </p>
 
           <h3>Rules that stand</h3>
@@ -1046,7 +1161,7 @@
             <li>Speed is reported, not scored.</li>
             <li>A budget stop never counts as a refusal.</li>
             <li>The retry is one smaller second pass, taken only if affordable.</li>
-            <li>Misses are published as misses, and only runs on the fixed build are reported.</li>
+            <li>Misses are published as misses, and each live result is reported only from the build it ran on.</li>
           </ul>
         </section>
 
@@ -1055,10 +1170,12 @@
           <h2>What I would do next</h2>
           <ol>
             <li>
-              <strong>Decide how safety steps get flagged.</strong> Test a code
-              rule that flags any step naming a breaker, power or heat, against a
-              change to the instructions, and measure both on new live runs,
-              accepting that a word rule will sometimes flag a harmless step.
+              <strong>Decide how safety steps get flagged.</strong><span class="shipped">Done</span>
+              Jev now checks every step to try first: it flagged 30 of 31 held
+              out safety steps against 20 for the published word rule and 22
+              for the tuned one, and all 14 safety
+              steps in ten new live lookups were flagged, though the revised
+              instruction alone caught them too (<a href="#decisions">Part 9</a>).
             </li>
             <li>
               <strong>Put one brief in front of one technician</strong> and ask a
@@ -1128,8 +1245,9 @@
             <li>The build ran in phases. Replay phases came first, at no cost; live phases ran only after a typed "proceed", with the planned calls and spend printed first.</li>
             <li>The ledger reserves each call before it is made, against a $5 cap for the whole build.</li>
             <li>Every library name was checked against the current release before use.</li>
-            <li>Planted bugs test the tests: all 918 are caught.</li>
-            <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to one build. The whole build spend is the one total that also counts runs on the earlier build that was replaced.</li>
+            <li>Planted bugs test the tests: all 1,105 are caught.</li>
+            <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to its build: the 18 September results to one fixed build, the safety check's ten live lookups to the later build that added it, and its labeled set scores to Jev calls on 30 September under the locked settings and model jev-1.13.0. The whole build spend is the one total that also counts runs on the earlier build that was replaced.</li>
+            <li>The safety check was scored on a labeled set built before any scoring, with its settings locked and its choice rule written before the held out half was scored once.</li>
           </ul>
 
           <h3>What I got wrong</h3>
@@ -1145,6 +1263,7 @@
             <li>The recorded v2 demo replays live runs of 18 September 2026 with no API call. The four v1 briefs linked in <a href="#v1">Part 3</a> remain the record of v1.</li>
             <li>The v2 property records are synthetic. The property, the owner and the commercial detail are genericized; the equipment and the retrieved documentation are real.</li>
             <li>Cost comparisons with v1 are estimates computed from v1's logged usage, not measurements of v1's bill.</li>
+            <li>The safety step labels came from three model readers, not from people.</li>
           </ul>
         </section>
 
@@ -1167,8 +1286,12 @@
             <li><strong>Ledger:</strong> the running record of spend, checked before every paid call.</li>
             <li><strong>Planted bug:</strong> a deliberate small break in the code, used to check that the tests notice it.</li>
             <li><strong>Token:</strong> a word fragment; models are billed per million tokens.</li>
-            <li><strong>Build:</strong> a single frozen version of the code, identified by a fingerprint stored in every run record. "The fixed build" is the one every live v2 result on this page comes from; "the whole build" spend is the project's total.</li>
+            <li><strong>Build:</strong> a single frozen version of the code, identified by a fingerprint stored in every run record. "The fixed build" is the one every 18 September live v2 result on this page comes from; the safety check's live lookups ran on a later build; "the whole build" spend is the project's total.</li>
             <li><strong>HVAC:</strong> heating, ventilation and air conditioning equipment.</li>
+            <li><strong>Jev:</strong> a judgment model from TypeSafe that answers a yes or no question as a probability from 0 to 1; here, whether a step is a safety step.</li>
+            <li><strong>Recall:</strong> the share of real safety steps a check flagged.</li>
+            <li><strong>Precision:</strong> the share of a check's flags that were real safety steps.</li>
+            <li><strong>Held out half:</strong> the half of a labeled set kept aside from every setting choice, so its score is a fair test.</li>
           </ul>
         </section>
       </main>
