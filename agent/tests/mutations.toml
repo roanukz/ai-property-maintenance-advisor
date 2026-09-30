@@ -1170,7 +1170,7 @@ tests = ["agent/tests/test_config.py::test_no_inline_model_ids_or_prices"]
 [[mutation]]
 id = "config_scan_model_pattern_dropped"
 file = "agent/tests/test_config.py"
-search = 'MODEL_ID_RE = re.compile(r"claude-[a-z0-9]", re.IGNORECASE)'
+search = 'MODEL_ID_RE = re.compile(r"claude-[a-z0-9]|\bjev-[a-z0-9]", re.IGNORECASE)'
 replace = 'MODEL_ID_RE = re.compile(r"(?!x)x")'
 tests = ["agent/tests/test_config.py::test_scanner_catches_each_kind"]
 
@@ -5996,7 +5996,8 @@ tests = ["agent/tests/test_env_loader.py::test_dotenv_parses_comments_quotes_and
 [[mutation]]
 id = "env_reads_any_name"
 file = "agent/live/env.py"
-search = '''    names = list(config.LIVE_KEY_NAMES)
+search = '''    names = [n for n in config.LIVE_KEY_NAMES if n != config.TYPESAFE_KEY_NAME or need is None or n in need]
+    names += [n for n in (need or ()) if n == config.TYPESAFE_KEY_NAME and n not in names]
     if tracing:'''
 replace = '''    names = list(dict.fromkeys([*config.LIVE_KEY_NAMES, *found]))
     if tracing:'''
@@ -6071,8 +6072,8 @@ tests = ["agent/tests/test_env_loader.py::test_planted_key_never_written_or_prin
 [[mutation]]
 id = "preflight_typical_drops_read_plate"
 file = "agent/live/preflight.py"
-search = '''    typical_usd = research_usd + synthesize_typical_usd(mode) + (read_plate_typical_usd(mode) if plate else 0.0)'''
-replace = '''    typical_usd = research_usd + synthesize_typical_usd(mode)'''
+search = '''    typical_usd = (research_usd + synthesize_typical_usd(mode) + (read_plate_typical_usd(mode) if plate else 0.0)'''
+replace = '''    typical_usd = (research_usd + synthesize_typical_usd(mode)'''
 tests = ["agent/tests/test_preflight.py::test_preflight_prints_planned_calls_and_costs_from_config"]
 
 [[mutation]]
@@ -7695,3 +7696,1504 @@ replace = '''A hard spending cap on every run, enforced in code, and any search
               the cap blocked is shown in the research trail.'''
 tests = ["agent/tests/test_build_demo.py::test_installed_demo_names_the_search_limit_and_compares_steps"]
 why = "review N9, H5, R5: the What's new bullet put blocked calls down to the spending cap"
+
+# ---------------------------------------------------------------------------
+# Safety step flagging, behavior: step_text.py, safety.py, safety_check.py,
+# the graph wiring, the notice line and the run record (test_step_text.py,
+# test_safety.py, test_state.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "step_text_case_kept"
+file = "agent/rules/step_text.py"
+search = '''    value = _SPACE.sub(" ", value).strip().lower()'''
+replace = '''    value = _SPACE.sub(" ", value).strip()'''
+tests = ["agent/tests/test_step_text.py::test_normalize_text_folds_case_space_prefix_and_period"]
+
+[[mutation]]
+id = "step_text_prefix_kept"
+file = "agent/rules/step_text.py"
+search = '''    value = _SAFETY_PREFIX.sub("", value)'''
+replace = '''    value = value'''
+tests = ["agent/tests/test_step_text.py::test_normalize_text_folds_case_space_prefix_and_period"]
+
+[[mutation]]
+id = "step_key_ignores_detail"
+file = "agent/rules/step_text.py"
+search = '''    joined = normalize_text(step) + "\n" + normalize_text(detail)'''
+replace = '''    joined = normalize_text(step)'''
+tests = ["agent/tests/test_step_text.py::test_step_key_is_sha256_of_normalized_step_and_detail"]
+
+[[mutation]]
+id = "word_rule_substring"
+file = "agent/rules/step_text.py"
+search = '''    pattern = re.compile(r"\b(?:" + "|".join(re.escape(w) for w in alternatives) + r")\b", re.IGNORECASE)'''
+replace = '''    pattern = re.compile(r"(?:" + "|".join(re.escape(w) for w in alternatives) + r")", re.IGNORECASE)'''
+tests = ["agent/tests/test_step_text.py::test_word_rule_matches_whole_words_in_any_case"]
+
+[[mutation]]
+id = "word_rule_empty_list_matches"
+file = "agent/rules/step_text.py"
+search = '''    if not alternatives:
+        return False
+'''
+replace = ''''''
+tests = ["agent/tests/test_step_text.py::test_word_rule_with_no_words_flags_nothing"]
+
+[[mutation]]
+id = "safety_words_published_no_breaker_power"
+file = "agent/config.py"
+search = [
+    '''SAFETY_WORDS = (
+    "breaker", "breakers",
+    "power", "powered", "powering",''',
+    '''JEV_THRESHOLD: float | None = 0.51''',
+]
+replace = [
+    '''SAFETY_WORDS = (
+    "breakers",
+    "powered", "powering",''',
+    '''JEV_THRESHOLD: float | None = 0.99''',
+]
+tests = [
+    "agent/tests/test_safety.py::test_published_miss_is_flagged_by_the_shipped_configuration",
+]
+why = "the published miss: no breaker or power in the shipped (tuned) word list, and a Jev threshold above the recorded 0.98"
+
+[[mutation]]
+id = "raise_flags_layer_clears"
+file = "agent/rules/safety.py"
+search = '''        if raised_by is not None:
+            step["safety_flag"] = True'''
+replace = '''        if "word" in active:
+            step["safety_flag"] = word
+        elif raised_by is not None:
+            step["safety_flag"] = True'''
+tests = ["agent/tests/test_safety.py::test_raise_only_through_run_rules"]
+why = "a layer that can clear a flag"
+
+[[mutation]]
+id = "safety_provenance_unsorted"
+file = "agent/rules/safety.py"
+search = '''    return sorted(provenance, key=lambda entry: entry["final_flag"] is not True)'''
+replace = '''    return provenance'''
+tests = ["agent/tests/test_safety.py::test_raise_only_through_run_rules"]
+
+[[mutation]]
+id = "jev_threshold_none_raises"
+file = "agent/rules/safety.py"
+search = '''        jev = jev_threshold is not None and noul is not None and noul >= jev_threshold'''
+replace = '''        jev = noul is not None and noul >= (jev_threshold or 0.0)'''
+tests = ["agent/tests/test_safety.py::test_raise_flags_records_every_layer_and_raises_only_through_active_ones"]
+
+[[mutation]]
+id = "jev_matched_by_position"
+file = "agent/rules/safety.py"
+search = '''        noul = nouls.get(key)'''
+replace = '''        noul = next(iter(nouls.values()), None)'''
+tests = ["agent/tests/test_safety.py::test_jev_on_scripted_cassette_replies_raises_what_the_word_rule_misses"]
+
+[[mutation]]
+id = "safety_state_leaks_symptom"
+file = "agent/nodes/safety_check.py"
+search = '''        payload = {"appliance": appliance, "step": step.get("step") or "", "detail": step.get("detail") or ""}'''
+replace = '''        payload = {"appliance": appliance, "step": step.get("step") or "", "detail": step.get("detail") or "",
+                   "symptom": state.get("symptom")}'''
+tests = ["agent/tests/test_safety.py::test_the_judge_sees_only_appliance_step_and_detail"]
+
+[[mutation]]
+id = "safety_failures_counted_as_not_recorded"
+file = "agent/nodes/safety_check.py"
+search = '''    failed = [kind for kind in errors if kind != NOT_RECORDED]'''
+replace = '''    failed = []'''
+tests = ["agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice"]
+
+[[mutation]]
+id = "safety_notice_failed_only"
+file = "agent/nodes/safety_check.py"
+search = '''NOTICE_STATUSES = ("partial", "failed")'''
+replace = '''NOTICE_STATUSES = ("failed",)'''
+tests = [
+    "agent/tests/test_safety.py::test_notice_line_only_for_partial_and_failed",
+    "agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice",
+]
+
+[[mutation]]
+id = "safety_not_recorded_is_a_failure"
+file = "agent/nodes/safety_check.py"
+search = '''        return NOT_RECORDED, REASON_NOT_RECORDED'''
+replace = '''        return "failed", REASON_NOT_RECORDED'''
+tests = ["agent/tests/test_safety.py::test_not_recorded_is_not_a_failure"]
+
+[[mutation]]
+id = "safety_check_ignores_budget_stop"
+file = "agent/nodes/safety_check.py"
+search = '''    if state.get("status") == "budget_stopped":
+        return _signals("skipped", REASON_BUDGET_STOPPED, _configured_hash())
+'''
+replace = ''''''
+tests = ["agent/tests/test_safety.py::test_skips_without_a_call"]
+
+[[mutation]]
+id = "safety_check_ignores_disabled"
+file = "agent/nodes/safety_check.py"
+search = '''    if not config.JEV_SAFETY_ENABLED:
+        return _signals("disabled", REASON_DISABLED, _configured_hash())
+'''
+replace = ''''''
+tests = ["agent/tests/test_safety.py::test_disabled_makes_no_call"]
+
+[[mutation]]
+id = "retry_need_skips_jev"
+file = "agent/graph.py"
+search = '''    return steps * per_call'''
+replace = '''    return 0.0'''
+tests = ["agent/tests/test_safety.py::test_retry_affordability_counts_the_jev_calls"]
+
+[[mutation]]
+id = "safety_check_not_wired"
+file = "agent/graph.py"
+search = '''    builder.add_edge("synthesize", "safety_check")'''
+replace = '''    builder.add_edge("synthesize", "validate")'''
+tests = ["agent/tests/test_safety.py::test_retry_asks_jev_about_the_new_draft"]
+
+[[mutation]]
+id = "upgrade_pass_drops_signals"
+file = "agent/nodes/validate.py"
+search = '''        safety_signals=state.get("safety_signals"),'''
+replace = '''        safety_signals=None if upgrade_pass_done(state) else state.get("safety_signals"),'''
+tests = ["agent/tests/test_safety.py::test_upgrade_pass_reuses_the_signals"]
+
+[[mutation]]
+id = "safety_asked_in_validate"
+file = "agent/nodes/validate.py"
+search = '''        safety_signals=state.get("safety_signals"),'''
+replace = '''        safety_signals=__import__("agent.nodes.safety_check", fromlist=["check_draft"]).check_draft(state, ctx),'''
+tests = ["agent/tests/test_safety.py::test_resume_after_a_crash_does_not_ask_jev_again"]
+why = "an inline check in validate, as an edge would be, asks Jev again on a resumed thread"
+
+[[mutation]]
+id = "persist_safety_record_drops_jev"
+file = "agent/nodes/persist.py"
+search = '''"jev_noul": entry.get("jev_noul")'''
+replace = '''"jev_noul": None'''
+tests = ["agent/tests/test_safety.py::test_upgrade_pass_reuses_the_signals"]
+
+[[mutation]]
+id = "render_notice_in_legacy"
+file = "agent/render/brief_html.py"
+search = '''        notice = [] if self.legacy or not self.run.get("safety_notice") else ['''
+replace = '''        notice = [] if not self.run.get("safety_notice") else ['''
+tests = ["agent/tests/test_safety.py::test_notice_line_never_in_legacy_or_without_the_flag"]
+
+[[mutation]]
+id = "render_notice_never_passed"
+file = "agent/nodes/render.py"
+search = '''        "safety_notice": notice_needed(state.get("safety_signals")),'''
+replace = '''        "safety_notice": False,'''
+tests = ["agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice"]
+
+[[mutation]]
+id = "state_no_safety_signals"
+file = "agent/state.py"
+search = '''    safety_signals: dict[str, Any] | None
+'''
+replace = ''''''
+tests = ["agent/tests/test_state.py::test_state_json_round_trips_and_excludes_run_context"]
+
+# ---------------------------------------------------------------------------
+# SC12a and SC12b evaluation (agent/safety_eval, agent/cli.py; test_safety_eval.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "stats_wilson_drops_center_shift"
+file = "agent/safety_eval/stats.py"
+search = '''    center = (p + z2 / (2 * trials)) / denom'''
+replace = '''    center = p / denom'''
+tests = ["agent/tests/test_safety_eval.py::test_wilson_interval_matches_published_values"]
+
+[[mutation]]
+id = "stats_wilson_z_90"
+file = "agent/safety_eval/stats.py"
+search = '''Z95 = 1.959963984540054'''
+replace = '''Z95 = 1.6448536269514722'''
+tests = ["agent/tests/test_safety_eval.py::test_wilson_interval_matches_published_values"]
+
+[[mutation]]
+id = "pools_dealer_before_listed"
+file = "agent/safety_eval/pools.py"
+search = '''GROUPS = ("maker", "listed", "dealer")  # decision 53, in order'''
+replace = '''GROUPS = ("maker", "dealer", "listed")  # decision 53, in order'''
+tests = ["agent/tests/test_safety_eval.py::test_pools_keep_order_dedupe_and_groups"]
+
+[[mutation]]
+id = "pools_writer_flag_last_wins"
+file = "agent/safety_eval/pools.py"
+search = '''            item["writer_flag"] = item["writer_flag"] or step["safety_flag"]'''
+replace = '''            item["writer_flag"] = step["safety_flag"]'''
+tests = ["agent/tests/test_safety_eval.py::test_pools_keep_order_dedupe_and_groups"]
+
+[[mutation]]
+id = "pools_sentence_limit_off_by_one"
+file = "agent/safety_eval/pools.py"
+search = '''    if len(sentence) > config.SC12A_MAX_SENTENCE_CHARS:'''
+replace = '''    if len(sentence) >= config.SC12A_MAX_SENTENCE_CHARS:'''
+tests = ["agent/tests/test_safety_eval.py::test_pools_keep_order_dedupe_and_groups"]
+
+[[mutation]]
+id = "pools_split_salt_changed"
+file = "agent/safety_eval/pools.py"
+search = '''    return hashlib.sha256(family.encode("utf-8")).hexdigest()'''
+replace = '''    return hashlib.sha256(f"sc12a-split-v2\n{family}".encode("utf-8")).hexdigest()'''
+tests = ["agent/tests/test_safety_eval.py::test_split_is_stable_by_family"]
+
+[[mutation]]
+id = "pools_forced_tune_ignored"
+file = "agent/safety_eval/pools.py"
+search = '''        if name in forced and name not in halves:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_forced_tune_families_go_to_tune_whole"]
+
+[[mutation]]
+id = "labels_other_hazard_counts_yes"
+file = "agent/safety_eval/labels.py"
+search = '''    return vote["safety"] == "yes" and vote["hazard"] in IN_SCOPE_HAZARDS'''
+replace = '''    return vote["safety"] == "yes"'''
+tests = ["agent/tests/test_safety_eval.py::test_labels_take_the_majority_and_refuse_a_changed_vote"]
+
+[[mutation]]
+id = "labels_changed_vote_accepted"
+file = "agent/safety_eval/labels.py"
+search = '''            if previous is not None and previous != vote:'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_labels_take_the_majority_and_refuse_a_changed_vote"]
+
+[[mutation]]
+id = "stats_threshold_lowest_full_recall"
+file = "agent/safety_eval/stats.py"
+search = '''        return ThresholdChoice(full[0][0], FULL_RECALL, full[0][1])'''
+replace = '''        return ThresholdChoice(full[-1][0], FULL_RECALL, full[-1][1])'''
+tests = ["agent/tests/test_safety_eval.py::test_threshold_selection_follows_the_brief"]
+
+[[mutation]]
+id = "stats_threshold_floor_ignored"
+file = "agent/safety_eval/stats.py"
+search = '''    floor = [(t, c) for t, c in tried if meets_floor(c.precision)]'''
+replace = '''    floor = [(t, c) for t, c in tried if c.precision is not None]'''
+tests = ["agent/tests/test_safety_eval.py::test_threshold_selection_follows_the_brief"]
+
+[[mutation]]
+id = "stats_choice_ignores_floor"
+file = "agent/safety_eval/stats.py"
+search = '''        elif not meets_floor(counts.precision):'''
+replace = '''        elif counts.precision is None:'''
+tests = ["agent/tests/test_safety_eval.py::test_choice_rule_and_its_ties"]
+
+[[mutation]]
+id = "stats_choice_tie_prefers_model_call"
+file = "agent/safety_eval/stats.py"
+search = '''                int(MODEL_CALLS[name]), CANDIDATES.index(name))'''
+replace = '''                -int(MODEL_CALLS[name]), CANDIDATES.index(name))'''
+tests = ["agent/tests/test_safety_eval.py::test_choice_rule_and_its_ties"]
+
+[[mutation]]
+id = "stats_choice_precision_tie_break_reversed"
+file = "agent/safety_eval/stats.py"
+search = '''        return (-(counts.recall or Fraction(0)), -(counts.precision or Fraction(0)),'''
+replace = '''        return (-(counts.recall or Fraction(0)), (counts.precision or Fraction(0)),'''
+tests = ["agent/tests/test_safety_eval.py::test_choice_rule_and_its_ties"]
+
+[[mutation]]
+id = "stats_reliability_drops_one"
+file = "agent/safety_eval/stats.py"
+search = '''and (Fraction(str(i["noul"])) < hi or b == RELIABILITY_BINS - 1)]'''
+replace = '''and Fraction(str(i["noul"])) < hi]'''
+tests = ["agent/tests/test_safety_eval.py::test_reliability_table_bins_and_counts"]
+
+[[mutation]]
+id = "harness_stopping_rule_ignored"
+file = "agent/safety_eval/harness.py"
+search = '''    if not status["satisfied"]:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_stopping_rule_blocks_scoring_until_met"]
+
+[[mutation]]
+id = "harness_heldout_without_lock"
+file = "agent/safety_eval/harness.py"
+search = '''    if not lock_path().is_file():
+        raise EvalRefusal(f"no lock at {lock_path()}: the scorer prints no held out number before Gate 2 "
+                          "(advisor safety-set lock).")'''
+replace = ''''''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_scoring_refused_without_a_lock"]
+
+[[mutation]]
+id = "harness_lock_mismatch_ignored"
+file = "agent/safety_eval/harness.py"
+search = '''    bad = lock_mismatches(lock, current_lock_fields(doc, labels))'''
+replace = '''    bad = []'''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_scoring_refused_when_the_lock_does_not_match"]
+
+[[mutation]]
+id = "harness_lock_skips_word_list"
+file = "agent/safety_eval/harness.py"
+search = '''LOCK_FIELDS = ("wording", "criteria", "thresholds", "word_list_published", "word_list_tuned", "model",'''
+replace = '''LOCK_FIELDS = ("wording", "criteria", "thresholds", "word_list_published", "model",'''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_scoring_refused_when_the_lock_does_not_match"]
+
+[[mutation]]
+id = "harness_rescore_without_reason"
+file = "agent/safety_eval/harness.py"
+search = '''    if history["attempts"] and not reason:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_scored_once_then_only_with_a_reason"]
+
+[[mutation]]
+id = "harness_rescore_reason_not_recorded"
+file = "agent/safety_eval/harness.py"
+search = '''"lock_sha256": lock_sha256(lock), "reason": reason or None,'''
+replace = '''"lock_sha256": lock_sha256(lock), "reason": None,'''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_scored_once_then_only_with_a_reason"]
+
+[[mutation]]
+id = "cli_unknown_suite_falls_through"
+file = "agent/cli.py"
+search = '''    if args.which == "sc7b":
+        from agent.live.eval_sc7b import cmd_eval_sc7b
+
+        return cmd_eval_sc7b(args, environ)
+    raise CliRefusal(f"unknown eval suite {args.which!r}; the suites are {', '.join(EVAL_SUITES)}.")'''
+replace = '''    from agent.live.eval_sc7b import cmd_eval_sc7b
+
+    return cmd_eval_sc7b(args, environ)'''
+tests = ["agent/tests/test_safety_eval.py::test_unknown_eval_suite_is_an_error"]
+
+[[mutation]]
+id = "cli_eval_score_unknown_is_sc7b"
+file = "agent/cli.py"
+search = '''    if which != "sc7b":
+        raise CliRefusal(f"no evaluator scores suite {which!r} from run records.")
+'''
+replace = ''''''
+tests = ["agent/tests/test_safety_eval.py::test_unknown_eval_suite_is_an_error"]
+
+[[mutation]]
+id = "sc12b_graph_not_restored"
+file = "agent/safety_eval/sc12b.py"
+search = '''            path.write_bytes(original)
+            restored = file_sha256(path) == before'''
+replace = '''            restored = file_sha256(path) == before'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_first_lookup_graph_is_restored_by_hash"]
+
+[[mutation]]
+id = "sc12b_strip_keeps_scoped_codes"
+file = "agent/safety_eval/sc12b.py"
+search = '''    gone = {n["key"] for n in nodes if _in_scope(str(n.get("key") or ""), scope)}'''
+replace = '''    gone = {n["key"] for n in nodes if str(n.get("key")).startswith("model:") and _in_scope(str(n.get("key")), scope)}'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_first_lookup_graph_is_restored_by_hash"]
+
+[[mutation]]
+id = "sc12b_photo_first_file"
+file = "agent/safety_eval/sc12b.py"
+search = '''        if path.is_file() and file_sha256(path) == plate_sha256:'''
+replace = '''        if path.is_file():'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_inputs_photo_and_score"]
+
+[[mutation]]
+id = "sc12b_miss_not_listed"
+file = "agent/safety_eval/sc12b.py"
+search = '''              for i in scored if i["positive"] and not i["final"]]'''
+replace = '''              for i in scored if i["positive"] and not i["final"] and i["word"]]'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_inputs_photo_and_score"]
+
+[[mutation]]
+id = "sc12b_stop_line_at_reach"
+file = "agent/safety_eval/sc12b.py"
+search = '''    return spent > config.SC12_STOP_USD'''
+replace = '''    return spent >= config.SC12_STOP_USD'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_inputs_photo_and_score"]
+
+[[mutation]]
+id = "maker_documents_back_to_draft"
+file = "agent/safety_eval/maker_documents.json"
+search = '''  "status": "final",'''
+replace = '''  "status": "draft, pending review",'''
+tests = ["agent/tests/test_safety_eval.py::test_maker_documents_list_is_final_and_reviewed"]
+
+[[mutation]]
+id = "sc12a_live_heldout_before_lock"
+file = "agent/live/sc12a.py"
+search = '''        if not harness.lock_path().is_file():
+            raise EvalRefusal("the held out half is asked only after the lock (advisor safety-set lock).")'''
+replace = ''''''
+tests = ["agent/tests/test_safety_eval.py::test_live_sc12_commands_refuse_before_any_key_or_ledger"]
+
+[[mutation]]
+id = "sc12b_live_before_lock"
+file = "agent/live/sc12b.py"
+search = '''    if not harness.lock_path().is_file():
+        raise CliRefusal("SC12b runs after the lock (Gate 2): run advisor safety-set lock first.")'''
+replace = ''''''
+tests = ["agent/tests/test_safety_eval.py::test_live_sc12_commands_refuse_before_any_key_or_ledger"]
+
+# ---------------------------------------------------------------------------
+# Jev safety check plumbing: config, ledger, safety_judge, models, cassettes,
+# recorder, privacy diff, preflight, env and the test scrub
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "config_scan_jev_pattern_dropped"
+file = "agent/tests/test_config.py"
+search = '''MODEL_ID_RE = re.compile(r"claude-[a-z0-9]|\bjev-[a-z0-9]", re.IGNORECASE)'''
+replace = '''MODEL_ID_RE = re.compile(r"claude-[a-z0-9]", re.IGNORECASE)'''
+tests = ["agent/tests/test_config.py::test_scanner_catches_jev_model_ids"]
+
+[[mutation]]
+id = "config_scan_zero_is_money"
+file = "agent/tests/test_config.py"
+search = '''    return {float(v) for v in values if v}'''
+replace = '''    return {float(v) for v in values}'''
+tests = ["agent/tests/test_config.py::test_zero_price_is_not_a_money_value", "agent/tests/test_config.py::test_no_inline_model_ids_or_prices"]
+
+[[mutation]]
+id = "safety_judge_inline_model_id"
+file = "agent/safety_judge.py"
+search = '''NOUL_NAME = "safety_step"'''
+replace = '''NOUL_NAME = "safety_step"
+DEFAULT_MODEL = "jev-latest"'''
+tests = ["agent/tests/test_config.py::test_no_inline_model_ids_or_prices"]
+
+[[mutation]]
+id = "config_live_keys_skip_typesafe"
+file = "agent/config.py"
+search = '''LIVE_KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY") + ((TYPESAFE_KEY_NAME,) if JEV_SAFETY_ENABLED else ())'''
+replace = '''LIVE_KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY")'''
+tests = ["agent/tests/test_live_path.py::test_live_ask_refusals[typesafe_key_missing]"]
+
+[[mutation]]
+id = "models_replay_builds_typesafe_client"
+file = "agent/models.py"
+search = '''        return ctx.replay["safety_judge"]'''
+replace = '''        __import__("typesafe_sdk").TypeSafeClient(api_key="offline-test")
+        return ctx.replay["safety_judge"]'''
+tests = ["agent/tests/test_models.py::test_replay_mode_never_constructs_live_clients"]
+
+[[mutation]]
+id = "models_safety_judge_not_cached"
+file = "agent/models.py"
+search = '''        if "safety_judge" not in ctx.replay:'''
+replace = '''        if True:'''
+tests = ["agent/tests/test_models.py::test_replay_safety_judge_serves_the_cassette_once_per_run"]
+
+[[mutation]]
+id = "models_live_judge_wrong_noul"
+file = "agent/models.py"
+search = '''        instructions=noul["instructions"],
+        criteria=noul.get("criteria"),
+        capture=current_capture(),'''
+replace = '''        instructions=prompts.EXTRACT_SYSTEM,
+        criteria=noul.get("criteria"),
+        capture=current_capture(),'''
+tests = ["agent/tests/test_models.py::test_live_safety_judge_uses_config"]
+
+[[mutation]]
+id = "safety_judge_model_unpinned"
+file = "agent/safety_judge.py"
+search = ['''            options = {"model": config.JEV_MODEL, "base_url": constants.DEFAULT_BASE_URL,''', '''            response = client.system_one(state, questions, model=config.JEV_MODEL, retry=retry,''']
+replace = ['''            options = {"base_url": constants.DEFAULT_BASE_URL,''', '''            response = client.system_one(state, questions, retry=retry,''']
+tests = ["agent/tests/test_models.py::test_live_safety_judge_uses_config"]
+
+[[mutation]]
+id = "safety_judge_timeout_default"
+file = "agent/safety_judge.py"
+search = ['''                       "timeout": config.JEV_TIMEOUT_S, **self._client_options}''', '''                                         timeout=config.JEV_TIMEOUT_S)''']
+replace = ['''                       **self._client_options}''', '''                                         )''']
+tests = ["agent/tests/test_models.py::test_live_safety_judge_uses_config"]
+
+[[mutation]]
+id = "safety_judge_calls_before_reserve"
+file = "agent/safety_judge.py"
+search = '''        attempts = 1 + config.JEV_RETRY_MAX
+'''
+replace = '''        client.system_one(state, questions, model=config.JEV_MODEL, retry=retry, timeout=config.JEV_TIMEOUT_S)
+        attempts = 1 + config.JEV_RETRY_MAX
+'''
+tests = ["agent/tests/test_safety_judge.py::test_success_is_reserved_first_charged_after_and_captured", "agent/tests/test_live_path.py::test_live_ask_and_resume_end_to_end_on_fakes"]
+
+[[mutation]]
+id = "safety_judge_charges_the_estimate"
+file = "agent/safety_judge.py"
+search = '''        elif input_tokens is None:
+            self.ledger.charge_estimated(reservation, NO_USAGE_NOTE)
+        else:'''
+replace = '''        elif True:
+            self.ledger.charge_estimated(reservation, NO_USAGE_NOTE)
+        else:'''
+tests = ["agent/tests/test_safety_judge.py::test_success_is_reserved_first_charged_after_and_captured"]
+
+[[mutation]]
+id = "safety_judge_skips_capture"
+file = "agent/safety_judge.py"
+search = '''                self.capture.append(entry)'''
+replace = '''                pass'''
+tests = ["agent/tests/test_safety_judge.py::test_success_is_reserved_first_charged_after_and_captured", "agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
+
+[[mutation]]
+id = "ledger_jev_output_priced"
+file = "agent/ledger.py"
+search = '''        return {"input": config.PRICES_PER_MTOK[config.JEV_MODEL]["input"], "output": 0}'''
+replace = '''        return {"input": config.PRICES_PER_MTOK[config.JEV_MODEL]["input"], "output": 5}'''
+tests = ["agent/tests/test_ledger.py::test_jev_call_priced_on_input_only_with_typesafe_on_every_row", "agent/tests/test_safety_judge.py::test_success_is_reserved_first_charged_after_and_captured"]
+
+[[mutation]]
+id = "ledger_provider_not_carried"
+file = "agent/ledger.py"
+search = '''                    provider=provider, model=model, kind="reserve",'''
+replace = '''                    provider="anthropic", model=model, kind="reserve",'''
+tests = ["agent/tests/test_ledger.py::test_jev_call_priced_on_input_only_with_typesafe_on_every_row", "agent/tests/test_safety_judge.py::test_success_is_reserved_first_charged_after_and_captured"]
+
+[[mutation]]
+id = "ledger_charge_ignores_provider"
+file = "agent/ledger.py"
+search = '''        prices = call_prices(reservation.mode, reservation.provider, reservation.model)'''
+replace = '''        prices = config.REPLAY_PRICES if reservation.mode == "replay" else _prices_for(reservation.model or "")'''
+tests = ["agent/tests/test_ledger.py::test_jev_call_priced_on_input_only_with_typesafe_on_every_row"]
+
+[[mutation]]
+id = "ledger_refusal_drops_provider"
+file = "agent/ledger.py"
+search = '''                        f"{config.BUILD_CAP_USD:.2f}",
+                        thread_id, provider,'''
+replace = '''                        f"{config.BUILD_CAP_USD:.2f}",
+                        thread_id,'''
+tests = ["agent/tests/test_ledger.py::test_build_cap_refuses_a_jev_reservation_that_would_cross_it", "agent/tests/test_safety_judge.py::test_build_cap_refuses_a_jev_call_that_would_cross_it"]
+
+[[mutation]]
+id = "safety_judge_request_id_raises"
+file = "agent/safety_judge.py"
+search = '''    try:
+        value = obj.request_id
+    except Exception:
+        value = None'''
+replace = '''    value = obj.request_id'''
+tests = ["agent/tests/test_safety_judge.py::test_request_id_read_defensively"]
+
+[[mutation]]
+id = "safety_judge_no_usage_free"
+file = "agent/safety_judge.py"
+search = '''        elif input_tokens is None:
+            self.ledger.charge_estimated(reservation, NO_USAGE_NOTE)'''
+replace = '''        elif input_tokens is None:
+            self.ledger.charge(reservation, {"input_tokens": 0, "output_tokens": 0})'''
+tests = ["agent/tests/test_safety_judge.py::test_a_reply_with_no_usage_is_charged_at_its_reservation"]
+
+[[mutation]]
+id = "safety_judge_detail_not_redacted"
+file = "agent/safety_judge.py"
+search = '''        clean = redact(text, sorted({s for s in secrets if s}, key=len, reverse=True))'''
+replace = '''        clean = text'''
+tests = ["agent/tests/test_safety_judge.py::test_401_is_an_api_error_released_with_no_key_in_the_detail"]
+
+[[mutation]]
+id = "safety_judge_error_charged"
+file = "agent/safety_judge.py"
+search = '''            else:
+                self.ledger.release(reservation)
+            kind = "rate_limited"'''
+replace = '''            else:
+                self.ledger.charge_estimated(reservation, SENT_NOTE)
+            kind = "rate_limited"'''
+tests = ["agent/tests/test_safety_judge.py::test_401_is_an_api_error_released_with_no_key_in_the_detail", "agent/tests/test_safety_judge.py::test_500_is_an_api_error_released"]
+
+[[mutation]]
+id = "safety_judge_429_as_api_error"
+file = "agent/safety_judge.py"
+search = '''            kind = "rate_limited" if isinstance(exc, TypeSafeRateLimitError) else "api_error"'''
+replace = '''            kind = "api_error"'''
+tests = ["agent/tests/test_safety_judge.py::test_429_is_rate_limited_retried_once_then_released"]
+
+[[mutation]]
+id = "safety_judge_retry_default"
+file = "agent/safety_judge.py"
+search = '''        retry = RetryPolicy(max_retries=config.JEV_RETRY_MAX, timeout=config.JEV_RETRY_BUDGET_S,
+                            api_timeout_error=False, api_connection_error=False, predicate=lost_attempt)'''
+replace = '''        retry = None'''
+tests = ["agent/tests/test_safety_judge.py::test_429_is_rate_limited_retried_once_then_released"]
+
+[[mutation]]
+id = "safety_judge_no_retry"
+file = "agent/safety_judge.py"
+search = '''        retry = RetryPolicy(max_retries=config.JEV_RETRY_MAX, timeout=config.JEV_RETRY_BUDGET_S,'''
+replace = '''        retry = RetryPolicy(max_retries=0, timeout=config.JEV_RETRY_BUDGET_S,'''
+tests = ["agent/tests/test_safety_judge.py::test_500_then_success_is_answered"]
+
+[[mutation]]
+id = "safety_judge_timeout_released"
+file = "agent/safety_judge.py"
+search = '''        except TypeSafeAPITimeoutError as exc:
+            self.ledger.charge_estimated(reservation, SENT_NOTE)'''
+replace = '''        except TypeSafeAPITimeoutError as exc:
+            self.ledger.release(reservation)'''
+tests = ["agent/tests/test_safety_judge.py::test_timeout_is_charged_at_its_reservation"]
+
+[[mutation]]
+id = "safety_judge_connection_released"
+file = "agent/safety_judge.py"
+search = '''        except TypeSafeAPIConnectionError as exc:
+            self.ledger.charge_estimated(reservation, SENT_NOTE)'''
+replace = '''        except TypeSafeAPIConnectionError as exc:
+            self.ledger.release(reservation)'''
+tests = ["agent/tests/test_safety_judge.py::test_connection_error_is_an_api_error_charged_at_its_reservation"]
+
+[[mutation]]
+id = "safety_judge_validation_as_api_error"
+file = "agent/safety_judge.py"
+search = '''        except TypeSafeAPIResponseValidationError as exc:'''
+replace = '''        except () as exc:'''
+tests = ["agent/tests/test_safety_judge.py::test_unparseable_body_is_unparseable", "agent/tests/test_safety_judge.py::test_an_answer_without_its_noul_is_unparseable"]
+
+[[mutation]]
+id = "safety_judge_missing_noul_is_zero"
+file = "agent/safety_judge.py"
+search = '''        noul = getattr(answer, "noul", None)'''
+replace = '''        noul = getattr(answer, "noul", 0)'''
+tests = ["agent/tests/test_safety_judge.py::test_an_answer_without_its_noul_is_unparseable"]
+
+[[mutation]]
+id = "safety_judge_noul_range_unchecked"
+file = "agent/safety_judge.py"
+search = '''                or not 0 <= noul <= 1:'''
+replace = '''                or False:'''
+tests = ["agent/tests/test_safety_judge.py::test_an_answer_without_its_noul_is_unparseable"]
+
+[[mutation]]
+id = "safety_judge_model_unchecked"
+file = "agent/safety_judge.py"
+search = '''        if model != config.JEV_MODEL:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_safety_judge.py::test_a_different_model_string_is_a_failed_check"]
+
+[[mutation]]
+id = "safety_judge_client_outside_guard"
+file = "agent/safety_judge.py"
+search = '''        try:
+            client = self._client_or_build()
+        except TypeSafeError as exc:'''
+replace = '''        client = self._client_or_build()
+        try:
+            pass
+        except TypeSafeError as exc:'''
+tests = ["agent/tests/test_safety_judge.py::test_missing_key_fails_at_construction_before_any_reservation"]
+
+[[mutation]]
+id = "safety_judge_reservation_escapes"
+file = "agent/safety_judge.py"
+search = '''        except BudgetExceeded as exc:
+            raise _Failure("reservation_refused", f"{exc.reason}: {exc}") from None'''
+replace = '''        except BudgetExceeded:
+            raise'''
+tests = ["agent/tests/test_safety_judge.py::test_refused_reservation_is_a_failed_check_and_nothing_is_sent"]
+
+[[mutation]]
+id = "safety_judge_other_escapes"
+file = "agent/safety_judge.py"
+search = ['''        except Exception as exc:  # unknown whether it was sent: charge the reservation''', '''        except Exception as exc:  # last resort (decision 55): never a crash''']
+replace = ['''        except ValueError as exc:  # unknown whether it was sent: charge the reservation''', '''        except ValueError as exc:  # last resort (decision 55): never a crash''']
+tests = ["agent/tests/test_safety_judge.py::test_any_other_exception_is_a_failed_check"]
+
+[[mutation]]
+id = "safety_judge_live_in_replay_mode"
+file = "agent/safety_judge.py"
+search = '''        if mode not in config.LIVE_MODES:
+            raise ValueError(f"a live safety judge needs a live mode, not {mode!r}")'''
+replace = '''        if False:
+            raise ValueError(f"a live safety judge needs a live mode, not {mode!r}")'''
+tests = ["agent/tests/test_safety_judge.py::test_live_judge_refuses_replay_mode"]
+
+[[mutation]]
+id = "safety_judge_hash_ignores_criteria"
+file = "agent/safety_judge.py"
+search = '''    canonical = json.dumps({"instructions": instructions, "criteria": criteria}, sort_keys=True,'''
+replace = '''    canonical = json.dumps({"instructions": instructions}, sort_keys=True,'''
+tests = ["agent/tests/test_safety_judge.py::test_question_hash_is_canonical_and_short"]
+
+[[mutation]]
+id = "safety_judge_kinds_open"
+file = "agent/safety_judge.py"
+search = '''        if kind not in FAILURE_KINDS:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_safety_judge.py::test_failure_kinds_are_closed"]
+
+[[mutation]]
+id = "safety_judge_replay_by_position"
+file = "agent/safety_judge.py"
+search = '''        queue = self._queues.get(step_sha256)'''
+replace = '''        queue = next((q for q in self._queues.values() if q), None)'''
+tests = ["agent/tests/test_safety_judge.py::test_replay_serves_by_step_hash_in_recorded_order"]
+
+[[mutation]]
+id = "safety_judge_replay_reuses_entry"
+file = "agent/safety_judge.py"
+search = '''        entry = queue.pop(0)'''
+replace = '''        entry = queue[0]'''
+tests = ["agent/tests/test_safety_judge.py::test_replay_serves_by_step_hash_in_recorded_order"]
+
+[[mutation]]
+id = "safety_judge_replay_hash_unchecked"
+file = "agent/safety_judge.py"
+search = '''            if entry["question_hash"] != question_hash:'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_safety_judge.py::test_replay_refuses_another_question_hash_or_model"]
+
+[[mutation]]
+id = "safety_judge_replay_model_unchecked"
+file = "agent/safety_judge.py"
+search = '''            if (entry["model"] == config.JEV_MODEL) == mismatch:'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_safety_judge.py::test_replay_refuses_another_question_hash_or_model"]
+
+[[mutation]]
+id = "safety_judge_replay_error_served_as_answer"
+file = "agent/safety_judge.py"
+search = '''        if entry["error"] is not None:
+            raise SafetyCheckError(entry["error"], "a recorded failure")'''
+replace = '''        if False:
+            raise SafetyCheckError(entry["error"], "a recorded failure")'''
+tests = ["agent/tests/test_safety_judge.py::test_replay_not_recorded_and_recorded_failures"]
+
+[[mutation]]
+id = "safety_judge_capture_keeps_state"
+file = "agent/safety_judge.py"
+search = '''        self._record(capture_entry(
+            step_sha256, self.question_hash, model=reply.model, noul=reply.noul, input_tokens=reply.input_tokens,
+            output_tokens=reply.output_tokens, request_id=reply.request_id))'''
+replace = '''        self._record({**capture_entry(
+            step_sha256, self.question_hash, model=reply.model, noul=reply.noul, input_tokens=reply.input_tokens,
+            output_tokens=reply.output_tokens, request_id=reply.request_id), "step": state.get("step")})'''
+tests = ["agent/tests/test_safety_judge.py::test_capture_holds_no_step_text"]
+
+[[mutation]]
+id = "safety_judge_reserves_as_replay"
+file = "agent/safety_judge.py"
+search = '''                self.run_id, mode=self.mode, node=NODE, model=config.JEV_MODEL,'''
+replace = '''                self.run_id, mode="replay", node=NODE, model=config.JEV_MODEL,'''
+tests = ["agent/tests/test_safety_judge.py::test_build_cap_refuses_a_jev_call_that_would_cross_it"]
+
+[[mutation]]
+id = "cassettes_safety_check_unknown"
+file = "agent/replay/cassettes.py"
+search = '''OPTIONAL_KEYS = ("classifier", "safety_check")'''
+replace = '''OPTIONAL_KEYS = ("classifier",)'''
+tests = ["agent/tests/test_cassettes.py::test_safety_check_is_optional_and_served_as_a_copy", "agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
+
+[[mutation]]
+id = "cassettes_safety_check_shared"
+file = "agent/replay/cassettes.py"
+search = '''        return None if entries is None else copy.deepcopy(entries)'''
+replace = '''        return entries'''
+tests = ["agent/tests/test_cassettes.py::test_safety_check_is_optional_and_served_as_a_copy"]
+
+[[mutation]]
+id = "cassettes_safety_check_unchecked"
+file = "agent/replay/cassettes.py"
+search = '''    if "safety_check" in data:
+        _check_safety_check(c, data["safety_check"])'''
+replace = '''    pass'''
+tests = ["agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[not_a_list]", "agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[step_text_instead_of_a_hash]"]
+
+[[mutation]]
+id = "cassettes_safety_check_extra_keys"
+file = "agent/replay/cassettes.py"
+search = '''        c.keys(entry, path, SAFETY_CHECK_KEYS)'''
+replace = '''        c.keys(entry, path, SAFETY_CHECK_KEYS, ("step", "state", "detail"))'''
+tests = ["agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[an_extra_key_holding_text]"]
+
+[[mutation]]
+id = "cassettes_noul_range"
+file = "agent/replay/cassettes.py"
+search = '''            isinstance(noul, bool) or not isinstance(noul, (int, float)) or not 0 <= noul <= 1'''
+replace = '''            isinstance(noul, bool) or not isinstance(noul, (int, float))'''
+tests = ["agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[probability_above_1]"]
+
+[[mutation]]
+id = "cassettes_safety_one_of"
+file = "agent/replay/cassettes.py"
+search = '''        if (noul is None) == (error is None):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[both_noul_and_error]", "agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[neither_noul_nor_error]"]
+
+[[mutation]]
+id = "cassettes_safety_model_any_text"
+file = "agent/replay/cassettes.py"
+search = '''        if not isinstance(entry["model"], str) or not MODEL_NAME_RE.match(entry["model"]):'''
+replace = '''        if not isinstance(entry["model"], str):'''
+tests = ["agent/tests/test_cassettes.py::test_loader_rejects_malformed_safety_check[model_with_spaces]"]
+
+[[mutation]]
+id = "privacy_diff_safety_shape_unchecked"
+file = "agent/replay/privacy_diff.py"
+search = '''    result.hits += scan_safety_check(data)
+'''
+replace = ''''''
+tests = ["agent/tests/test_cassettes.py::test_privacy_diff_covers_the_safety_check_key"]
+
+[[mutation]]
+id = "privacy_diff_request_id_exempt_anywhere"
+file = "agent/replay/privacy_diff.py"
+search = '''    return (kind == EXEMPT_REQUEST_ID_KIND and _REQUEST_ID_PATH.match(path) is not None
+            and REQUEST_ID_RE.match(text) is not None)'''
+replace = '''    return kind == EXEMPT_REQUEST_ID_KIND'''
+tests = ["agent/tests/test_cassettes.py::test_privacy_diff_covers_the_safety_check_key"]
+
+[[mutation]]
+id = "privacy_diff_request_id_not_exempt"
+file = "agent/replay/privacy_diff.py"
+search = '''            if not is_exempt_hit(spath, kind, text):'''
+replace = '''            if True:'''
+tests = ["agent/tests/test_cassettes.py::test_privacy_diff_covers_the_safety_check_key"]
+
+[[mutation]]
+id = "recorder_drops_safety_check"
+file = "agent/live/recorder.py"
+search = '''        build.cassette["safety_check"] = [{key: e.get(key) for key in SAFETY_CHECK_KEYS} for e in safety]'''
+replace = '''        pass'''
+tests = ["agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
+
+[[mutation]]
+id = "recorder_safety_capture_off"
+file = "agent/live/recorder.py"
+search = '''        with capture_into(SafetyCapture(handler)):'''
+replace = '''        with contextlib.nullcontext():'''
+tests = ["agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
+
+[[mutation]]
+id = "recorder_safety_keeps_extra"
+file = "agent/live/recorder.py"
+search = '''        build.cassette["safety_check"] = [{key: e.get(key) for key in SAFETY_CHECK_KEYS} for e in safety]'''
+replace = '''        build.cassette["safety_check"] = [dict(e) for e in safety]'''
+tests = ["agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
+
+[[mutation]]
+id = "recorder_safety_no_origin"
+file = "agent/live/recorder.py"
+search = '''        build.origins.append((f"safety_check[{i}]",'''
+replace = '''        build.origins.append((f"not_safety_check[{i}]",'''
+tests = ["agent/tests/test_recorder.py::test_staged_recording_passes_the_privacy_diff_with_its_copy_log"]
+
+[[mutation]]
+id = "preflight_jev_calls_not_listed"
+file = "agent/live/preflight.py"
+search = '''        if plan.max_jev_calls:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_preflight.py::test_preflight_prints_planned_calls_and_costs_from_config"]
+
+[[mutation]]
+id = "preflight_jev_cost_dropped"
+file = "agent/live/preflight.py"
+search = '''                   + jev_typical_usd(typical_jev))'''
+replace = '''                   + 0)'''
+tests = ["agent/tests/test_preflight.py::test_preflight_counts_jev_calls_and_cost[jev_enabled]"]
+
+[[mutation]]
+id = "preflight_jev_counted_when_disabled"
+file = "agent/live/preflight.py"
+search = '''    return passes * config.JEV_PLAN_STEPS_PER_PASS if config.JEV_SAFETY_ENABLED else 0'''
+replace = '''    return passes * config.JEV_PLAN_STEPS_PER_PASS'''
+tests = ["agent/tests/test_preflight.py::test_preflight_counts_jev_calls_and_cost[jev_disabled]"]
+
+[[mutation]]
+id = "env_typesafe_key_always_read"
+file = "agent/live/env.py"
+search = '''    names = [n for n in config.LIVE_KEY_NAMES if n != config.TYPESAFE_KEY_NAME or need is None or n in need]'''
+replace = '''    names = list(config.LIVE_KEY_NAMES)'''
+tests = ["agent/tests/test_env_loader.py::test_dotenv_parses_comments_quotes_and_export[typesafe_key_not_needed]"]
+
+[[mutation]]
+id = "helpers_scrub_misses_typesafe_key"
+file = "agent/tests/helpers.py"
+search = '''SCRUB_NAMES = ("TAVILY_API_KEY", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL",
+               "TYPESAFE_LOG_LEVEL")'''
+replace = '''SCRUB_NAMES = ("TAVILY_API_KEY",)'''
+tests = ["agent/tests/test_offline_guard.py::test_spawn_helper_scrubs_child_env"]
+
+[[mutation]]
+id = "safety_judge_replay_drops_request_id"
+file = "agent/safety_judge.py"
+search = '''                          request_id=entry["request_id"], input_tokens=entry["input_tokens"],'''
+replace = '''                          request_id=None, input_tokens=entry["input_tokens"],'''
+tests = ["agent/tests/test_safety_judge.py::test_live_capture_replays_to_the_same_answers"]
+
+[[mutation]]
+id = "retry_need_one_jev_attempt"
+file = "agent/graph.py"
+search = '''    attempts = 1 + config.JEV_RETRY_MAX
+    per_call = price_usage('''
+replace = '''    attempts = 1
+    per_call = price_usage('''
+tests = ["agent/tests/test_safety.py::test_retry_affordability_counts_the_jev_calls"]
+
+[[mutation]]
+id = "safety_appliance_no_maker_match"
+file = "agent/nodes/safety_check.py"
+search = '''    maker = _maker(identity.get("manufacturer"))'''
+replace = '''    maker = None'''
+tests = ["agent/tests/test_safety.py::test_the_judge_sees_only_appliance_step_and_detail"]
+
+[[mutation]]
+id = "word_list_published_drops_heated"
+file = "agent/config.py"
+search = '''    "heat", "heater", "heaters", "heating", "heated",'''
+replace = '''    "heat", "heater", "heaters", "heating",'''
+tests = ["agent/tests/test_step_text.py::test_published_word_list_is_exactly_the_ten_words"]
+
+[[mutation]]
+id = "word_list_published_adds_panel"
+file = "agent/config.py"
+search = '''    "heat", "heater", "heaters", "heating", "heated",'''
+replace = '''    "heat", "heater", "heaters", "heating", "heated", "panel",'''
+tests = ["agent/tests/test_step_text.py::test_published_word_list_is_exactly_the_ten_words"]
+
+[[mutation]]
+id = "pair_provenance_last_wins"
+file = "agent/rules/safety.py"
+search = '''        entry = next((e for e in queue if (e.get("final_flag") is True) == flagged), None)
+        if entry is None and queue:
+            entry = queue[0]'''
+replace = '''        entry = queue[-1] if queue else None'''
+tests = ["agent/tests/test_safety.py::test_duplicate_steps_keep_their_own_provenance"]
+
+[[mutation]]
+id = "persist_safety_record_dict_join"
+file = "agent/nodes/persist.py"
+search = '''    entries = pair_provenance(final, state.get("safety_provenance") or [])'''
+replace = '''    by_key = {p.get("step_sha256"): p for p in state.get("safety_provenance") or [] if isinstance(p, dict)}
+    entries = [by_key.get(step_key(s.get("step"), s.get("detail"))) or {} for s in final]'''
+tests = ["agent/tests/test_safety.py::test_duplicate_steps_keep_their_own_provenance"]
+
+[[mutation]]
+id = "sc12b_run_steps_dict_join"
+file = "agent/safety_eval/sc12b.py"
+search = '''    entries = pair_provenance(steps, record.get("safety_provenance") or [])'''
+replace = '''    prov = {p.get("step_sha256"): p for p in record.get("safety_provenance") or [] if isinstance(p, dict)}
+    entries = [prov.get(step_key(s.get("step"), s.get("detail"))) or {} for s in steps]'''
+tests = ["agent/tests/test_safety.py::test_duplicate_steps_keep_their_own_provenance"]
+
+[[mutation]]
+id = "safety_judge_lost_not_counted"
+file = "agent/safety_judge.py"
+search = '''                            api_timeout_error=False, api_connection_error=False, predicate=lost_attempt)'''
+replace = '''                            predicate=lost_attempt)'''
+tests = ["agent/tests/test_safety_judge.py::test_timeout_then_answer_charges_the_lost_attempt", "agent/tests/test_safety_judge.py::test_timeout_then_error_status_charges_the_reservation"]
+
+[[mutation]]
+id = "safety_judge_timeouts_not_retried"
+file = "agent/safety_judge.py"
+search = '''                lost.append(type(exc).__name__)
+                return True'''
+replace = '''                lost.append(type(exc).__name__)
+                return False'''
+tests = ["agent/tests/test_safety_judge.py::test_timeout_then_answer_charges_the_lost_attempt"]
+
+[[mutation]]
+id = "safety_judge_lost_then_error_released"
+file = "agent/safety_judge.py"
+search = '''            if lost:  # an earlier attempt timed out or dropped and may have been billed'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_safety_judge.py::test_timeout_then_error_status_charges_the_reservation"]
+
+[[mutation]]
+id = "privacy_typesafe_prefix_dropped"
+file = "agent/replay/privacy_diff.py"
+search = '''    "TypeSafe key prefix": "apikey" + "_",
+'''
+replace = ''
+tests = ["agent/tests/test_cassettes.py::test_privacy_diff_blocks_a_typesafe_key_even_as_a_request_id"]
+
+[[mutation]]
+id = "env_typesafe_key_only_while_enabled"
+file = "agent/live/env.py"
+search = '''    names += [n for n in (need or ()) if n == config.TYPESAFE_KEY_NAME and n not in names]
+'''
+replace = ''
+tests = ["agent/tests/test_env_loader.py::test_typesafe_key_loaded_when_needed_while_jev_is_disabled"]
+
+[[mutation]]
+id = "eval_estimate_drops_jev_cost"
+file = "agent/live/eval_sc3b.py"
+search = '''        usd += jev_typical_usd(typical_jev)'''
+replace = '''        pass'''
+tests = ["agent/tests/test_live_eval.py::test_eval_preflight_names_and_prices_the_jev_calls"]
+
+[[mutation]]
+id = "eval_preflight_drops_jev_calls"
+file = "agent/live/eval_sc3b.py"
+search = '''        f"{sum(e.typical_credits for e in ests)} Tavily searches and {typical_jev} Jev calls "
+        f"({config.JEV_PROVIDER}); at most {sum(e.max_model_calls for e in ests)} Anthropic calls",'''
+replace = '''        f"{sum(e.typical_credits for e in ests)} Tavily searches; "
+        f"at most {sum(e.max_model_calls for e in ests)} Anthropic calls",'''
+tests = ["agent/tests/test_live_eval.py::test_eval_preflight_names_and_prices_the_jev_calls"]
+
+[[mutation]]
+id = "preflight_jev_line_claims_a_bound"
+file = "agent/live/preflight.py"
+search = '''            f"{planned} for {SYNTHESIZE_PASSES} drafts at {config.JEV_PLAN_STEPS_PER_PASS} steps each; one call "
+            "per try_first step (a longer draft makes more), each reserved and held under the run cap")'''
+replace = '''            f"at most {planned}, one per try_first step per draft")'''
+tests = ["agent/tests/test_preflight.py::test_preflight_prints_planned_calls_and_costs_from_config"]
+
+[[mutation]]
+id = "harness_extend_ignores_maker_list"
+file = "agent/safety_eval/harness.py"
+search = '''    require_same_maker_documents(doc, documents.sha256)
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_maker_list_hash_pins_the_set_extension_and_lock"]
+
+[[mutation]]
+id = "harness_lock_ignores_maker_list"
+file = "agent/safety_eval/harness.py"
+search = '''    require_same_maker_documents(doc, maker_documents)
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_maker_list_hash_pins_the_set_extension_and_lock"]
+
+[[mutation]]
+id = "harness_lock_skips_maker_list"
+file = "agent/safety_eval/harness.py"
+search = '''               "item_ids", "labels", "maker_documents", "split")'''
+replace = '''               "item_ids", "labels", "split")'''
+tests = ["agent/tests/test_safety_eval.py::test_maker_list_hash_pins_the_set_extension_and_lock"]
+
+[[mutation]]
+id = "pools_not_documentation_kept"
+file = "agent/safety_eval/pools.py"
+search = '''        if norm_url(page.url) in skip:
+            continue
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_not_documentation_pages_are_left_out_and_urls_name_the_appliance"]
+
+[[mutation]]
+id = "pools_appliance_from_query_only"
+file = "agent/safety_eval/pools.py"
+search = '''    if found == UNKNOWN_APPLIANCE:
+        found = appliance_for(re.sub(r"[^0-9a-z]+", " ", (url or "").casefold()))'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_not_documentation_pages_are_left_out_and_urls_name_the_appliance"]
+
+[[mutation]]
+id = "reader_packet_carries_writer_flag"
+file = "agent/safety_eval/harness.py"
+search = '''READER_KEYS = ("id", "appliance", "step", "detail")'''
+replace = '''READER_KEYS = ("id", "appliance", "step", "detail", "writer_flag")'''
+tests = ["agent/tests/test_safety_eval.py::test_reader_packet_holds_only_id_appliance_step_and_detail"]
+
+[[mutation]]
+id = "sc12b_items_relabel_known"
+file = "agent/safety_eval/harness.py"
+search = '''        item["reused_label"] = item["id"] in labels'''
+replace = '''        item["reused_label"] = False'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_steps_already_labeled_are_not_labeled_again"]
+
+[[mutation]]
+id = "format_null_choice_silent"
+file = "agent/safety_eval/harness.py"
+search = '''            lines.append(f"  config: SAFETY_LAYERS = {()!r}")
+            lines.append("  Jev is not picked: set JEV_SAFETY_ENABLED = False, keep the harness and the "
+                         "results, and publish the null")'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_no_candidate_kept_prints_the_null_config"]
+
+[[mutation]]
+id = "sc12b_live_config_unchecked"
+file = "agent/live/sc12b.py"
+search = '''    problems = shipped_config_problems()
+    if problems:'''
+replace = '''    problems = []
+    if problems:'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_refuses_a_config_the_choice_rule_did_not_pick"]
+
+[[mutation]]
+id = "sc12b_batch_credit_refusal_first"
+file = "agent/live/sc12b.py"
+search = '''                               need=tuple(config.LIVE_KEY_NAMES), environ=environ, check_credits=False)'''
+replace = '''                               need=tuple(config.LIVE_KEY_NAMES), environ=environ)'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_gate3_prints_the_credit_plan_before_any_refusal"]
+
+[[mutation]]
+id = "sc12b_stop_line_not_checked_after_run"
+file = "agent/live/sc12b.py"
+search = '''            if offline.past_stop_line(record["work_spend_usd"]):'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_reports_the_stop_line_after_the_last_run"]
+
+[[mutation]]
+id = "eval_record_v1_checks_any_case"
+file = "agent/live/eval_sc3b.py"
+search = '''    if (error is None and outcome is not None and spec.case in evaluators.V1_CASES
+            and (spec.stop_at_pause or not getattr(outcome, "paused", False))):'''
+replace = '''    if (error is None and outcome is not None
+            and (spec.stop_at_pause or not getattr(outcome, "paused", False))):'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_reports_the_stop_line_after_the_last_run"]
+why = "an SC12b run has no PLAN 6.5 case, so its record crashed on a KeyError after the paid run"
+
+[[mutation]]
+id = "prompts_item5_v1_sentence_back"
+file = "agent/prompts.py"
+search = '''Set "safety_flag": true on every step that switches power or gas off, on or reset (a breaker, a disconnect, a GFCI, a plug or a gas valve), that has the reader open, touch or work near anything that can be electrically live, hot or carrying gas, or that runs or tests a heater, and put those steps FIRST in the list.'''
+replace = '''Safety-relevant steps (overheat, electrical, gas) go FIRST in the list with "safety_flag": true.'''
+tests = ["agent/tests/test_prompts.py::test_item_5_safety_sentence_is_arm_a"]
+why = "arm A replaced v1's last sentence of item 5 (jev-safety build brief, What to build 8)"
+
+[[mutation]]
+id = "prompts_item5_gfci_dropped"
+file = "agent/prompts.py"
+search = '''(a breaker, a disconnect, a GFCI, a plug or a gas valve)'''
+replace = '''(a breaker, a disconnect, a plug or a gas valve)'''
+tests = ["agent/tests/test_prompts.py::test_item_5_safety_sentence_is_arm_a"]
+
+# ---------------------------------------------------------------------------
+# Decision 58: pool D's per page cap, document families and balanced halves
+# (agent/safety_eval/pools.py, harness.py, maker_documents.json; test_safety_eval.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "pools_split_ties_to_heldout"
+file = "agent/safety_eval/pools.py"
+search = '''            half = TUNE if key(TUNE) <= key(HELDOUT) else HELDOUT'''
+replace = '''            half = TUNE if key(TUNE) < key(HELDOUT) else HELDOUT'''
+tests = ["agent/tests/test_safety_eval.py::test_split_is_stable_by_family"]
+
+[[mutation]]
+id = "pools_split_in_arrival_order"
+file = "agent/safety_eval/pools.py"
+search = '''    ordered = sorted(sizes, key=family_sha256)'''
+replace = '''    ordered = list(sizes)'''
+tests = ["agent/tests/test_safety_eval.py::test_split_is_stable_by_family"]
+
+[[mutation]]
+id = "pools_split_to_larger_half"
+file = "agent/safety_eval/pools.py"
+search = '''            half = TUNE if key(TUNE) <= key(HELDOUT) else HELDOUT'''
+replace = '''            half = HELDOUT if key(TUNE) <= key(HELDOUT) else TUNE'''
+tests = ["agent/tests/test_safety_eval.py::test_halves_balance_within_the_largest_family"]
+
+[[mutation]]
+id = "pools_split_counts_families"
+file = "agent/safety_eval/pools.py"
+search = '''        counts[half] += sizes[name]
+        stratum = (half, strata.get(name) if strata else None)
+        counts[stratum] = counts.get(stratum, 0) + sizes[name]'''
+replace = '''        counts[half] += 1
+        stratum = (half, strata.get(name) if strata else None)
+        counts[stratum] = counts.get(stratum, 0) + 1'''
+tests = ["agent/tests/test_safety_eval.py::test_halves_balance_within_the_largest_family"]
+
+[[mutation]]
+id = "pools_forced_family_is_the_document"
+file = "agent/safety_eval/pools.py"
+search = '''    return list(dict.fromkeys(by_document.get(d) or g_family(d, inputs) for d in forced_documents))'''
+replace = '''    return list(dict.fromkeys(forced_documents))'''
+tests = ["agent/tests/test_safety_eval.py::test_forced_tune_families_go_to_tune_whole"]
+
+[[mutation]]
+id = "pools_doc_cap_removed"
+file = "agent/safety_eval/pools.py"
+search = '''            if kept.get(document, 0) >= config.SC12A_D_DOC_CAP:
+                break
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_d_pages_give_at_most_the_cap"]
+
+[[mutation]]
+id = "pools_doc_cap_off_by_one"
+file = "agent/safety_eval/pools.py"
+search = '''            if kept.get(document, 0) >= config.SC12A_D_DOC_CAP:'''
+replace = '''            if kept.get(document, 0) > config.SC12A_D_DOC_CAP:'''
+tests = ["agent/tests/test_safety_eval.py::test_d_pages_give_at_most_the_cap"]
+
+[[mutation]]
+id = "pools_doc_cap_counts_every_sentence"
+file = "agent/safety_eval/pools.py"
+search = '''            if keeps_sentence(sentence):
+                kept[document] = kept.get(document, 0) + 1
+'''
+replace = '''            kept[document] = kept.get(document, 0) + 1
+            if keeps_sentence(sentence):
+'''
+tests = ["agent/tests/test_safety_eval.py::test_d_pages_give_at_most_the_cap"]
+
+[[mutation]]
+id = "pools_listed_family_ignored"
+file = "agent/safety_eval/pools.py"
+search = '''"family": families.get(norm_url(page.url), document),'''
+replace = '''"family": document,'''
+tests = ["agent/tests/test_safety_eval.py::test_families_group_listed_manuals_and_runs_of_one_question"]
+
+[[mutation]]
+id = "pools_question_ignores_code"
+file = "agent/safety_eval/pools.py"
+search = '''        question = f"code:{kg.norm_code(str(code))}" if code else (f"symptom:{symptom}" if symptom else None)'''
+replace = '''        question = f"symptom:{symptom}" if symptom else None'''
+tests = ["agent/tests/test_safety_eval.py::test_families_group_listed_manuals_and_runs_of_one_question"]
+
+[[mutation]]
+id = "pools_family_skips_eval_records"
+file = "agent/safety_eval/pools.py"
+search = '''    records = sorted((data / "eval").glob("*.json")) + sorted(
+        (data / "superseded").glob("**/eval/*.json"), key=lambda p: _rel(p, data))'''
+replace = '''    records: list[Path] = []'''
+tests = ["agent/tests/test_safety_eval.py::test_families_group_listed_manuals_and_runs_of_one_question"]
+
+[[mutation]]
+id = "pools_family_skips_superseded_recordings"
+file = "agent/safety_eval/pools.py"
+search = '''    recordings = sorted((data / "recordings").glob("live_t_*.json")) + sorted(
+        (data / "superseded").glob("**/recordings/live_t_*.json"), key=lambda p: _rel(p, data))'''
+replace = '''    recordings = sorted((data / "recordings").glob("live_t_*.json"))'''
+tests = ["agent/tests/test_safety_eval.py::test_families_group_listed_manuals_and_runs_of_one_question"]
+
+[[mutation]]
+id = "maker_documents_family_split"
+file = "agent/safety_eval/maker_documents.json"
+search = '''2015_880_series.pdf",
+      "family": "sundance-880-owners-manual",'''
+replace = '''2015_880_series.pdf",
+      "family": "sundance-880-owners-manual-2015",'''
+tests = ["agent/tests/test_safety_eval.py::test_maker_documents_list_is_final_and_reviewed"]
+
+[[mutation]]
+id = "harness_lock_skips_split"
+file = "agent/safety_eval/harness.py"
+search = '''               "item_ids", "labels", "maker_documents", "split")'''
+replace = '''               "item_ids", "labels", "maker_documents")'''
+tests = ["agent/tests/test_safety_eval.py::test_lock_refuses_a_changed_split"]
+
+[[mutation]]
+id = "harness_lock_split_omits_family"
+file = "agent/safety_eval/harness.py"
+search = '''        "split": [[i["id"], i.get("family"), i["half"]] for i in doc["items"]],'''
+replace = '''        "split": [[i["id"], i["half"]] for i in doc["items"]],'''
+tests = ["agent/tests/test_safety_eval.py::test_lock_refuses_a_changed_split"]
+
+[[mutation]]
+id = "harness_rebuild_same_sampling"
+file = "agent/safety_eval/harness.py"
+search = '''        if sampling == pools.SAMPLING:
+            raise EvalRefusal(f"{items_path()} exists; the set is built once. Use --extend for the stopping rule.")
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_a_set_is_rebuilt_only_under_a_new_sampling_before_anyone_had_it"]
+
+[[mutation]]
+id = "harness_rebuild_ignores_readers"
+file = "agent/safety_eval/harness.py"
+search = '''        if seen:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_a_set_is_rebuilt_only_under_a_new_sampling_before_anyone_had_it"]
+
+[[mutation]]
+id = "harness_extend_other_sampling"
+file = "agent/safety_eval/harness.py"
+search = '''    if doc.get("sampling") != pools.SAMPLING:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_a_set_is_rebuilt_only_under_a_new_sampling_before_anyone_had_it"]
+
+# ---------------------------------------------------------------------------
+# SC12a review fixes: the split balanced within each appliance, a revision of a
+# listed manual in its family, the cap per URL, the extension's halves and
+# worked examples, near duplicates reported, the held out writer arm, and the
+# SC12b gate holding arm A's whole sentence (decision 59)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "pools_split_ignores_strata"
+file = "agent/safety_eval/pools.py"
+search = '''            s = strata.get(name) if strata else None'''
+replace = '''            s = None'''
+tests = ["agent/tests/test_safety_eval.py::test_split_balances_each_appliance", "agent/tests/test_safety_eval.py::test_halves_balance_within_each_stratum"]
+
+[[mutation]]
+id = "pools_finish_drops_strata"
+file = "agent/safety_eval/pools.py"
+search = '''    halves = assign_halves(sizes, forced_families, fixed, strata)'''
+replace = '''    halves = assign_halves(sizes, forced_families, fixed)'''
+tests = ["agent/tests/test_safety_eval.py::test_split_balances_each_appliance"]
+
+[[mutation]]
+id = "pools_extend_ignores_fixed_halves"
+file = "agent/safety_eval/pools.py"
+search = '''    families = _finish(items, forced_families, fixed)'''
+replace = '''    families = _finish(items, forced_families, None)'''
+tests = ["agent/tests/test_safety_eval.py::test_extension_keeps_every_family_half"]
+
+[[mutation]]
+id = "pools_extend_skips_worked_examples"
+file = "agent/safety_eval/pools.py"
+search = '''    new_forced = [d for d in worked_example_documents(items[len(existing):]) if d not in forced_tune]'''
+replace = '''    new_forced: list[str] = []'''
+tests = ["agent/tests/test_safety_eval.py::test_extension_forces_a_new_worked_example_document"]
+
+[[mutation]]
+id = "pools_doc_cap_per_version"
+file = "agent/safety_eval/pools.py"
+search = '''    kept: dict[str, int] = {}  # per document (the URL), across its stored versions
+    for page in ordered_pages(data_dir, maker_documents, excluded):
+'''
+replace = '''    for page in ordered_pages(data_dir, maker_documents, excluded):
+        kept: dict[str, int] = {}
+'''
+tests = ["agent/tests/test_safety_eval.py::test_d_cap_counts_a_url_across_its_stored_versions"]
+
+[[mutation]]
+id = "pools_also_in_family_ignored"
+file = "agent/safety_eval/pools.py"
+search = '''    families = {**listed_families(maker_documents), **listed_families(also_in_family)}'''
+replace = '''    families = listed_families(maker_documents)'''
+tests = ["agent/tests/test_safety_eval.py::test_a_revision_of_a_listed_manual_joins_its_family"]
+
+[[mutation]]
+id = "pools_document_list_drops_also_in_family"
+file = "agent/safety_eval/pools.py"
+search = '''                        also_in_family=list(data.get("also_in_family") or []))'''
+replace = '''                        also_in_family=[])'''
+tests = ["agent/tests/test_safety_eval.py::test_a_revision_of_a_listed_manual_joins_its_family"]
+
+[[mutation]]
+id = "harness_build_drops_also_in_family"
+file = "agent/safety_eval/harness.py"
+search = '''    result = pools.build_items(roots, documents.documents, excluded=documents.excluded,
+                               also_in_family=documents.also_in_family)'''
+replace = '''    result = pools.build_items(roots, documents.documents, excluded=documents.excluded)'''
+tests = ["agent/tests/test_safety_eval.py::test_a_revision_of_a_listed_manual_joins_its_family"]
+
+[[mutation]]
+id = "maker_documents_also_in_family_other_family"
+file = "agent/safety_eval/maker_documents.json"
+search = '''      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "reason": "revision 5 of Trane document 18-AC98D1; the listed manual is revision 7E"'''
+replace = '''      "family": "trane-condensing-units-18-ac98d1-5-en",
+      "reason": "revision 5 of Trane document 18-AC98D1; the listed manual is revision 7E"'''
+tests = ["agent/tests/test_safety_eval.py::test_a_revision_of_a_listed_manual_joins_its_family"]
+
+[[mutation]]
+id = "pools_near_dup_counts_within_a_half"
+file = "agent/safety_eval/pools.py"
+search = '''            if half_a == half_b:
+                continue
+'''
+replace = ''
+tests = ["agent/tests/test_safety_eval.py::test_near_duplicates_are_counted_across_the_halves"]
+
+[[mutation]]
+id = "pools_near_dup_keeps_digits"
+file = "agent/safety_eval/pools.py"
+search = '''_NOT_LETTER = re.compile(r"[^a-z]+")'''
+replace = '''_NOT_LETTER = re.compile(r"[^a-z0-9]+")'''
+tests = ["agent/tests/test_safety_eval.py::test_near_duplicates_are_counted_across_the_halves"]
+
+[[mutation]]
+id = "harness_writer_arm_heldout_only"
+file = "agent/safety_eval/harness.py"
+search = '''    result = arms(scored, lock["thresholds"], writer_items_of(doc["items"], labels) if no_generated else None)'''
+replace = '''    result = arms(scored, lock["thresholds"])'''
+tests = ["agent/tests/test_safety_eval.py::test_heldout_writer_arm_scored_on_all_of_pool_g_when_the_half_has_no_generated_step"]
+
+[[mutation]]
+id = "harness_counts_skip_appliances"
+file = "agent/safety_eval/harness.py"
+search = '''        lines.append(f"  {name} by appliance: {detail}")'''
+replace = '''        pass'''
+tests = ["agent/tests/test_safety_eval.py::test_a_set_is_rebuilt_only_under_a_new_sampling_before_anyone_had_it"]
+
+[[mutation]]
+id = "sc12b_arm_a_first_clause_only"
+file = "agent/safety_eval/sc12b.py"
+search = '''ARM_A_MARKER = (
+    'Set "safety_flag": true on every step that switches power or gas off, on or reset (a breaker, '
+    "a disconnect, a GFCI, a plug or a gas valve), that has the reader open, touch or work near anything "
+    "that can be electrically live, hot or carrying gas, or that runs or tests a heater, and put those "
+    "steps FIRST in the list."
+)'''
+replace = '''ARM_A_MARKER = 'Set "safety_flag": true on every step that switches power or gas off, on or reset''''
+tests = ["agent/tests/test_prompts.py::test_arm_a_gate_holds_the_same_whole_sentence"]
+
+[[mutation]]
+id = "safety_words_published_list_no_breaker_power"
+file = "agent/config.py"
+search = '''SAFETY_WORDS_PUBLISHED = (
+    "breaker", "breakers",
+    "power", "powered", "powering",'''
+replace = '''SAFETY_WORDS_PUBLISHED = (
+    "breakers",
+    "powered", "powering",'''
+tests = ["agent/tests/test_step_text.py::test_word_rule_flags_the_published_miss_and_not_the_water_step"]
+why = "the published list loses breaker and power, so the published miss is no longer flagged by the published arm"
+
+[[mutation]]
+id = "sc12b_score_raw_interval"
+file = "agent/safety_eval/sc12b.py"
+search = '''        lines.append(harness.arm_line(names[key], counts))'''
+replace = '''        s = counts.summary()
+        lines.append(f"  {names[key]}: recall {s['recall']:.3f} ({s['tp']} of {s['positives']}), "
+                     f"precision {s['precision']:.3f} ({s['tp']} of {s['flagged']}), wilson recall {s['recall_wilson95']}")'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
+why = "the SC12b scorer prints the recall interval as a raw tuple and precision without an interval"
+
+[[mutation]]
+id = "sc12b_score_shipped_always"
+file = "agent/safety_eval/sc12b.py"
+search = '''    return "(shipped)" if layer in tuple(config.SAFETY_LAYERS) else "(not shipped)"'''
+replace = '''    return "(shipped)"'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
+why = "every code layer is marked shipped whatever config.SAFETY_LAYERS says"
+
+[[mutation]]
+id = "sc12b_score_word_tag_from_jev"
+file = "agent/safety_eval/sc12b.py"
+search = '''            "word": f"word rule, tuned {shipped_tag('word')}",'''
+replace = '''            "word": f"word rule, tuned {shipped_tag('jev')}",'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
+why = "the word rule is marked shipped or not by whether Jev ships"
+
+[[mutation]]
+id = "sc12b_score_baseline_no_interval"
+file = "agent/safety_eval/sc12b.py"
+search = '''                     f"{harness.ratio_text(s['recall'], s['recall_wilson95'])} ({s['tp']} of {s['positives']}); "'''
+replace = '''                     f"{s['recall']:.3f} ({s['tp']} of {s['positives']}); "'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
+why = "the writer baseline's recall is printed without its Wilson 95% interval"
+
+[[mutation]]
+id = "cli_main_block_local_main"
+file = "agent/cli.py"
+search = '''    from agent.cli import main as _main
+
+    sys.exit(_main())'''
+replace = '''    sys.exit(main())'''
+tests = ["agent/tests/test_cli.py::test_module_run_prints_a_live_module_refusal_without_a_traceback"]
+why = "run as python -m agent.cli, a CliRefusal raised in a live module escapes __main__'s own class and prints a traceback"
+
+[[mutation]]
+id = "sc12b_baseline_keeps_superseded_steps"
+file = "agent/safety_eval/sc12b.py"
+search = '''             if i["pool"] == pools.POOL_G and str(i["document"]).startswith("t-") and i["id"] in labels
+             and not superseded_only(i)]'''
+replace = '''             if i["pool"] == pools.POOL_G and str(i["document"]).startswith("t-") and i["id"] in labels]'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_writer_baseline_leaves_out_steps_only_a_replaced_build_wrote"]
+why = "the 18 September writer baseline counts steps only the replaced build wrote, which is not a result"
+
+[[mutation]]
+id = "sc12b_baseline_superseded_any"
+file = "agent/safety_eval/sc12b.py"
+search = '''    return bool(sources) and all("superseded" in PurePosixPath(str(s)).parts for s in sources)'''
+replace = '''    return bool(sources) and any("superseded" in PurePosixPath(str(s)).parts for s in sources)'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_writer_baseline_leaves_out_steps_only_a_replaced_build_wrote"]
+why = "one superseded source drops a step the fixed build also wrote"
+
+[[mutation]]
+id = "sc12b_jev_label_constant_name"
+file = "agent/safety_eval/sc12b.py"
+search = '''            "jev": (f"Jev at {config.JEV_THRESHOLD:.2f} {shipped_tag('jev')}" if config.JEV_THRESHOLD is not None'''
+replace = '''            "jev": (f"Jev at config.JEV_THRESHOLD {shipped_tag('jev')}" if config.JEV_THRESHOLD is not None'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
+why = "the SC12b printout names the Python constant instead of the threshold Jev was scored at"

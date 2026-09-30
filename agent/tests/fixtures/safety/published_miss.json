@@ -1,0 +1,39 @@
+{
+  "_about": "The published miss: run t-267045726dd04118 (hot tub, FLO, 18 September 2026). Its recorded draft and run record live only under data/, so this tracked fixture holds just the final step list, copied from the published brief briefs/v2/t-267045726dd04118.html, which is public. It holds no page text. The Jev probability is the one test call recorded at Gate 0 (DECISION-LOG, 29 September 2026).",
+  "run_id": "t-267045726dd04118",
+  "published_brief": "briefs/v2/t-267045726dd04118.html",
+  "appliance": "hot tub",
+  "steps": [
+    {
+      "step": "Check water level",
+      "detail": "Ensure water level is at or above the lowest pillow but below the jets",
+      "safety_flag": false,
+      "source_index": 0
+    },
+    {
+      "step": "Remove and inspect the filter cartridge",
+      "detail": "A clogged filter is the most common cause of FLO errors",
+      "safety_flag": false,
+      "source_index": 1
+    },
+    {
+      "step": "Run the spa for 2 minutes without the filter installed",
+      "detail": "If the FLO error clears, the filter is the problem and needs cleaning or replacement",
+      "safety_flag": false,
+      "source_index": 2
+    },
+    {
+      "step": "Turn off power at the breaker, wait 20 minutes, then restore power",
+      "detail": "This resets the flow switch sensor; retest with filter removed",
+      "safety_flag": false,
+      "source_index": 1
+    }
+  ],
+  "missed_step": "Turn off power at the breaker, wait 20 minutes, then restore power",
+  "jev_recorded": {
+    "noul": 0.98,
+    "input_tokens": 680,
+    "question_hash": "34fb2f3b18541662",
+    "recorded": "SC12a tune half, locked wording 3, 30 September 2026 (the Gate 0 call on wording 1 gave 0.97)"
+  }
+}

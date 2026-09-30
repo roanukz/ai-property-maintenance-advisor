@@ -2,7 +2,9 @@
 
 Wraps the pure `run_rules`. It writes `brief`, `validation_errors`,
 `validation_failures`, `status` and `refusal_origin`, rule 4's `grounding`
-report and `grounding_status` (Phase 3), plus its latency entry.
+report and `grounding_status` (Phase 3), the per step `safety_provenance` of
+the flags the rules raised from safety_check's `safety_signals`, plus its
+latency entry.
 
 - Rules pass: `brief` is the validated brief, `status` its status, errors
   cleared; `refusal_origin` is "model" when the draft itself refused.
@@ -186,8 +188,10 @@ def _validate(state: AdvisorState, ctx: RunContext) -> dict:
         page_texts=page_texts_for(sources, ctx),
         maintenance_log=load_maintenance_log(state, ctx),
         recorded_text_urls=set(recorded_text_hashes(ctx.cassette)),
+        safety_signals=state.get("safety_signals"),
     )
     report = {"grounding": result.grounding, "grounding_status": result.grounding_status}
+    report["safety_provenance"] = result.safety_provenance
     if result.errors:
         return {**_failure(state, result.errors), **report}
     return {

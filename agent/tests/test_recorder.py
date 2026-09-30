@@ -18,9 +18,10 @@ from typing import Any
 
 import pytest
 
-from agent import cli, config
+from agent import cli, config, prompts
 from agent.replay import privacy_diff
 from agent.replay.cassettes import load_cassette
+from agent.safety_judge import question_hash
 from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
     FLO_CASSETTE,
     PLATE,
@@ -81,6 +82,41 @@ def test_recording_loads_as_a_cassette_and_replays(live_env: Path, monkeypatch: 
     out += capsys.readouterr().out
     assert ran(out) == ran(live_out)
     assert "status: ok" in out
+
+
+def test_recording_carries_the_jev_answers_and_replays_them(live_env: Path, monkeypatch: pytest.MonkeyPatch,
+                                                           capsys: pytest.CaptureFixture[str]) -> None:
+    """Mutations: recorder_drops_safety_check (the candidate leaves the Jev answers out);
+    recorder_safety_capture_off (capturing hands the live judge no capture list); recorder_safety_keeps_extra
+    (a recorded answer keeps the capture's event key, so the candidate fails to load)."""
+    fakes = LiveFakes(flo_data())
+    fakes.jev_noul = 0.93
+    fakes.install(monkeypatch)
+    thread_id, live_out = run_flo_live(monkeypatch, capsys, fakes)
+    path, cassette, report, _ = recording_files(live_env)
+    load_cassette(path)
+    assert report["loadable"] is True and "loads as a cassette: yes" in live_out
+    entries = cassette["safety_check"]
+    assert fakes.jev_requests and len(entries) == len(fakes.jev_requests)
+    noul = prompts.SAFETY_STEP_NOUL
+    assert {e["question_hash"] for e in entries} == {question_hash(noul["instructions"], noul["criteria"])}
+    assert [(e["noul"], e["model"], e["error"], e["input_tokens"]) for e in entries] == \
+        [(0.93, config.JEV_MODEL, None, 384)] * len(entries)
+    assert [e["request_id"] for e in entries] == [f"req-{n}" for n in range(1, len(entries) + 1)]
+    assert "safety_check" in cassette["provenance"]["copied_fields"]
+    recorded = json.dumps(entries)
+    assert all(state["step"] not in recorded and state["appliance"] not in recorded for state in fakes.jev_requests)
+
+    # Replaying the recording serves the same answers: the run records' safety sections match.
+    live_record = run_record(thread_id)
+    monkeypatch.setenv(config.ENV_MODE, "replay")
+    assert cli.main(["ask", "--symptom", SYMPTOM, "--photo", str(PLATE), "--cassette", str(path)]) == cli.EXIT_OK
+    out = capsys.readouterr().out
+    replay_thread = thread_of(out)
+    assert cli.main(["resume", replay_thread, *RESUME_FLAGS, "--cassette", str(path)]) == cli.EXIT_OK
+    capsys.readouterr()
+    assert live_record["safety"]["status"] == "ran"
+    assert run_record(replay_thread)["safety"] == live_record["safety"]
 
 
 def test_recording_holds_no_key_photo_bytes_or_real_page_text(live_env: Path, monkeypatch: pytest.MonkeyPatch,
@@ -150,7 +186,8 @@ def test_privacy_report_applies_the_local_denylist(live_env: Path, monkeypatch: 
 def test_staged_recording_passes_the_privacy_diff_with_its_copy_log(
         live_env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     """Mutations: recorder_copy_log_not_written (the candidate has no copy log, so the PLAN 8.10 diff
-    blocks it); recorder_copy_log_skips_lookups (strings from the lookup log are not listed as copies).
+    blocks it); recorder_copy_log_skips_lookups (strings from the lookup log are not listed as copies);
+    recorder_safety_no_origin (the Jev answers are not listed as copies from the capture).
     Finding P1: a live recording staged the way next_step says must reach the diff unblocked."""
     import shutil
 
@@ -178,6 +215,9 @@ def test_staged_recording_passes_the_privacy_diff_with_its_copy_log(
     tool_copies = [c for c in result.copies if c["dest"].startswith("research.tool_results")]
     assert tool_copies and all("lookup log line" in c["source"] for c in tool_copies)
     assert any("capture.jsonl line" in c["source"] for c in result.copies if c["dest"].startswith("synthesize"))
+    # The recorded Jev answers are listed as copies from the capture too (mutation recorder_safety_no_origin).
+    jev_copies = [c for c in result.copies if c["dest"].startswith("safety_check")]
+    assert cassette["safety_check"] and jev_copies and all("(Jev answer" in c["source"] for c in jev_copies)
     assert [h["matches"] for h in result.hashed] == ["demo-assets/plate-clear.jpg"]
     assert not any(c["dest"].startswith("provenance") for c in result.copies)  # the recorder wrote those
 

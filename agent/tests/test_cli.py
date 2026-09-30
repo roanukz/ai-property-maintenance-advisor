@@ -321,3 +321,27 @@ def test_property_show_lists_validated_maintenance_due(
     page = (config.PROPERTY_OUT_DIR / f"{SEED_PROPERTY}.html").read_text(encoding="utf-8")
     assert "Replace the synthetic filter cartridge: interval every 12 months; due 2027-03-01" in page
     assert "Live only synthetic task" not in page
+
+
+def test_module_run_prints_a_live_module_refusal_without_a_traceback(tmp_path: Path) -> None:
+    """`python -m agent.cli` makes agent/cli.py __main__, a second copy of the module beside the
+    agent.cli the live modules import, each with its own CliRefusal. A refusal raised in a live module
+    (here eval_sc3b.check_mode, for `eval sc12a --live` in replay mode, before any key, ledger or
+    network is touched) must still print as a refusal with exit code 1, as the `advisor` entry point does.
+
+    The child runs under the network guard, with every key scrubbed, ADVISOR_MODE unset and the data
+    directory pointed at an empty temp folder that must stay empty.
+
+    Mutation: cli_main_block_local_main (the __main__ block calls its own main again)."""
+    from agent.tests.helpers import GUARD_MARKER, spawn_offline_child
+
+    data = tmp_path / "data"
+    proc = spawn_offline_child(
+        ["-m", "agent.cli", "eval", "sc12a", "--live"], kind="python", cwd=tmp_path, timeout=60,
+        env_extra={config.ENV_MODE: None, "ADVISOR_DATA_DIR": str(data)},
+    )
+    assert GUARD_MARKER in proc.stderr, proc.stderr
+    assert proc.returncode == cli.EXIT_REFUSED, proc.stderr
+    assert "advisor: refused: --live needs ADVISOR_MODE set to one of" in proc.stderr, proc.stderr
+    assert "Traceback" not in proc.stderr and "Traceback" not in proc.stdout
+    assert not data.exists() or not any(data.rglob("*"))

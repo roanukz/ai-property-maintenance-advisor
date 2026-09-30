@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+import json
+
+import httpx2
 import pytest
+import typesafe_sdk
 from langchain_anthropic import ChatAnthropic
 
-from agent import config, models
+from agent import config, models, prompts
 from agent.ledger import Ledger
 from agent.replay.replay_model import ReplayChatModel, ReplayExhausted
 from agent.research.tools import ResearchTool
+from agent.safety_judge import ReplayJudge, SafetyCheckError, question_hash
 from agent.state import RunContext
+
+STEP = "ab" * 32
+STATE = {"appliance": "hot tub", "step": "Turn off power at the breaker", "detail": ""}
 
 
 class FakeCassette:
@@ -27,12 +35,19 @@ def ctx(mode, tmp_path, cassette=None):
 
 def test_replay_mode_never_constructs_live_clients(tmp_path, monkeypatch):
     # Mutation: have make_model or make_tools build the live client first and
-    # swap it out in replay; the raising constructors fire.
+    # swap it out in replay; the raising constructors fire. Mutation
+    # models_replay_builds_typesafe_client: make_safety_judge builds a
+    # TypeSafeClient in replay. The live judge catches every error as a failed
+    # check, so construction is recorded, not only raised.
+    built = []
+
     def boom(*a, **k):
+        built.append(k)
         raise AssertionError("live client constructed in replay")
 
     for name in ("ChatAnthropic", "TavilySearch", "TavilyExtract"):
         monkeypatch.setattr(models, name, boom)
+    monkeypatch.setattr(typesafe_sdk, "TypeSafeClient", boom)
     run = ctx("replay", tmp_path, FakeCassette())
     for node in models.NODES:
         m = models.make_model(node, run)
@@ -40,6 +55,12 @@ def test_replay_mode_never_constructs_live_clients(tmp_path, monkeypatch):
         assert m.model == config.MODEL_FOR["replay"][node]
         assert m.invoke("hi").content == node  # served from this node's script
     assert [t.name for t in models.make_tools(run)] == ["search", "fetch"]
+    judge = models.make_safety_judge(run)
+    assert isinstance(judge, ReplayJudge)
+    with pytest.raises(SafetyCheckError) as caught:  # a cassette with no safety_check key
+        judge.ask(STEP, STATE)
+    assert caught.value.kind == "not_recorded"
+    assert built == []
 
 
 def test_replay_max_tokens_match_config(tmp_path):
@@ -144,3 +165,69 @@ def test_unknown_mode_or_node_is_rejected(tmp_path):
         models.make_model("research", ctx("live", tmp_path))
     with pytest.raises(ValueError):
         models.make_model("summarize", ctx("replay", tmp_path, FakeCassette()))
+
+
+def recorded_entry(**overrides):
+    noul = prompts.SAFETY_STEP_NOUL
+    entry = {"step_sha256": STEP, "question_hash": question_hash(noul["instructions"], noul["criteria"]),
+             "model": config.JEV_MODEL, "noul": 0.97, "input_tokens": 384, "output_tokens": 3,
+             "request_id": "req-1", "error": None}
+    entry.update(overrides)
+    return entry
+
+
+class RecordedJevCassette(FakeCassette):
+    safety_check = [recorded_entry()]
+
+
+def test_replay_safety_judge_serves_the_cassette_once_per_run(tmp_path):
+    # Mutation models_safety_judge_not_cached: make_safety_judge builds a new
+    # replay judge on every call, so a second pass is served the first answer again.
+    run = ctx("replay", tmp_path, RecordedJevCassette())
+    judge = models.make_safety_judge(run)
+    reply = judge.ask(STEP, STATE)
+    assert (reply.noul, reply.model, reply.request_id, reply.input_tokens) == (0.97, config.JEV_MODEL, "req-1", 384)
+    assert reply.question_hash == judge.question_hash
+    assert models.make_safety_judge(run) is judge
+    with pytest.raises(SafetyCheckError) as caught:
+        models.make_safety_judge(run).ask(STEP, STATE)
+    assert caught.value.kind == "not_recorded"  # one recorded answer serves one call
+    with pytest.raises(ValueError):
+        models.make_safety_judge(ctx("replay", tmp_path))  # no cassette
+
+
+def test_live_safety_judge_uses_config(tmp_path, monkeypatch):
+    # Construct and call on a mock transport; sockets stay blocked.
+    # Mutations: safety_judge_model_unpinned (the client and call leave the
+    # model to the SDK default); safety_judge_timeout_default (no per call
+    # timeout); models_live_judge_wrong_noul (the live judge asks another wording).
+    seen = {}
+    real = typesafe_sdk.TypeSafeClient
+
+    def handler(request):
+        seen["body"] = json.loads(request.content)
+        seen["timeout"] = request.extensions.get("timeout")
+        return httpx2.Response(200, json={"model": config.JEV_MODEL, "usage": {"input_tokens": 384, "output_tokens": 3},
+                                          "answers": {"safety_step": {"type": "noul", "noul": 0.9}}})
+
+    def factory(**kwargs):
+        seen["client"] = dict(kwargs)
+        return real(**kwargs, api_key="offline-test", transport=httpx2.MockTransport(handler))
+
+    monkeypatch.setattr(typesafe_sdk, "TypeSafeClient", factory)
+    Ledger(tmp_path / "l", create=True)
+    run = ctx("cheap", tmp_path)
+    judge = models.make_safety_judge(run)
+    assert judge.question_hash == question_hash(prompts.SAFETY_STEP_NOUL["instructions"],
+                                                prompts.SAFETY_STEP_NOUL["criteria"])
+    assert judge.ask(STEP, STATE).noul == 0.9
+    assert seen["client"]["model"] == config.JEV_MODEL and seen["client"]["timeout"] == config.JEV_TIMEOUT_S
+    assert seen["body"]["model"] == config.JEV_MODEL and seen["body"]["state"] == STATE
+    assert seen["body"]["questions"] == {"safety_step": {"type": "noul",
+                                                         "instructions": prompts.SAFETY_STEP_NOUL["instructions"],
+                                                         "criteria": prompts.SAFETY_STEP_NOUL["criteria"]}}
+    assert seen["timeout"]["read"] == config.JEV_TIMEOUT_S
+    rows = Ledger(tmp_path / "l").rows("r1")
+    assert [(r["kind"], r["provider"], r["model"]) for r in rows] == [
+        ("reserve", config.JEV_PROVIDER, config.JEV_MODEL), ("charge", config.JEV_PROVIDER, config.JEV_MODEL),
+        ("release", config.JEV_PROVIDER, config.JEV_MODEL)]

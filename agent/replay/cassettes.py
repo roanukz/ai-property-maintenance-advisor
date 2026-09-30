@@ -22,7 +22,8 @@ Format (cassette_version 1):
       "synthesize": [{"attempt": 1, "draft": {...}, "usage": {...}}, ...],
       "page_texts": {example_url: text},
       "caps": null | {"run_cap_usd": number, ...},
-      "expect": {...}
+      "expect": {...},
+      "safety_check": [answer, ...]                      (optional)
     }
 
 A response is in the ReplayChatModel format: {"message": {"content",
@@ -34,6 +35,12 @@ folder, written by agent/live/recorder.py); or one of the
 failure shapes the wrappers must handle (PLAN 8.7): {"tool", "error": "..."},
 {"tool", "string": "..."} (a bare string return) or {"tool", "raise":
 "timeout"}. Each failure shape may also name its query or url.
+
+A safety_check answer is one recorded Jev call (agent/safety_judge.py):
+{"step_sha256", "question_hash", "model", "noul", "input_tokens",
+"output_tokens", "request_id", "error"}. It names the step by hash only and
+holds no step or page text; exactly one of noul and error is set. A cassette
+without the key replays with the check not recorded, which is not a failure.
 """
 
 from __future__ import annotations
@@ -64,7 +71,7 @@ REQUIRED_KEYS = (
     "caps",
     "expect",
 )
-OPTIONAL_KEYS = ("classifier",)
+OPTIONAL_KEYS = ("classifier", "safety_check")
 PROVENANCE_REQUIRED = ("derived_from", "copied_fields", "synthetic_fields", "built_by", "reviewed")
 PROVENANCE_OPTIONAL = ("public_already",)
 IDENTITY_FIELDS = ("manufacturer", "model", "serial", "manufacture_date")
@@ -75,8 +82,22 @@ FAILURE_SHAPES = ("error", "string", "raise")
 RESULT_OPTIONAL = ("text_sha256",)
 RAISE_KINDS = ("timeout",)
 
+# One recorded Jev answer, and the failure kinds a recording may hold (a
+# replay's own "not_recorded" is never recorded).
+SAFETY_CHECK_KEYS = (
+    "step_sha256", "question_hash", "model", "noul", "input_tokens", "output_tokens", "request_id", "error",
+)
+SAFETY_CHECK_ERRORS = (
+    "reservation_refused", "timeout", "rate_limited", "api_error", "unparseable", "model_mismatch",
+    "missing_key", "other",
+)
+
 CASE_RE = re.compile(r"^[a-z0-9_]+$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+QUESTION_HASH_RE = re.compile(r"^[0-9a-f]{16}$")
+# A model name or request ID is one opaque token: no spaces, so no text.
+MODEL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:\-]{0,63}$")
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:\-]{1,128}$")
 # Synthetic page text may only sit on reserved example hosts (RFC 2606 and
 # RFC 6761), never on a real URL (decision 15).
 EXAMPLE_HOSTS = ("example.com", "example.org", "example.net")
@@ -297,6 +318,41 @@ def _check_script_matches_results(c: _Checker, research: dict) -> None:
                 )
 
 
+def _check_safety_check(c: _Checker, entries: Any) -> None:
+    """Each recorded Jev answer: its exact keys, hashes, one token strings and numbers; never text."""
+    for i, entry in enumerate(c.list_(entries, "safety_check")):
+        path = f"safety_check[{i}]"
+        entry = c.dict_(entry, path)
+        c.keys(entry, path, SAFETY_CHECK_KEYS)
+        if not isinstance(entry["step_sha256"], str) or not SHA256_RE.match(entry["step_sha256"]):
+            c.fail(f"{path}.step_sha256", "must be 64 lower case hex characters")
+        if not isinstance(entry["question_hash"], str) or not QUESTION_HASH_RE.match(entry["question_hash"]):
+            c.fail(f"{path}.question_hash", "must be 16 lower case hex characters")
+        if not isinstance(entry["model"], str) or not MODEL_NAME_RE.match(entry["model"]):
+            c.fail(f"{path}.model", "must be a model name with no spaces")
+        noul = entry["noul"]
+        if noul is not None and (
+            isinstance(noul, bool) or not isinstance(noul, (int, float)) or not 0 <= noul <= 1
+        ):
+            c.fail(f"{path}.noul", "must be null or a probability from 0 to 1")
+        for key in ("input_tokens", "output_tokens"):
+            if entry[key] is not None:
+                c.int_(entry[key], f"{path}.{key}")
+        request_id = entry["request_id"]
+        if request_id is not None and (not isinstance(request_id, str) or not REQUEST_ID_RE.match(request_id)):
+            c.fail(f"{path}.request_id", "must be null or one token of at most 128 characters")
+        error = entry["error"]
+        if error is not None and error not in SAFETY_CHECK_ERRORS:
+            c.fail(f"{path}.error", f"must be null or one of {', '.join(SAFETY_CHECK_ERRORS)}, got {error!r}")
+        if (noul is None) == (error is None):
+            c.fail(path, "needs exactly one of noul and error")
+
+
+def check_safety_check_entries(entries: Any, source: str = "<safety_check>") -> None:
+    """Raise CassetteError unless `entries` is a well formed safety_check list."""
+    _check_safety_check(_Checker(source), entries)
+
+
 def _check_provenance(c: _Checker, prov: Any) -> None:
     prov = c.dict_(prov, "provenance")
     c.keys(prov, "provenance", PROVENANCE_REQUIRED, PROVENANCE_OPTIONAL)
@@ -390,6 +446,9 @@ def validate_cassette(data: Any, source: str = "<cassette>") -> None:
     if not expect:
         c.fail("expect", "must state at least one expected outcome")
 
+    if "safety_check" in data:
+        _check_safety_check(c, data["safety_check"])
+
 
 # ---------------------------------------------------------------------------
 # The Cassette object
@@ -436,6 +495,12 @@ class Cassette:
         """True when provenance names a v1 lookup (the decision 25 exemption)."""
         derived = self.data["provenance"]["derived_from"] or ""
         return derived.startswith(("v1 lookup ", "v1 extract lookup "))
+
+    @property
+    def safety_check(self) -> list[dict[str, Any]] | None:
+        """Recorded Jev answers in call order, or None when the cassette has none."""
+        entries = self.data.get("safety_check")
+        return None if entries is None else copy.deepcopy(entries)
 
     def responses_for(self, node: str) -> list[dict[str, Any]]:
         """Scripted responses for one node, in the ReplayChatModel format."""

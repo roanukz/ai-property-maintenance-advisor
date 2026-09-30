@@ -6,6 +6,9 @@ Mutations that turn these red:
   agent/tests/: test_no_inline_model_ids_or_prices lists it.
 - the claude pattern, the $ pattern or the float check removed from the
   scanner: test_scanner_catches_each_kind fails.
+- the jev pattern removed or narrowed to versioned IDs: test_scanner_catches_jev_model_ids
+  fails; zero kept among the money values (Jev's free output): every 0.0 in the
+  package is listed and test_zero_price_is_not_a_money_value fails.
 - a MODEL_FOR entry naming a model missing from PRICES_PER_MTOK, or a
   loop_guard not equal to search + fetch + 2, in config.py: the matching
   consistency test fails.
@@ -22,7 +25,7 @@ from agent import config
 
 AGENT_DIR = config.REPO_ROOT / "agent"
 
-MODEL_ID_RE = re.compile(r"claude-[a-z0-9]", re.IGNORECASE)
+MODEL_ID_RE = re.compile(r"claude-[a-z0-9]|\bjev-[a-z0-9]", re.IGNORECASE)
 DOLLAR_RE = re.compile(r"\$\s?\d")
 
 # A float literal that happens to equal a price but is not one can opt out
@@ -46,7 +49,9 @@ def _money_values() -> set[float]:
             config.ANTHROPIC_WEB_SEARCH_USD_PER_SEARCH,
         }
     )
-    return {float(v) for v in values}
+    # A free price (Jev's output) is not a figure anyone could inline: 0.0 is
+    # every float default and sum start in the package.
+    return {float(v) for v in values if v}
 
 
 def scan_source(text: str, money: set[float]) -> list[tuple[int, str]]:
@@ -112,6 +117,22 @@ def test_scanner_catches_each_kind() -> None:
     )
     hits = scan_source(source, money)
     assert [line for line, _ in hits] == [2, 3, 4, 5]
+
+
+def test_scanner_catches_jev_model_ids() -> None:
+    money = _money_values()
+    ids = ["je" + "v-1.13.0", "je" + "v-latest", "je" + "v-preview", "JE" + "V-2"]  # split: no model ID here
+    source = "\n".join([f"MODEL = '{model}'" for model in ids] + ["name = 'jev_threshold'", "n = 'a jev reply'"])
+    assert [line for line, _ in scan_source(source, money)] == [1, 2, 3, 4]
+
+
+def test_zero_price_is_not_a_money_value() -> None:
+    assert config.PRICES_PER_MTOK[config.JEV_MODEL]["output"] == 0
+    money = _money_values()
+    assert 0.0 not in money
+    assert config.PRICES_PER_MTOK[config.JEV_MODEL]["input"] in money
+    source = "\n".join(["total = 0.0", f"price = {config.PRICES_PER_MTOK[config.JEV_MODEL]['input']!r}"])
+    assert [line for line, _ in scan_source(source, money)] == [2]
 
 
 def test_scan_covers_the_agent_package() -> None:

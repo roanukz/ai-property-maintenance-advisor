@@ -42,8 +42,13 @@ def price(model: str, tokens_in: float, tokens_out: float) -> float:
     return (tokens_in * prices["input"] + tokens_out * prices["output"]) / 1_000_000
 
 
-def expected_typical(mode: str, *, read_plate: bool) -> float:
-    """Section 9 table B, typical column, from config."""
+def expected_jev_calls(passes: int) -> int:
+    """Jev calls one run plans: one per step per draft, config.JEV_PLAN_STEPS_PER_PASS steps a draft."""
+    return passes * config.JEV_PLAN_STEPS_PER_PASS if config.JEV_SAFETY_ENABLED else 0
+
+
+def expected_typical(mode: str, *, read_plate: bool, jev: bool = True) -> float:
+    """Section 9 table B, typical column, from config, plus one draft's Jev calls (input only)."""
     models = config.MODEL_FOR[mode]
     searches = config.RESEARCH_LIMITS["main"]["search"]
     research_in = sum(config.RESEARCH_CALL_BASE_TOKENS + k * config.RESEARCH_TOKENS_PER_SEARCH
@@ -56,6 +61,8 @@ def expected_typical(mode: str, *, read_plate: bool) -> float:
     if read_plate:
         tokens = config.READ_PLATE_TOKENS_TYPICAL
         total += price(models["read_plate"], tokens["input"], tokens["output"])
+    if jev:
+        total += price(config.JEV_MODEL, expected_jev_calls(1) * config.JEV_EST_INPUT_TOKENS, 0)
     return total
 
 
@@ -76,19 +83,22 @@ def test_preflight_prints_planned_calls_and_costs_from_config(live_env: Path, mo
                                                              capsys: pytest.CaptureFixture[str]) -> None:
     """Mutations: preflight_typical_drops_read_plate; preflight_worst_not_cap (worst case is the
     typical figure); preflight_build_spend_zero (build spend read as 0); preflight_research_calls_off
-    (the final answer turn is not counted)."""
+    (the final answer turn is not counted); preflight_jev_calls_not_listed (no Jev line)."""
     fakes = LiveFakes(flo_data()).install(monkeypatch)
     preload_spend(1.25, credits=7)
     code, out, err = live_ask(monkeypatch, capsys, typed="no\n")
     assert code == cli.EXIT_REFUSED
     typical = expected_typical("cheap", read_plate=True)
-    assert abs(typical - SECTION_9_TYPICAL_RESEARCH_ROUTE) < 0.0005
+    assert abs(expected_typical("cheap", read_plate=True, jev=False) - SECTION_9_TYPICAL_RESEARCH_ROUTE) < 0.0005
     searches = config.RESEARCH_LIMITS["main"]["search"]
     expected = [
         "advisor ask: preflight, mode cheap, LIVE (real money)",
         "planned: one cheap run",
         f"  model calls: typical {searches + 1 + 2}, at most {expected_max_calls(read_plate=True)}",
         f"  Tavily credits: typical {searches}, at most {config.RUN_CREDIT_CAP}",
+        f"  Jev calls (typesafe, {config.JEV_MODEL}): planned {expected_jev_calls(1)} for one draft, "
+        f"{expected_jev_calls(2)} for 2 drafts at {config.JEV_PLAN_STEPS_PER_PASS} steps each; one call per "
+        "try_first step (a longer draft makes more)",
         f"  estimated cost: typical {usd(typical)}, worst case {usd(config.RUN_CAP_USD['cheap'])}",
         f"per run cap (cheap): {usd(config.RUN_CAP_USD['cheap'])}",
         f"build spend so far (live runs): {usd(1.25)} of {usd(config.BUILD_CAP_USD)}, "
@@ -148,6 +158,25 @@ def test_check_schema_preflight_shows_one_call_and_its_reservation(
     assert "  model calls: typical 1, at most 1" in out and "  Tavily credits: typical 0, at most 0" in out
     assert f"  estimated cost: typical {usd(typical)}, worst case {usd(worst)}" in out
     assert typical < worst
+
+
+@pytest.mark.parametrize("enabled", [True, False], ids=["jev_enabled", "jev_disabled"])
+def test_preflight_counts_jev_calls_and_cost(enabled: bool, live_env: Path, monkeypatch: pytest.MonkeyPatch,
+                                             capsys: pytest.CaptureFixture[str]) -> None:
+    """Mutations: preflight_jev_cost_dropped (the Jev calls are counted but not priced);
+    preflight_jev_counted_when_disabled (Jev calls planned while JEV_SAFETY_ENABLED is False)."""
+    fakes = LiveFakes(flo_data()).install(monkeypatch)
+    # Inflated so the Jev share shows at the preflight's four decimals.
+    monkeypatch.setattr(config, "JEV_EST_INPUT_TOKENS", 100_000)
+    monkeypatch.setattr(config, "JEV_SAFETY_ENABLED", enabled)
+    code, out, err = live_ask(monkeypatch, capsys, "--new-ledger", typed="no\n")
+    assert code == cli.EXIT_REFUSED
+    jev_usd = expected_typical("cheap", read_plate=True) - expected_typical("cheap", read_plate=True, jev=False)
+    per_call = 100_000 * config.PRICES_PER_MTOK[config.JEV_MODEL]["input"] / 1_000_000
+    assert jev_usd == pytest.approx(config.JEV_PLAN_STEPS_PER_PASS * per_call if enabled else 0)
+    assert f"estimated cost: typical {usd(expected_typical('cheap', read_plate=True))}," in out
+    assert ("Jev calls" in out) is enabled
+    assert fakes.constructed == [] and fakes.jev_requests == []
 
 
 def test_resume_preflight_counts_what_the_run_spent(live_env: Path, monkeypatch: pytest.MonkeyPatch,

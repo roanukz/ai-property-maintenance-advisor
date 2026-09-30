@@ -22,6 +22,14 @@ OPUS_BASELINE = "claude-opus-5"  # v1 baseline only; v2 never calls it
 
 HAIKU_RETIREMENT_EARLIEST = "2026-10-15"
 
+# Jev, TypeSafe's System One model, asked one Noul per try_first step by the
+# safety_check node (decisions 53 to 57). Pinned to the documented versioned
+# ID; the SDK default is "jev-latest" (decision 54).
+JEV_MODEL = "jev-1.13.0"
+JEV_PROVIDER = "typesafe"
+JEV_SAFETY_ENABLED = True
+TYPESAFE_KEY_NAME = "TYPESAFE_API_KEY"
+
 MODES = ("replay", "cheap", "full")
 LIVE_MODES = ("cheap", "full")
 
@@ -41,6 +49,8 @@ PRICES_PER_MTOK = {
     HAIKU: {"input": 1.00, "output": 5.00},
     SONNET: {"input": 2.00, "output": 10.00},
     OPUS_BASELINE: {"input": 5.00, "output": 25.00},
+    # TypeSafe prices input only; the API still reports output_tokens, priced at 0.
+    JEV_MODEL: {"input": 0.042, "output": 0.0},
 }
 # Cache pricing as multiples of the base input price.
 CACHE_READ_MULTIPLIER = 0.10
@@ -142,7 +152,9 @@ RUN_CAP_USD = {"cheap": 0.15, "full": 0.30}  # full is proposed, replay only for
 REPLAY_RUN_CAP_USD = 0.15
 BUILD_CAP_USD = 5.00  # the lower of this and the Anthropic balance recorded at the Phase 5 gate
 RUN_CREDIT_CAP = 10
-BUILD_CREDIT_CAP = 150
+# Raised from 150 to 300 by Roanuk at SC12b's Gate 3 on 30 September 2026 (brief decision 1):
+# Tavily's free tier gives 1,000 credits a month, so it costs nothing.
+BUILD_CREDIT_CAP = 300
 RESEARCH_BUDGET_USD = 0.09  # reaching it ends research, not the run (decision 26)
 
 # Retry affordability (decision 23): the reduced retry pass's typical cost.
@@ -337,8 +349,9 @@ SC7B_REPEAT_SEARCH_MAX = 2
 # How often one eval run answers the confirmation pause before it gives up.
 EVAL_MAX_PAUSES = 2
 # The key names a live command reads, from the environment or the repo's
-# gitignored .env; LANGSMITH_* only when ADVISOR_TRACING=1.
-LIVE_KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY")
+# gitignored .env; LANGSMITH_* only when ADVISOR_TRACING=1. TYPESAFE_API_KEY
+# only while Jev is enabled, so a run that cannot call Jev never reads it.
+LIVE_KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY") + ((TYPESAFE_KEY_NAME,) if JEV_SAFETY_ENABLED else ())
 TRACING_KEY_PREFIX = "LANGSMITH_"
 ENV_FILE = REPO_ROOT / ".env"
 
@@ -377,3 +390,79 @@ PLATE_EVAL_SYMPTOM = "not heating"
 # v1 case E1's printed serial on demo-assets/plate-clear.jpg (v1
 # scripts/run-tests.mjs, case E1).
 E1_PLATE_SERIAL = "100915742"
+
+# ---------------------------------------------------------------------------
+# Safety step flagging (the word rule and Jev; decisions 53 to 57)
+# ---------------------------------------------------------------------------
+
+# Per Jev call: a 5 second timeout per attempt, at most one retry, and a 10
+# second budget for the call and its retry (decision 57).
+JEV_TIMEOUT_S = 5.0
+JEV_RETRY_MAX = 1
+JEV_RETRY_BUDGET_S = 10.0
+# Input tokens reserved per attempt; Gate 0's one call used 384.
+JEV_EST_INPUT_TOKENS = 450
+# The BriefDraft schema sets no maximum number of try_first steps, so the
+# preflight plans this many Jev calls per synthesize pass. The most steps in a
+# recorded draft is 7 (the hvac cassette).
+JEV_PLAN_STEPS_PER_PASS = 8
+
+# The word rule as published: whole words, any case, in the step or its detail.
+SAFETY_WORDS_PUBLISHED = (
+    "breaker", "breakers",
+    "power", "powered", "powering",
+    "heat", "heater", "heaters", "heating", "heated",
+)
+# The word rule, tuned on the SC12a tune half only (29 September 2026, each change
+# logged with its tune result in DECISION-LOG): words that gained recall with no
+# new false flag were added, and "heat", which caught only thermostat and cover
+# steps, was dropped.
+SAFETY_WORDS = (
+    "breaker", "breakers",
+    "power", "powered", "powering",
+    "heater", "heaters", "heating", "heated",
+    "wire", "wires", "panel", "panels", "door", "doors",
+    "disconnect", "disconnects", "electrical", "jumper", "box",
+)
+# Which code layers may raise a flag in production. The SC12a choice rule
+# sets one of ("word",), ("jev",) or ("word", "jev"); on the held out half on
+# 30 September 2026 it picked Jev (decision 62).
+SAFETY_LAYERS = ("jev",)
+# The locked tune half threshold for Jev (data/eval/sc12a/lock.json). None would
+# record Jev's answers without letting them raise a flag.
+JEV_THRESHOLD: float | None = 0.51
+
+# ---------------------------------------------------------------------------
+# SC12a and SC12b, the safety evaluation (agent/safety_eval, agent/live/sc12a.py
+# and agent/live/sc12b.py; build brief sections "The labeled set" to "SC12b")
+# ---------------------------------------------------------------------------
+
+# The labeled set: G plus D stop at this many items; the stopping rule then
+# adds D items this many at a time until the held out half has this many in
+# scope positives or the pages run out. D skips sentences longer than this.
+SC12A_POOL_SIZE = 300
+SC12A_EXTEND_BY = 50
+SC12A_MIN_HELDOUT_POSITIVES = 30
+SC12A_MAX_SENTENCE_CHARS = 400
+# Decision 58: pool D keeps at most this many qualifying sentences from any one
+# page (its first ones in document order), then moves to the next page. A URL
+# stored in more than one version is one page: the cap counts across versions.
+SC12A_D_DOC_CAP = 25
+# Near duplicates across the halves are reported with the set, not removed: a
+# pair counts when, with digits and punctuation stripped, the two texts match,
+# reach one of these similarity ratios, or share a span of at least this many
+# characters.
+SC12A_NEAR_DUP_RATIOS = (0.9, 0.8)
+SC12A_NEAR_DUP_SPAN = 60
+# Jev question wordings tried on the tune half, at most; blind readers per item.
+SC12A_MAX_WORDINGS = 5
+SC12A_READERS = 3
+# The choice rule drops a candidate below this precision, and the threshold
+# rule's fallback keeps only thresholds at or above it (decision 4 default).
+SAFETY_PRECISION_FLOOR = 0.60
+# This work's stop line: stop and report once the ledger's spend since the
+# first SC12 live command passes it (success criterion 7).
+SC12_STOP_USD = 1.50
+# SC12b: this many live first lookups with the input of each recorded run.
+SC12B_RUNS_PER_INPUT = 5
+SC12B_INPUT_RUNS = ("t-267045726dd04118", "t-a6cc7b63e63b41d0")

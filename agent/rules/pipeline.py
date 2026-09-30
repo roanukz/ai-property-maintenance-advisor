@@ -18,7 +18,9 @@
 5. Code grounding (rule 4, `agent/rules/grounding.py`): each kept
    candidate code must appear in its cited source's raw text, else its
    snippet; a v1 derived replay reports "unverifiable" instead of failing.
-6. Safety steps first (rule 5).
+6. Safety flags raised (raise only, `safety.raise_flags`): the word rule
+   and Jev's recorded probabilities, each only when config.SAFETY_LAYERS lets
+   it raise a flag; then safety steps first (rule 5).
 7. Refusal and budget stop clearing (rule 6).
 8. happened_before must cite a loaded record of this appliance (rule 7).
 9. Registry dates: code writes the age statement (rule 8).
@@ -43,6 +45,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from agent import config
 from agent.rules import citations, clearing, grounding, observed_code as observed_rule, safety, tiers
 from agent.rules import maintenance as maintenance_rule
 from agent.rules import prices as prices_rule
@@ -72,6 +75,8 @@ class RulesResult:
     grounding_status: str | None = None
     # Rules 9 and 10: upgrade and maintenance entries dropped, each with its reason.
     dropped: list[dict[str, Any]] = field(default_factory=list)
+    # One entry per final step, in the brief's order (`safety.raise_flags`).
+    safety_provenance: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _schema_errors(prefix: str, exc: ValidationError) -> list[str]:
@@ -187,6 +192,7 @@ def run_rules(
     today: date | None = None,
     maintenance_log: list[dict] | None = None,
     recorded_text_urls: set[str] | None = None,
+    safety_signals: dict | None = None,
 ) -> RulesResult:
     """Run every v2 rule over one model draft.
 
@@ -198,7 +204,9 @@ def run_rules(
     source URL to its fetched raw text; `maintenance_log` is the appliance's
     registry maintenance rows (`Registry.maintenance_log`), from which rule 9
     writes due dates; `recorded_text_urls` names the URLs whose page text a
-    replayed recording says was saved (rule 4). `pass_kind` is "synthesize", or "upgrade" for the pass
+    replayed recording says was saved (rule 4); `safety_signals` is the
+    safety_check node's record of Jev's answers, read and never called.
+    `pass_kind` is "synthesize", or "upgrade" for the pass
     after upgrade_check added graph derived options to the draft: the same
     rules run on both, so a graph option is checked like a model option and
     pruning and renumbering come after it is in (decision 27).
@@ -236,8 +244,13 @@ def run_rules(
         errors += check_grounding(brief, sources=sources, mode=mode, provenance=provenance,
                                   page_texts=page_texts, report=grounding_report,
                                   recorded_text_urls=frozenset(recorded_text_urls or ()))
+    raised = safety.raise_flags(brief.get("try_first") or [], safety_signals,
+                                layers=config.SAFETY_LAYERS, words=config.SAFETY_WORDS,
+                                jev_threshold=config.JEV_THRESHOLD)
     safety.apply_safety_order(brief)
     clearing.clear_on_refusal(brief)
+    if not brief.get("try_first"):
+        raised = []
     citations.check_happened_before(brief, history_hits, (registry or {}).get("id"))
     citations.apply_registry_dates(brief, registry=registry,
                                    manufacture_date=identity.get("manufacture_date"), today=today)
@@ -265,4 +278,4 @@ def run_rules(
         return RulesResult(brief=None, errors=_schema_errors(BRIEF_SCHEMA, exc))
     origin = "model" if final["status"] == "no_reliable_answer" else None
     return RulesResult(brief=final, errors=[], refusal_origin=origin, grounding=grounding_report,
-                       grounding_status=grounding_status, dropped=dropped)
+                       grounding_status=grounding_status, dropped=dropped, safety_provenance=raised)

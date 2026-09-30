@@ -6,7 +6,11 @@ variable, so the graph and nodes are the ones replay uses, unchanged). For
 each call it appends the node, the reply text, the tool calls and the usage
 to `<recordings>/<run_id>.capture.jsonl`. It never stores the request, so the
 photo bytes, prompts and headers are never read, and each line is redacted
-of the loaded key values before it is written.
+of the loaded key values before it is written. The same block hands every
+live Jev judge a capture list (agent/safety_judge.capture_into), and each
+answer or failure it appends goes to the same file as a "safety_check" event:
+the step's hash, the question hash, the model, the probability, the token
+counts, the request ID and the failure kind, never the step's text.
 
 When the run reaches END, `write_candidate` builds a version 1 cassette from
 that capture, the run's lookup log and its page files:
@@ -15,6 +19,7 @@ that capture, the run's lookup log and its page files:
 - input: the symptom, and the plate by sha256 only, or the typed identity;
 - read_plate, classifier, research.script and synthesize: the recorded
   replies and usage, in call order;
+- safety_check (only when Jev was asked): the recorded answers, in call order;
 - research.tool_results: each Tavily call from the lookup log, success or
   failure, in the cassette shapes (a result, "error", "string", "raise");
 - page text: decision 15 lets a cassette carry text only on example hosts,
@@ -58,15 +63,18 @@ from agent.replay import privacy_diff
 from agent.replay.cassettes import (
     CASSETTE_VERSION,
     IDENTITY_FIELDS,
+    SAFETY_CHECK_KEYS,
     CassetteError,
     is_example_url,
     load_cassette,
 )
 from agent.research.tools import load_page_text, save_page_text
+from agent.safety_judge import capture_into
 
 BUILT_BY = "agent/live/recorder.py"
 USAGE_KEYS = ("input_tokens", "output_tokens", "total_tokens", "input_token_details", "output_token_details")
 UNPARSED_KEY = "unparsed_reply"
+SAFETY_EVENT = "safety_check"
 # Lookup log statuses for calls the ledger refused before Tavily was called.
 NOT_SENT_STATUSES = ("run_cap", "build_cap", "run_credit_cap", "build_credit_cap")
 KEY_HIT_KINDS = (*privacy_diff.KEY_PREFIXES, "auth header name")
@@ -152,6 +160,19 @@ class CaptureHandler(BaseCallbackHandler):
                      "tool_calls": calls, "usage": _usage(getattr(message, "usage_metadata", None))})
 
 
+class SafetyCapture(list):
+    """The live judge's capture list: each entry it appends also goes to the capture file."""
+
+    def __init__(self, handler: CaptureHandler) -> None:
+        super().__init__()
+        self.handler = handler
+
+    def append(self, entry: Mapping[str, Any]) -> None:
+        record = {key: entry.get(key) for key in SAFETY_CHECK_KEYS}
+        super().append(record)
+        self.handler.append({"event": SAFETY_EVENT, **record})
+
+
 def _register_hook() -> None:
     global _HOOK_REGISTERED
     with _HOOK_LOCK:
@@ -168,7 +189,8 @@ def capturing(run_id: str, mode: str, segment: str, secrets: Sequence[str] = ())
     handler.append({"event": "segment", "segment": segment})
     token = _CAPTURE.set(handler)
     try:
-        yield handler
+        with capture_into(SafetyCapture(handler)):
+            yield handler
     finally:
         _CAPTURE.reset(token)
 
@@ -399,10 +421,17 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
             "fetches": sum(1 for e in trail if e.get("tool") == "fetch" and e.get("status") != "blocked"),
         },
     }
+    safety = [e for e in capture if e.get("event") == SAFETY_EVENT]
+    if safety:
+        build.cassette["safety_check"] = [{key: e.get(key) for key in SAFETY_CHECK_KEYS} for e in safety]
+        build.cassette["provenance"]["copied_fields"].append("safety_check")
     if len(plate) > 1:
         build.notes.append(f"{len(plate)} read_plate replies; only the first is kept")
     index = {id(e): i for i, e in enumerate(capture)}
     capture_name = capture_path(run_id).name
+    for i, event in enumerate(safety):
+        build.origins.append((f"safety_check[{i}]",
+                              f"{capture_name} line {index[id(event)] + 1} (Jev answer {i + 1})"))
     if plate:
         build.origins.append(("read_plate", f"{capture_name} line {index[id(plate[0])] + 1} (read_plate reply)"))
     for node, prefix, key in (("classifier", "classifier", ""), ("research", "research.script", ".message"),
@@ -472,8 +501,9 @@ def scan(data: Any, denylist: Sequence[str]) -> list[dict[str, str]]:
     """Privacy diff hits for every string, key and long number in data."""
     hits = [{"path": p, "kind": kind, "match": match}
             for p, text in privacy_diff.iter_strings(data)
-            for kind, match in privacy_diff.scan_string(text, list(denylist))]
-    return hits + privacy_diff.scan_keys_and_numbers(data, list(denylist))
+            for kind, match in privacy_diff.scan_string(text, list(denylist))
+            if not privacy_diff.is_exempt_hit(p, kind, text)]
+    return hits + privacy_diff.scan_keys_and_numbers(data, list(denylist)) + privacy_diff.scan_safety_check(data)
 
 
 def _denylist() -> list[str]:

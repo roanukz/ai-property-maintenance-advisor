@@ -78,7 +78,7 @@ SYNTHESIS_SYSTEM = """You produce a service brief for a piece of residential equ
 
 4. OBSERVED CODE SHORT-CIRCUIT: if the symptom reports a specific code visible on the unit's display or panel, that observed code overrides symptom matching. Return the single documented candidate for that code (mark it "confirmed": true), not a list of possibilities. Only widen back out if the sources show the code has multiple documented meanings for this model family.
 
-5. "try_first" contains ONLY steps that are (a) documented in a provided source, (b) safe for an untrained person, and (c) actually actionable by someone standing at the unit. Never include "no action required", "monitor the situation", or "call a professional" as a step. Safety-relevant steps (overheat, electrical, gas) go FIRST in the list with "safety_flag": true.
+5. "try_first" contains ONLY steps that are (a) documented in a provided source, (b) safe for an untrained person, and (c) actually actionable by someone standing at the unit. Never include "no action required", "monitor the situation", or "call a professional" as a step. Set "safety_flag": true on every step that switches power or gas off, on or reset (a breaker, a disconnect, a GFCI, a plug or a gas valve), that has the reader open, touch or work near anything that can be electrically live, hot or carrying gas, or that runs or tests a heater, and put those steps FIRST in the list.
 
 6. NO RELIABLE ANSWER: if sources are insufficient or contradictory, or the model cannot be confidently matched to documentation, set "status": "no_reliable_answer" and fill "no_reliable_answer" with what you found and why it is not enough; the search trail is added by code. This is a success state of the product, not a failure: a clean "we don't know" beats a plausible guess. NEVER fall back to general knowledge about the equipment category ("hot tubs in general", "most heat pumps"). If you cannot find documentation for this model or its documented family, say so. If your searches surface nothing about a model, that strongly suggests it should be no_reliable_answer; do not soften this.
 
@@ -273,3 +273,40 @@ def build_classifier_user_prompt(
     lines += ["", *classifier_cause_lines(documented)]
     lines += ["", CLASSIFIER_CLOSING]
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# safety_check: Jev's one Noul per try_first step: SC12a wording 3, chosen on the
+# tune half (the brief's starting wording plus criteria from the label protocol).
+# Its question_hash is recorded with every answer, and replay refuses an answer
+# recorded under another wording.
+# ---------------------------------------------------------------------------
+
+SAFETY_STEP_NOUL = {
+    "instructions": (
+        "Doing this step, or doing it wrong, involves electricity, gas or overheating: it switches power "
+        "or gas off, on or reset; it has the reader open, touch or work near something that can be "
+        "electrically live, hot or carrying gas; it checks such a hazard before contact; or it runs or "
+        "tests a heater as a diagnostic."
+    ),
+    "criteria": {
+        "true": (
+            "The step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas "
+            "off, on or reset (a circuit breaker, a disconnect, a GFCI, unplugging the unit, a power switch "
+            "used to cut power for service, or a gas valve); it has the reader open, touch or work near "
+            "something that can be electrically live, hot or carrying gas (an equipment panel or cabinet, "
+            "wiring, a heater or heating element, a burner, hot water or a hot surface); it checks one of "
+            "those hazards before contact, such as reading an indicator light before touching anything; or "
+            "it runs or tests a heater or burner as a diagnostic. Removing or opening an access door, panel, "
+            "cover or control box on the equipment counts as working near something that can be live."
+        ),
+        "false": (
+            "Ordinary use of the controls (pressing a button, changing a mode or setpoint for normal use), "
+            "checking water level or water chemistry, cleaning or swapping a filter, or a step whose only "
+            "hazard is mechanical, chemical, pressure, water or a fall, unless the step or its detail brings "
+            "in one of the yes cases. Refrigerant, nitrogen, vacuum or other pressure work, and running the "
+            "equipment with the filter out, are no unless the step or its detail brings in one of the yes "
+            "cases."
+        ),
+    },
+}

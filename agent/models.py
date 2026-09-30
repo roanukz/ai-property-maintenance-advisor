@@ -9,6 +9,10 @@ client differs.
 In replay each run builds one model per node and one set of tools, cached on
 RunContext.replay, so a node that runs twice (a retry) continues the script
 instead of starting it over, and tests can read the instances the graph used.
+
+make_safety_judge does the same for Jev (agent/safety_judge.py): replay serves
+the cassette's recorded "safety_check" answers and never imports typesafe_sdk;
+a live mode builds the TypeSafe judge on the run's ledger.
 """
 
 from __future__ import annotations
@@ -19,10 +23,18 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.tools import BaseTool
 from langchain_tavily import TavilyExtract, TavilySearch
 
-from agent import config
+from agent import config, prompts
+from agent.ledger import Ledger
 from agent.replay.replay_model import ReplayChatModel
 from agent.replay.tool_stubs import make_stub_inners
 from agent.research.tools import make_research_tools
+from agent.safety_judge import (
+    SafetyJudge,
+    build_live_judge,
+    build_replay_judge,
+    current_capture,
+    question_hash,
+)
 from agent.state import RunContext
 
 NODES = ("read_plate", "classifier", "research", "synthesize")
@@ -95,4 +107,44 @@ def make_tools(ctx: RunContext) -> list[BaseTool]:
         ctx,
         search_inner=TavilySearch(**config.TAVILY_SEARCH_SETTINGS),
         fetch_inner=TavilyExtract(**config.TAVILY_EXTRACT_SETTINGS),
+    )
+
+
+def _thread_id() -> str | None:
+    try:
+        from langgraph.config import get_config
+
+        return (get_config().get("configurable") or {}).get("thread_id")
+    except RuntimeError:  # called outside a graph run, as in unit tests
+        return None
+
+
+def make_safety_judge(ctx: RunContext) -> SafetyJudge:
+    """The Jev judge for this run: the cassette's recorded answers in replay, TypeSafe live.
+
+    Replay builds one judge per run, cached on RunContext.replay, from the
+    cassette's optional "safety_check" list (none recorded: every step is
+    not_recorded). A live judge reserves on the run's ledger and appends its
+    answers to the live recording's capture, when one is running.
+    """
+    _check(None, ctx.mode)
+    noul = prompts.SAFETY_STEP_NOUL
+    if ctx.mode == "replay":
+        if ctx.cassette is None:
+            raise ValueError("replay mode needs a cassette on the RunContext")
+        if "safety_judge" not in ctx.replay:
+            entries = getattr(ctx.cassette, "safety_check", None) or []
+            ctx.replay["safety_judge"] = build_replay_judge(
+                entries, question_hash=question_hash(noul["instructions"], noul.get("criteria")))
+        return ctx.replay["safety_judge"]
+    return build_live_judge(
+        ledger=Ledger(ctx.ledger_path),
+        run_id=ctx.run_id,
+        mode=ctx.mode,
+        instructions=noul["instructions"],
+        criteria=noul.get("criteria"),
+        capture=current_capture(),
+        thread_id=_thread_id(),
+        run_cap_usd=(ctx.caps or {}).get("run_cap_usd"),
+        secrets=ctx.secrets,
     )

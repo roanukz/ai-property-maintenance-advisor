@@ -22,7 +22,9 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+import httpx2
 import pytest
+import typesafe_sdk
 
 from agent import cli, config
 from agent.graph import RETRY_NOT_AFFORDABLE
@@ -31,6 +33,18 @@ from agent.replay.replay_model import ReplayChatModel
 # Built by concatenation so this file holds no key shaped string for the privacy scan.
 FAKE_ANTHROPIC = "sk-" + "ant-" + "planted" + "Fake" + "0123456789"
 FAKE_TAVILY = "tv" + "ly-" + "planted" + "Fake" + "9876543210"
+FAKE_TYPESAFE = "apikey" + "_" + "planted" + "Fake" + "1357924680"
+REAL_TYPESAFE_CLIENT = typesafe_sdk.TypeSafeClient
+
+
+def fake_typesafe_client(**kwargs: Any) -> Any:
+    """The real TypeSafeClient on a mock transport: every Jev question answered 0.5, no network."""
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        questions = json.loads(request.content)["questions"]
+        return httpx2.Response(200, json={"model": config.JEV_MODEL, "usage": {"input_tokens": 384, "output_tokens": 3},
+                                          "answers": {name: {"type": "noul", "noul": 0.5} for name in questions}})
+
+    return REAL_TYPESAFE_CLIENT(**kwargs, transport=httpx2.MockTransport(answer))
 BUILD = "build-a"
 
 
@@ -320,7 +334,8 @@ def live_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Fakes:
     }.items():
         monkeypatch.setattr(config, name, path)
     (tmp_path / ".env").write_text(
-        f"# planted by test_live_eval\nANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nexport TAVILY_API_KEY=\"{FAKE_TAVILY}\"\n",
+        f"# planted by test_live_eval\nANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nexport TAVILY_API_KEY=\"{FAKE_TAVILY}\"\n"
+        f"{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n",
         encoding="utf-8",
     )
     monkeypatch.setenv(config.ENV_MODE, "cheap")
@@ -334,6 +349,7 @@ def live_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Fakes:
     monkeypatch.setattr(models, "ChatAnthropic", fakes.chat)
     monkeypatch.setattr(models, "TavilySearch", fakes.search)
     monkeypatch.setattr(models, "TavilyExtract", fakes.extract)
+    monkeypatch.setattr(typesafe_sdk, "TypeSafeClient", fake_typesafe_client)
     from agent.ledger import Ledger
 
     Ledger(config.LEDGER_PATH, create=True)
@@ -443,6 +459,28 @@ def test_eval_preflight_counts_match_the_plan(live_env: Fakes, monkeypatch: pyte
     _spent_nothing(live_env)
 
 
+def test_eval_preflight_names_and_prices_the_jev_calls(live_env: Fakes, monkeypatch: pytest.MonkeyPatch,
+                                                       capsys: pytest.CaptureFixture[str]) -> None:
+    """Every sc7b run goes past the pause to synthesize and safety_check, so the preflight names its
+    Jev calls and counts their cost; with Jev disabled it plans none.
+
+    Mutations: eval_estimate_drops_jev_cost (the Jev calls are listed but not priced);
+    eval_preflight_drops_jev_calls (the planned paid calls line leaves Jev out)."""
+    # Inflated so the Jev share shows at the preflight's four decimals.
+    monkeypatch.setattr(config, "JEV_EST_INPUT_TOKENS", 100_000)
+    out = _preflight("sc7b", monkeypatch, capsys)
+    calls = 4 * config.JEV_PLAN_STEPS_PER_PASS
+    assert f"Tavily searches and {calls} Jev calls (typesafe)" in out
+    assert f"Jev calls (typesafe, {config.JEV_MODEL}): planned {calls} for one draft" in out
+    with_jev = _typical(out)
+    monkeypatch.setattr(config, "JEV_SAFETY_ENABLED", False)
+    out = _preflight("sc7b", monkeypatch, capsys)
+    assert "Tavily searches and 0 Jev calls (typesafe)" in out and f"({config.JEV_PROVIDER}, " not in out
+    per_call = 100_000 * config.PRICES_PER_MTOK[config.JEV_MODEL]["input"] / 1_000_000
+    assert with_jev - _typical(out) == pytest.approx(calls * per_call, abs=0.0002)
+    _spent_nothing(live_env)
+
+
 def test_eval_refuses_missing_key_ledger_budget_and_retired_model(
     live_env: Fakes, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -452,8 +490,8 @@ def test_eval_refuses_missing_key_ledger_budget_and_retired_model(
     assert _run(["eval", "sc3b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_REFUSED
     err = capsys.readouterr().err
     assert "TAVILY_API_KEY" in err and FAKE_ANTHROPIC not in err
-    (tmp_path / ".env").write_text(f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nTAVILY_API_KEY={FAKE_TAVILY}\n",
-                                   encoding="utf-8")
+    (tmp_path / ".env").write_text(f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nTAVILY_API_KEY={FAKE_TAVILY}\n"
+                                   f"{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n", encoding="utf-8")
 
     monkeypatch.setattr(cli, "_today", lambda: date.fromisoformat(config.HAIKU_RETIREMENT_EARLIEST))
     assert _run(["eval", "sc3b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_REFUSED
@@ -509,10 +547,11 @@ def test_sc3b_batch_runs_the_graph_with_fake_clients_and_never_leaks_a_key(
     assert live_env.keys_seen and set(live_env.keys_seen) == {(FAKE_ANTHROPIC, FAKE_TAVILY)}
     # No key anywhere the run wrote, in its output, or left in the environment.
     written = _all_written_text(tmp_path)
-    for key in (FAKE_ANTHROPIC, FAKE_TAVILY):
+    for key in (FAKE_ANTHROPIC, FAKE_TAVILY, FAKE_TYPESAFE):
         assert key.encode() not in written
         assert key not in captured.out and key not in captured.err
     assert "ANTHROPIC_API_KEY" not in os.environ and "TAVILY_API_KEY" not in os.environ
+    assert config.TYPESAFE_KEY_NAME not in os.environ
 
 
 def test_sc7b_batch_answers_the_pause_and_records_every_run(

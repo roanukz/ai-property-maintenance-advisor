@@ -1,0 +1,34 @@
+{
+  "note": "Jev question wordings tried on the tune half only (at most 5), each logged with its tune result in DECISION-LOG. Wording 1 is the brief's starting wording. Wording 2 adds criteria from the protocol's yes and no lists, as the brief asks when the SDK supports Noul criteria. Wording 3 adds two boundary cases the tune half showed (an access door or panel on the equipment is yes; refrigerant or pressure work and running with the filter out are no), both from the protocol's own lists. Wording 4 asks the same as a question.",
+  "wordings": [
+    {
+      "n": 1,
+      "instructions": "Doing this step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset; it has the reader open, touch or work near something that can be electrically live, hot or carrying gas; it checks such a hazard before contact; or it runs or tests a heater as a diagnostic.",
+      "criteria": null
+    },
+    {
+      "n": 2,
+      "instructions": "Doing this step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset; it has the reader open, touch or work near something that can be electrically live, hot or carrying gas; it checks such a hazard before contact; or it runs or tests a heater as a diagnostic.",
+      "criteria": {
+        "true": "The step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset (a circuit breaker, a disconnect, a GFCI, unplugging the unit, a power switch used to cut power for service, or a gas valve); it has the reader open, touch or work near something that can be electrically live, hot or carrying gas (an equipment panel or cabinet, wiring, a heater or heating element, a burner, hot water or a hot surface); it checks one of those hazards before contact, such as reading an indicator light before touching anything; or it runs or tests a heater or burner as a diagnostic.",
+        "false": "Ordinary use of the controls (pressing a button, changing a mode or setpoint for normal use), checking water level or water chemistry, cleaning or swapping a filter, or a step whose only hazard is mechanical, chemical, pressure, water or a fall, unless the step or its detail brings in one of the yes cases."
+      }
+    },
+    {
+      "n": 3,
+      "instructions": "Doing this step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset; it has the reader open, touch or work near something that can be electrically live, hot or carrying gas; it checks such a hazard before contact; or it runs or tests a heater as a diagnostic.",
+      "criteria": {
+        "true": "The step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset (a circuit breaker, a disconnect, a GFCI, unplugging the unit, a power switch used to cut power for service, or a gas valve); it has the reader open, touch or work near something that can be electrically live, hot or carrying gas (an equipment panel or cabinet, wiring, a heater or heating element, a burner, hot water or a hot surface); it checks one of those hazards before contact, such as reading an indicator light before touching anything; or it runs or tests a heater or burner as a diagnostic. Removing or opening an access door, panel, cover or control box on the equipment counts as working near something that can be live.",
+        "false": "Ordinary use of the controls (pressing a button, changing a mode or setpoint for normal use), checking water level or water chemistry, cleaning or swapping a filter, or a step whose only hazard is mechanical, chemical, pressure, water or a fall, unless the step or its detail brings in one of the yes cases. Refrigerant, nitrogen, vacuum or other pressure work, and running the equipment with the filter out, are no unless the step or its detail brings in one of the yes cases."
+      }
+    },
+    {
+      "n": 4,
+      "instructions": "Does doing this step, or doing it wrong, involve electricity, gas or overheating? That is: does it switch power or gas off, on or reset; have the reader open, touch or work near something that can be electrically live, hot or carrying gas; check such a hazard before contact; or run or test a heater as a diagnostic?",
+      "criteria": {
+        "true": "The step, or doing it wrong, involves electricity, gas or overheating: it switches power or gas off, on or reset (a circuit breaker, a disconnect, a GFCI, unplugging the unit, a power switch used to cut power for service, or a gas valve); it has the reader open, touch or work near something that can be electrically live, hot or carrying gas (an equipment panel or cabinet, wiring, a heater or heating element, a burner, hot water or a hot surface); it checks one of those hazards before contact, such as reading an indicator light before touching anything; or it runs or tests a heater or burner as a diagnostic. Removing or opening an access door, panel, cover or control box on the equipment counts as working near something that can be live.",
+        "false": "Ordinary use of the controls (pressing a button, changing a mode or setpoint for normal use), checking water level or water chemistry, cleaning or swapping a filter, or a step whose only hazard is mechanical, chemical, pressure, water or a fall, unless the step or its detail brings in one of the yes cases. Refrigerant, nitrogen, vacuum or other pressure work, and running the equipment with the filter out, are no unless the step or its detail brings in one of the yes cases."
+      }
+    }
+  ]
+}

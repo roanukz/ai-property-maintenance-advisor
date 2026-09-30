@@ -43,7 +43,9 @@ agent/tests/fixtures/goldens/README.md lists each one, says whether decision
   validate already clears them, decision 9).
 - a budget stop page shows no all forum warning: its sources were never
   graded, so their forum tier is a default, not a finding;
-- CSS rules for the new pieces are appended after v1's CSS.
+- CSS rules for the new pieces are appended after v1's CSS;
+- one notice line above the steps (SAFETY_NOTICE) when the run says the
+  automatic safety check was attempted and failed (`run["safety_notice"]`).
 
 Legacy mode needs U+2014 (placeholders, title, refusal intro). The repo's
 style scan bans that character and its escapes in source files, so it is
@@ -97,6 +99,10 @@ FOOTER_NO_ANSWER = (
 FOOTER_BUDGET = (
     "This brief lists what was searched on {date} before the run stopped at a budget limit. "
     "No documented answer is given. It is not a diagnosis."
+)
+SAFETY_NOTICE = (
+    "An automatic safety check did not run on this brief. Treat any step at a breaker, "
+    "a panel, a heater or a gas valve as a safety step."
 )
 CODE_NOTE = "was reported on the unit's display, so matching was narrowed to that code."
 REASON_LABELS = {"discontinued": "model discontinued", "parts_unavailable": "parts no longer available"}
@@ -367,9 +373,12 @@ class _Brief:
                 f"      <p>{self.e(s.get('detail'))}{self.ref(s.get('source_index'))}</p>",
                 "    </li>",
             ]))
+        notice = [] if self.legacy or not self.run.get("safety_notice") else [
+            f'  <p class="note">{SAFETY_NOTICE}</p>']
         return "\n".join([
             "<section>",
             "  <h2>Try this first</h2>",
+            *notice,
             '  <ol class="steps">',
             *items,
             "  </ol>",
@@ -606,7 +615,8 @@ def render_brief(
     `run` carries what the page shows beyond the brief (v2 only):
     `records`, the run's history_hits (the service record happened_before cites
     is shown with its date); `search_trail`
-    and `stop_reason` for the budget stop box. `legacy=True` renders exactly as
+    and `stop_reason` for the budget stop box; `safety_notice`, True when the
+    automatic safety check failed, for the notice line above the steps. `legacy=True` renders exactly as
     v1 did and ignores `run`.
     """
     if legacy and isinstance(brief, Mapping) and brief.get("status") == "budget_stopped":

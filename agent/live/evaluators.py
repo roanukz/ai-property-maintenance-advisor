@@ -566,6 +566,8 @@ def _status_detail(state: Mapping[str, Any]) -> str:
 
 
 _V1_CHECKS = {"E1": _e1, "E2": _e2, "B1": _b1, "B2": _b2, "B3": _b3, "B4": _b4}
+# The cases with PLAN 6.5 checks; an SC12b run ("SC12b") has none.
+V1_CASES = frozenset(_V1_CHECKS)
 
 
 def v1_case_checks(case: str, state: Mapping[str, Any], raw_extraction: Mapping[str, Any] | None = None

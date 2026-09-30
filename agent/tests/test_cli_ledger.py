@@ -142,6 +142,9 @@ def test_run_report_shows_tokens_estimate_and_r4(ledger_path: Path, tmp_path: Pa
                + research + searches * config.tavily_credit_usd()
                + price(config.SYNTH_EXCERPT_TOKENS_TYPICAL + config.SYNTH_PROMPT_TOKENS_ESTIMATE,
                        config.SYNTH_OUTPUT_TOKENS_TYPICAL))
+    if config.JEV_SAFETY_ENABLED:  # one draft's Jev calls, input only
+        typical += (config.JEV_PLAN_STEPS_PER_PASS * config.JEV_EST_INPUT_TOKENS
+                    * config.PRICES_PER_MTOK[config.JEV_MODEL]["input"] / 1_000_000)
     total = ledger.run_total("run-r4")
     assert (f"  actual {total:.4f} USD against the estimate: typical {typical:.4f} USD "
             f"({total - typical:+.4f}), worst case {config.RUN_CAP_USD['cheap']:.4f} USD") in out

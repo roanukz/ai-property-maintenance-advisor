@@ -3,7 +3,8 @@
 The page is the v2 format of `agent.render.brief_html.render_brief` (PLAN 6.3,
 SC10). Besides the brief, the page is given the run's history_hits (so
 happened_before shows the service record's date), and for a budget stop the
-search trail and stop reason.
+search trail and stop reason, and whether the automatic safety check was
+attempted and failed (`safety_check.notice_needed`), which adds one notice line.
 
 Default output is config.BRIEFS_OUT_DIR / f"{run_id}.html" (decision 51), or
 the path already in state as html_path. A path inside the published pages is
@@ -22,6 +23,7 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from agent import config
+from agent.nodes.safety_check import notice_needed
 from agent.render.brief_html import budget_stopped_brief, render_brief
 from agent.state import AdvisorState, RunContext
 
@@ -60,6 +62,7 @@ def render(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
         "records": state.get("history_hits") or [],
         "search_trail": state.get("search_trail") or [],
         "stop_reason": state.get("stop_reason"),
+        "safety_notice": notice_needed(state.get("safety_signals")),
     }
     page = render_brief(
         brief,

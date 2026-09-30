@@ -16,6 +16,13 @@ arithmetic; nothing is typed in:
   in, SYNTH_OUTPUT_TOKENS_TYPICAL out.
 - the classifier runs only when the rules cannot decide, so it is in the
   "at most" call count and not in the typical cost.
+- Jev, while config.JEV_SAFETY_ENABLED: one call per try_first step per
+  synthesize pass. The BriefDraft schema sets no maximum, so each pass plans
+  config.JEV_PLAN_STEPS_PER_PASS calls of config.JEV_EST_INPUT_TOKENS input
+  tokens, output free; typical is one pass, and SYNTHESIZE_PASSES passes are
+  planned too. Neither is an upper bound, since a longer draft makes more
+  calls; each is reserved and held under the run cap. A missing TYPESAFE_API_KEY is refused before this preflight prints, since
+  config.LIVE_KEY_NAMES holds it while Jev is enabled.
 - worst case for a run: its per run cap (config.RUN_CAP_USD), which the ledger
   enforces before every call; for a resumed run, the cap less what the run
   already spent.
@@ -33,6 +40,8 @@ from agent import config
 PROCEED = "proceed"
 STAGE_ASK = "ask"
 STAGE_RESUME = "resume"
+# The first draft and the draft after the retry pass (max_model_calls counts both).
+SYNTHESIZE_PASSES = 2
 
 
 @dataclass
@@ -47,6 +56,8 @@ class Plan:
     typical_credits: int
     max_credits: int
     notes: list[str] = field(default_factory=list)
+    typical_jev_calls: int = 0
+    max_jev_calls: int = 0
 
 
 def _usd(amount: float) -> str:
@@ -81,6 +92,23 @@ def synthesize_typical_usd(mode: str) -> float:
     return _price(config.MODEL_FOR[mode]["synthesize"], input_tokens, config.SYNTH_OUTPUT_TOKENS_TYPICAL)
 
 
+def jev_calls(passes: int) -> int:
+    """Jev calls planned for this many synthesize passes: one per step, none while Jev is disabled."""
+    return passes * config.JEV_PLAN_STEPS_PER_PASS if config.JEV_SAFETY_ENABLED else 0
+
+
+def jev_typical_usd(calls: int) -> float:
+    """Jev's cost for this many calls: input only, output free."""
+    return _price(config.JEV_MODEL, calls * config.JEV_EST_INPUT_TOKENS, 0)
+
+
+def jev_line(typical: int, planned: int) -> str:
+    """The preflight's Jev line. It claims no upper bound: the draft schema caps no step count."""
+    return (f"Jev calls ({config.JEV_PROVIDER}, {config.JEV_MODEL}): planned {typical} for one draft, "
+            f"{planned} for {SYNTHESIZE_PASSES} drafts at {config.JEV_PLAN_STEPS_PER_PASS} steps each; one call "
+            "per try_first step (a longer draft makes more), each reserved and held under the run cap")
+
+
 def max_model_calls(mode: str, *, photo: bool) -> int:
     """Every model request one run can make, before retries of failed requests."""
     retry_row = "main" if mode == "full" else "retry_cheap"
@@ -99,7 +127,9 @@ def run_plan(mode: str, *, photo: bool, stage: str, spent_in_run: float = 0.0) -
     cap = config.RUN_CAP_USD[mode]
     research_calls, research_usd, credits = research_typical(mode)
     plate = photo and stage == STAGE_ASK
-    typical_usd = research_usd + synthesize_typical_usd(mode) + (read_plate_typical_usd(mode) if plate else 0.0)
+    typical_jev = jev_calls(1)
+    typical_usd = (research_usd + synthesize_typical_usd(mode) + (read_plate_typical_usd(mode) if plate else 0.0)
+                   + jev_typical_usd(typical_jev))
     typical_calls = research_calls + 1 + (1 if plate else 0)
     notes = ["a failed research request may be retried once (ModelRetryMiddleware); every attempt, "
              "retries included, is reserved in the ledger before it is sent"]
@@ -117,6 +147,8 @@ def run_plan(mode: str, *, photo: bool, stage: str, spent_in_run: float = 0.0) -
         typical_credits=credits,
         max_credits=config.RUN_CREDIT_CAP,
         notes=notes,
+        typical_jev_calls=typical_jev,
+        max_jev_calls=jev_calls(SYNTHESIZE_PASSES),
     )
 
 
@@ -147,6 +179,10 @@ def preflight_lines(command: str, mode: str, plans: Sequence[Plan], ledger: Any)
             f"planned: {plan.label}",
             f"  model calls: typical {plan.typical_calls}, at most {plan.max_calls}",
             f"  Tavily credits: typical {plan.typical_credits}, at most {plan.max_credits}",
+        ]
+        if plan.max_jev_calls:
+            lines.append("  " + jev_line(plan.typical_jev_calls, plan.max_jev_calls))
+        lines += [
             f"  estimated cost: typical {_usd(plan.typical_usd)}, worst case {_usd(plan.worst_usd)}",
         ]
         lines += [f"  note: {note}" for note in plan.notes]

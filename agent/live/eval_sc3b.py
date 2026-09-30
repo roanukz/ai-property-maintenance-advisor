@@ -18,7 +18,7 @@ eval_plates:
   a pooled rerun of a fixed build carries that build's logged fix (decision 35);
 - the preflight (PRD Part A rule 1): planned calls and estimated cost, typical
   and worst case, computed from config values with the PLAN section 9
-  arithmetic, the per run cap, the build spend so far and remaining, and the
+  arithmetic, including the Jev calls a run past the pause makes, the per run cap, the build spend so far and remaining, and the
   Tavily credits planned; then one line from stdin, which must be exactly
   "proceed". No flag skips it;
 - one JSON run record per run in config.EVAL_DIR, with the spec's v1 case
@@ -52,7 +52,7 @@ from agent import cli, config
 from agent.build_info import build_id as _build_id
 from agent.cli import CliRefusal
 from agent.live import evaluators
-from agent.live.preflight import PROCEED, confirmed
+from agent.live.preflight import PROCEED, SYNTHESIZE_PASSES, confirmed, jev_calls, jev_line, jev_typical_usd
 
 SUITE = "sc3b"
 EVAL_MODE = "cheap"
@@ -154,6 +154,9 @@ class RunEstimate:
     typical_credits: int
     first_pass_credits: int
     credit_ceiling: int
+    # Jev calls (typesafe), one per try_first step per draft; none for a run that stops at the pause.
+    typical_jev_calls: int = 0
+    max_jev_calls: int = 0
 
 
 def estimate(spec: RunSpec, *, route: str | None = None) -> RunEstimate:
@@ -183,10 +186,16 @@ def estimate(spec: RunSpec, *, route: str | None = None) -> RunEstimate:
         first_pass = config.RESEARCH_LIMITS[kind]["search"] + config.RESEARCH_LIMITS[kind]["fetch"]
     # A validation failure may take the reduced retry pass and one more synthesize call.
     max_calls += config.RESEARCH_LIMITS["retry_cheap"]["loop_guard"] + 1
+    # A run that goes past the pause reaches synthesize, then safety_check asks Jev once per step.
+    typical_jev = max_jev = 0
+    if not spec.stop_at_pause:
+        typical_jev, max_jev = jev_calls(1), jev_calls(SYNTHESIZE_PASSES)
+        usd += jev_typical_usd(typical_jev)
     return RunEstimate(
         typical_usd=usd, worst_usd=config.RUN_CAP_USD[EVAL_MODE], typical_model_calls=calls,
         max_model_calls=max_calls, typical_credits=credits,
         first_pass_credits=min(first_pass, config.RUN_CREDIT_CAP), credit_ceiling=config.RUN_CREDIT_CAP,
+        typical_jev_calls=typical_jev, max_jev_calls=max_jev,
     )
 
 
@@ -204,11 +213,14 @@ def check_mode(args: argparse.Namespace, environ: Mapping[str, str]) -> str:
 
 
 def open_batch_ledger(mode: str, runs: int, *, new_ledger: bool, need: tuple[str, ...],
-                      per_run_usd: float | None = None, environ: Mapping[str, str] | None = None):
+                      per_run_usd: float | None = None, environ: Mapping[str, str] | None = None,
+                      check_credits: bool = True):
     """The live ledger, refused unless the rest of the build budget covers every run at its worst case.
 
     A run's worst case is its per run cap, or `per_run_usd` for a batch
-    whose runs make one small call each (the plate runs).
+    whose runs make one small call each (the plate runs). With
+    `check_credits` False the caller weighs the credits left itself (SC12b's
+    Gate 3 prints its plan against them first).
     """
     ledger = cli.open_live_ledger(mode, new_ledger=new_ledger, need=need, need_usd=per_run_usd,
                                   **({} if environ is None else {"environ": environ}))
@@ -221,7 +233,7 @@ def open_batch_ledger(mode: str, runs: int, *, new_ledger: bool, need: tuple[str
             f"remaining build budget {remaining:.4f} USD is below {runs} runs at {what} ({need:.4f} USD)."
         )
     credits_left = config.BUILD_CREDIT_CAP - ledger.build_credits()
-    if credits_left < runs * config.RUN_CREDIT_CAP:
+    if check_credits and credits_left < runs * config.RUN_CREDIT_CAP:
         raise CliRefusal(
             f"remaining build Tavily credits {credits_left} are below {runs} runs at "
             f"{config.RUN_CREDIT_CAP} credits each."
@@ -332,10 +344,12 @@ def preflight_lines(suite: str, specs: Sequence[RunSpec], ledger, *, extra: Sequ
             f"  {i}. {spec.label} ({spec.case}, {source}, \"{spec.symptom}\"), {route}: "
             f"typical {_usd(est.typical_usd)}, {est.typical_model_calls} model calls, {est.typical_credits} searches"
         )
+    typical_jev = sum(e.typical_jev_calls for e in ests)
     lines += [
-        f"planned paid calls: typical {sum(e.typical_model_calls for e in ests)} Anthropic calls and "
-        f"{sum(e.typical_credits for e in ests)} Tavily searches; at most "
-        f"{sum(e.max_model_calls for e in ests)} Anthropic calls",
+        f"planned paid calls: typical {sum(e.typical_model_calls for e in ests)} Anthropic calls, "
+        f"{sum(e.typical_credits for e in ests)} Tavily searches and {typical_jev} Jev calls "
+        f"({config.JEV_PROVIDER}); at most {sum(e.max_model_calls for e in ests)} Anthropic calls",
+        *([jev_line(typical_jev, sum(e.max_jev_calls for e in ests))] if typical_jev else []),
         f"estimated cost: typical {_usd(sum(e.typical_usd for e in ests))}; worst case "
         f"{_usd(sum(e.worst_usd for e in ests))} "
         f"({worst_text or f'{runs} runs at the {_usd(cap)} per run cap'})",
@@ -454,7 +468,8 @@ def run_record(spec: RunSpec, *, run_id: str, thread_id: str, build: str, fix: s
     if spec.photo is not None:
         record["extraction"] = {"raw": dict(raw_extraction) if raw_extraction is not None else None,
                                 "final": state.get("extraction")}
-    if error is None and outcome is not None and (spec.stop_at_pause or not getattr(outcome, "paused", False)):
+    if (error is None and outcome is not None and spec.case in evaluators.V1_CASES
+            and (spec.stop_at_pause or not getattr(outcome, "paused", False))):
         record["v1_checks"] = evaluators.v1_case_checks(spec.case, state, raw_extraction)
     record["sc11"] = evaluators.sc11(record)
     return record

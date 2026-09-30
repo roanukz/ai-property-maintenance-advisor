@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 
 from agent import prompts
+from agent.safety_eval.sc12b import ARM_A_MARKER, arm_a_in
 
 DASHES = (chr(0x2014), chr(0x2013))
 
@@ -47,7 +48,7 @@ V1_SYNTHESIS_UNCHANGED = (
     "back out if the sources show the code has multiple documented meanings for this model family.",
     "(b) safe for an untrained person, and (c) actually actionable by someone standing at the unit. "
     'Never include "no action required", "monitor the situation", or "call a professional" as a '
-    'step. Safety-relevant steps (overheat, electrical, gas) go FIRST in the list with "safety_flag": true.',
+    "step. ",
     '6. NO RELIABLE ANSWER: if sources are insufficient or contradictory, or the model cannot be '
     'confidently matched to documentation, set "status": "no_reliable_answer" and fill '
     '"no_reliable_answer" with ',
@@ -70,6 +71,16 @@ V1_SYNTHESIS_UNCHANGED = (
 V1_RESEARCH_UNCHANGED = (
     "or its documented model family: owner's manual, error code tables, troubleshooting guides. "
     "Prefer official manufacturer pages, then dealer/retailer/repair-service pages, then community forums.",
+)
+
+# Item 5's last sentence: v1's wording, replaced by arm A (the jev-safety build
+# brief, "What to build" 8).
+V1_ITEM_5_SAFETY = 'Safety-relevant steps (overheat, electrical, gas) go FIRST in the list with "safety_flag": true.'
+ARM_A_ITEM_5_SAFETY = (
+    'step. Set "safety_flag": true on every step that switches power or gas off, on or reset (a breaker, '
+    "a disconnect, a GFCI, a plug or a gas valve), that has the reader open, touch or work near anything "
+    "that can be electrically live, hot or carrying gas, or that runs or tests a heater, and put those "
+    "steps FIRST in the list.\n"
 )
 
 # PLAN 6.4: dashes replaced by a semicolon or colon.
@@ -157,6 +168,35 @@ def test_unchanged_v1_rules_are_verbatim() -> None:
         assert sentence in prompts.SYNTHESIS_SYSTEM, sentence
     for sentence in V1_RESEARCH_UNCHANGED:
         assert sentence in prompts.RESEARCH_PROMPT, sentence
+
+
+def test_item_5_safety_sentence_is_arm_a() -> None:
+    """Mutation prompts_item5_v1_sentence_back: restore v1's last sentence of item 5.
+
+    Mutation prompts_item5_gfci_dropped: drop "a GFCI" from the arm A sentence.
+    """
+    text = prompts.SYNTHESIS_SYSTEM
+    assert ARM_A_ITEM_5_SAFETY in text
+    assert V1_ITEM_5_SAFETY not in text
+    item_5 = text[text.index("\n5. "):text.index("\n6. ")]
+    assert item_5.rstrip().endswith(ARM_A_ITEM_5_SAFETY.rstrip())
+    for dash in DASHES:
+        assert dash not in ARM_A_ITEM_5_SAFETY
+    for cut in CUT:
+        assert cut not in item_5, cut
+    assert arm_a_in(text)
+
+
+def test_arm_a_gate_holds_the_same_whole_sentence() -> None:
+    """The SC12b gate holds arm A's whole sentence, the same text as this file's copy, so a prompt
+    whose sentence keeps its first clause but changes the rest fails the gate as well as this test.
+
+    Mutation sc12b_arm_a_first_clause_only: the gate checks only the sentence's first clause.
+    """
+    assert ARM_A_ITEM_5_SAFETY.removeprefix("step. ").rstrip("\n") == ARM_A_MARKER
+    assert arm_a_in(prompts.SYNTHESIS_SYSTEM)
+    assert not arm_a_in(prompts.SYNTHESIS_SYSTEM.replace("a GFCI, ", ""))
+    assert not arm_a_in(prompts.SYNTHESIS_SYSTEM.replace("runs or tests a heater", "runs a heater"))
 
 
 def test_rules_are_numbered_one_to_ten_in_order() -> None:

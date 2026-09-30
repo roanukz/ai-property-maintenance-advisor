@@ -4,7 +4,8 @@ A graph node (render -> persist -> END). Everything it writes is keyed by the
 thread ID, so writing a thread twice changes nothing:
 
 - the lookup row in the registry (the registry's record of the lookup);
-- the run record (the RunResult wrapper of PLAN 7.3) as JSON in `<data>/runs/`;
+- the run record (the RunResult wrapper of PLAN 7.3) as JSON in `<data>/runs/`,
+  with each final step's safety provenance (`safety_record`);
 - knowledge graph edges from a validated ok brief.
 
 Edges. Each candidate with a code, an evidence quote and a source cited from
@@ -129,6 +130,8 @@ from agent.rules.evidence import (
     verify_span,
 )
 from agent.rules.grounding import code_forms
+from agent.rules.safety import pair_provenance
+from agent.rules.step_text import step_key
 from agent.state import AdvisorState, RunContext
 
 log = logging.getLogger(__name__)
@@ -685,6 +688,7 @@ def run_record(state: AdvisorState, ctx: RunContext, thread_id: str) -> dict[str
         "research_limits": state.get("research_limits"),
         "grounding_status": state.get("grounding_status"),
         "grounding": list(state.get("grounding") or []),
+        "safety": safety_record(state),
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "all_forum": bool(sources) and all(s.get("tier") == "forum" for s in sources),
         "cost_usd": ledger.run_total(run_id) if ledger is not None else float(state.get("cost_usd") or 0.0),
@@ -697,6 +701,29 @@ def run_record(state: AdvisorState, ctx: RunContext, thread_id: str) -> dict[str
         "html_path": state.get("html_path"),
         "brief": brief,
     }
+
+
+def safety_record(state: AdvisorState) -> dict[str, Any]:
+    """The safety check's status and reason, and each final step's provenance.
+
+    Per step: its text, the writer's flag, the word rule, Jev's probability
+    (and the error kind when its call failed), the final flag and the layer
+    that raised it. Steps and provenance are joined by step hash, one entry
+    per step, so two copies of a step keep their own provenance.
+    """
+    signals = state.get("safety_signals") or {}
+    errors = {e.get("step_sha256"): e.get("error") for e in signals.get("steps") or [] if isinstance(e, dict)}
+    final = (state.get("brief") or {}).get("try_first") or []
+    entries = pair_provenance(final, state.get("safety_provenance") or [])
+    steps = []
+    for step, entry in zip(final, entries, strict=True):
+        key = step_key(step.get("step"), step.get("detail"))
+        steps.append({"step": step.get("step"), "step_sha256": key,
+                      "writer_flag": entry.get("writer_flag"), "word_rule": entry.get("word_rule"),
+                      "jev_noul": entry.get("jev_noul"), "jev_error": errors.get(key),
+                      "final_flag": step.get("safety_flag") is True, "raised_by": entry.get("raised_by")})
+    return {"status": signals.get("status"), "reason": signals.get("reason"),
+            "question_hash": signals.get("question_hash"), "model": signals.get("model"), "steps": steps}
 
 
 def _upsert_lookup(ctx: RunContext, state: AdvisorState, record: dict[str, Any]) -> None:

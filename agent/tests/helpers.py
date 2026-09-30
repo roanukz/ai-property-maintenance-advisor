@@ -24,7 +24,10 @@ NODE_GUARD = TESTS_DIR / "harness" / "netguard.mjs"
 
 # Variable names removed from every test process and every child.
 SCRUB_PREFIXES = ("ANTHROPIC_", "LANGSMITH_", "LANGCHAIN_")
-SCRUB_NAMES = ("TAVILY_API_KEY",)
+# TYPESAFE_API_KEY, and TYPESAFE_BASE_URL, TYPESAFE_DEFAULT_MODEL and
+# TYPESAFE_LOG_LEVEL, which typesafe-sdk also reads from the environment.
+SCRUB_NAMES = ("TAVILY_API_KEY", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL",
+               "TYPESAFE_LOG_LEVEL")
 
 # The guards print these texts. They are repeated here (not imported) because
 # importing sitecustomize.py would patch sockets in the importing process.

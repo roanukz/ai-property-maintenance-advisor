@@ -19,6 +19,7 @@ dependencies = [
     "langsmith==0.12.6",
     "networkx==3.6.1",
     "pydantic==2.13.5",
+    "typesafe-sdk==0.7.2",
 ]
 
 [project.scripts]

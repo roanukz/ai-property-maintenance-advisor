@@ -7,7 +7,9 @@ the code change (mutation) that turns it red.
 
 from __future__ import annotations
 
+import base64
 import copy
+import hashlib
 import json
 from pathlib import Path
 
@@ -593,3 +595,105 @@ def test_result_text_hash_names_the_local_page_text() -> None:
     wrong["research"]["tool_results"][0]["results"][0]["page_sha"] = "a" * 64
     with pytest.raises(CassetteError, match="unknown key"):
         cassette_from_dict(wrong)
+
+
+# ---------------------------------------------------------------------------
+# The optional "safety_check" key (recorded Jev answers)
+# ---------------------------------------------------------------------------
+
+
+def jev_entry(**overrides) -> dict:
+    entry = {"step_sha256": "c3" * 32, "question_hash": "0123456789abcdef", "model": config.JEV_MODEL,
+             "noul": 0.97, "input_tokens": 384, "output_tokens": 3, "request_id": "req-1", "error": None}
+    entry.update(overrides)
+    return entry
+
+
+def test_safety_check_is_optional_and_served_as_a_copy(tmp_path):
+    # Mutations: cassettes_safety_check_unknown (the key is not among the
+    # optional keys, so a recording that holds it fails to load);
+    # cassettes_safety_check_shared (the accessor returns the stored list, so a
+    # caller's edit reaches the next read).
+    assert load_cassette(CASSETTE).safety_check is None
+    data = sample()
+    data["safety_check"] = [jev_entry(), jev_entry(noul=None, error="timeout", input_tokens=None,
+                                                   output_tokens=None, request_id=None)]
+    c = load_cassette(write(tmp_path, data))
+    assert c.safety_check == data["safety_check"]
+    c.safety_check[0]["noul"] = 0.0
+    assert c.safety_check[0]["noul"] == 0.97
+    data["safety_check"] = []
+    assert load_cassette(write(tmp_path, data)).safety_check == []
+
+
+SAFETY_CHECK_REJECTS = {
+    "not_a_list": ({"step_sha256": "c3" * 32}, "safety_check: must be a list"),
+    "step_text_instead_of_a_hash": ([jev_entry(step_sha256="Turn off power at the breaker")], "step_sha256"),
+    "short_question_hash": ([jev_entry(question_hash="0123")], "question_hash"),
+    "model_with_spaces": ([jev_entry(model="Turn off power at the breaker")], "model"),
+    "probability_above_1": ([jev_entry(noul=1.5)], "noul"),
+    "probability_as_text": ([jev_entry(noul="0.9")], "noul"),
+    "probability_as_a_bool": ([jev_entry(noul=True)], "noul"),
+    "negative_tokens": ([jev_entry(input_tokens=-1)], "input_tokens"),
+    "request_id_with_spaces": ([jev_entry(request_id="see the step: turn off power")], "request_id"),
+    "unknown_error_kind": ([jev_entry(noul=None, error="flaky")], "error"),
+    "not_recorded_is_never_recorded": ([jev_entry(noul=None, error="not_recorded")], "error"),
+    "both_noul_and_error": ([jev_entry(error="timeout")], "exactly one of noul and error"),
+    "neither_noul_nor_error": ([jev_entry(noul=None)], "exactly one of noul and error"),
+    "an_extra_key_holding_text": ([{**jev_entry(), "step": "Turn off power"}], "unknown key.*step"),
+    "a_missing_key": ([{k: v for k, v in jev_entry().items() if k != "request_id"}], "missing required key"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(SAFETY_CHECK_REJECTS))
+def test_loader_rejects_malformed_safety_check(tmp_path, case):
+    # Mutations: cassettes_safety_check_unchecked (the key loads unvalidated);
+    # cassettes_safety_check_extra_keys (unknown keys pass); cassettes_noul_range
+    # (the 0 to 1 check dropped); cassettes_safety_one_of (noul and error both
+    # allowed); cassettes_safety_model_any_text (a model string may hold text).
+    entries, message = SAFETY_CHECK_REJECTS[case]
+    data = sample()
+    data["safety_check"] = entries
+    with pytest.raises(CassetteError, match=message):
+        load_cassette(write(tmp_path, data))
+
+
+def test_privacy_diff_covers_the_safety_check_key(tmp_path):
+    # Mutations: privacy_diff_safety_shape_unchecked (a staged safety_check
+    # holding text passes the diff); privacy_diff_request_id_exempt_anywhere
+    # (a high entropy token outside safety_check[i].request_id is exempt);
+    # privacy_diff_request_id_not_exempt (a recorded request ID blocks the diff).
+    staging, cassette, log = stage_mini(tmp_path)
+    # A request ID shaped like a random token: high entropy, one token, no key prefix.
+    opaque = base64.urlsafe_b64encode(hashlib.sha256(b"synthetic request").digest()).decode().rstrip("=")
+    assert pd.is_secret_shaped(opaque)
+    cassette["safety_check"] = [jev_entry(request_id=opaque)]
+    (staging / "cassettes" / "mini.json").write_text(json.dumps(cassette))
+    results, report = pd.run(staging, tmp_path, status=stub_status)
+    assert results[0].hits == [] and "Result: CLEAN" in report
+
+    cassette["safety_check"] = [jev_entry(model="Turn off power at the breaker, then restore power")]
+    cassette["expect"]["note"] = opaque
+    (staging / "cassettes" / "mini.json").write_text(json.dumps(cassette))
+    results, report = pd.run(staging, tmp_path, status=stub_status)
+    got = {(h["path"], h["kind"]) for h in results[0].hits}
+    assert ("safety_check", "safety_check shape") in got
+    assert ("expect.note", "high entropy token") in got
+    assert "Result: BLOCKED" in report
+
+
+def test_privacy_diff_blocks_a_typesafe_key_even_as_a_request_id(tmp_path):
+    # Mutation: privacy_typesafe_prefix_dropped (no rule knows the TypeSafe
+    # prefix; a key of hex characters scores below the entropy line, and in
+    # safety_check[i].request_id the entropy hit is exempt, so it passes).
+    staging, cassette, log = stage_mini(tmp_path)
+    key = "apikey" + "_" + hashlib.sha256(b"synthetic typesafe key").hexdigest()[:35] + "_" + hashlib.sha256(b"second part").hexdigest()
+    assert "TypeSafe key prefix" in kinds("note " + key)
+    cassette["safety_check"] = [jev_entry(request_id=key)]
+    cassette["expect"]["note"] = key
+    (staging / "cassettes" / "mini.json").write_text(json.dumps(cassette))
+    results, report = pd.run(staging, tmp_path, status=stub_status)
+    got = {(h["path"], h["kind"]) for h in results[0].hits}
+    assert ("safety_check[0].request_id", "TypeSafe key prefix") in got
+    assert ("expect.note", "TypeSafe key prefix") in got
+    assert "Result: BLOCKED" in report

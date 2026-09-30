@@ -1,0 +1,155 @@
+{
+  "status": "final",
+  "decision": "53",
+  "rule": "Pool D's second group: manuals the maker wrote that were retrieved from a host the host rule in agent/rules/tiers.py does not give manufacturer tier. Fixed before any labeling; matched to pages by URL. Drafted from the lookup logs (URL, title) and a few words of each stored page (a copyright line or a maker part number); no page text beyond those words is recorded here.",
+  "documents": [
+    {
+      "url": "https://cdn.spasoftwaresolutions.net/product_documents/sundance_spas/2025/25-880-Domestic-Rev-A-24932862.pdf",
+      "family": "sundance-880-owners-manual",
+      "host": "cdn.spasoftwaresolutions.net",
+      "title": "880 Series",
+      "maker": "Sundance Spas",
+      "reason": "Sundance 880 Series owner's manual, 2025 domestic revision A; the page carries a copyright line naming Sundance Spas, Inc."
+    },
+    {
+      "url": "https://www.thespaworks.com/sites/default/files/upload/2015_880_series.pdf",
+      "family": "sundance-880-owners-manual",
+      "host": "www.thespaworks.com",
+      "title": "880 SERIES OWNER'S MANUAL",
+      "maker": "Sundance Spas",
+      "reason": "Sundance 880 Series owner's manual, 2015; the page carries a copyright line naming Sundance Spas, Inc."
+    },
+    {
+      "url": "https://www.thespaworks.com/sites/default/files/2005_sundance_880_series_owners_manual.pdf",
+      "family": "sundance-880-owners-manual",
+      "host": "www.thespaworks.com",
+      "title": "Sundance 2005+ 880 Owner's Manual (Revision C)",
+      "maker": "Sundance Spas",
+      "reason": "Sundance 880 Series owner's manual, 2005 revision C; the page carries a 2005 copyright line naming Sundance Spas, Inc."
+    },
+    {
+      "url": "https://www.belleflamme.ca/wp-content/uploads/2024/12/18-AC98D1-7E-EN_07072023.pdf",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "host": "www.belleflamme.ca",
+      "title": "Installation and Operation Manual - Condensing Units",
+      "maker": "Trane",
+      "reason": "Trane condensing unit installation and operation manual; the page carries Trane document number 18-AC98D1-7E-EN on every page and a 2023 Trane copyright line."
+    },
+    {
+      "url": "https://www.manualslib.com/manual/1016845/Trane-Xr16-4ttr6.html",
+      "family": "trane-xr16-4ttr6-product-data",
+      "host": "www.manualslib.com",
+      "title": "TRANE XR16 4TTR6 PRODUCT DATA Pdf Download",
+      "maker": "Trane",
+      "reason": "Trane XR16 4TTR6 product data, shown on a manual library site; the page carries a 2013 Trane copyright line with document number 22-1889-01. Kept: the maker's document; the library site's own page text in the stored copy is labeled like any other item."
+    },
+    {
+      "url": "https://aquarestspas.com/wp-content/uploads/2016/01/2015-OWNERS-MANUAL_AQUA-REST_DOMESTIC_ENGLISH.pdf",
+      "family": "aquarest-owners-manual",
+      "host": "aquarestspas.com",
+      "title": "Spa Owner's Manual",
+      "maker": "AquaRest Spas",
+      "reason": "Owner's manual, 2015; the stored text names ROTO OPS LLC and part number PN 378100 Rev I and does not name AquaRest. The AquaRest link comes from the host (aquarestspas.com) and from the 2017 and 2019 manuals below (part numbers 378100-1 and 378100-2), which name Roto Ops LLC as AquaRest's manufacturer. Kept: the host is AquaRest's own site, which config.MAKER_DOMAINS does not list, so the host rule gives it dealer tier."
+    },
+    {
+      "url": "https://aquarestspas.com/wp-content/uploads/2016/12/AR-2017-OWNERS-MANUAL-DOMESTIC-ENGLISH-UHS-378100-1-REV-O-.pdf",
+      "family": "aquarest-owners-manual",
+      "host": "aquarestspas.com",
+      "title": "Spa Owner's Manual",
+      "maker": "AquaRest Spas",
+      "reason": "AquaRest 2017 owner's manual, part number 378100-1 revision O; the page names AquaRest Spas and its manufacturer Roto Ops LLC. Kept: AquaRest's own site, which config.MAKER_DOMAINS does not list, so the host rule does not give it manufacturer tier."
+    },
+    {
+      "url": "https://aquarestspas.com/wp-content/uploads/2019/02/AR-OWNERS-MANUAL-DOMESTIC-ENGLISH-HU2-378100-2-REV-S-.pdf",
+      "family": "aquarest-owners-manual",
+      "host": "aquarestspas.com",
+      "title": "Spa Owner's Manual",
+      "maker": "AquaRest Spas",
+      "reason": "AquaRest owner's manual, part number 378100-2 revision S; the page names AquaRest Spas and its manufacturer Roto Ops LLC. Kept: AquaRest's own site, which config.MAKER_DOMAINS does not list, so the host rule does not give it manufacturer tier."
+    }
+  ],
+  "also_in_family_rule": "Pages outside the fixed list that are another revision of a listed document (decision 59). Each keeps its group (the host rule still decides maker or dealer) and takes the listed document's family, so the two revisions land in one half. Matched by URL.",
+  "also_in_family": [
+    {
+      "url": "https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC98D1-5-EN.pdf",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "reason": "revision 5 of Trane document 18-AC98D1; the listed manual is revision 7E"
+    }
+  ],
+  "not_documentation_rule": "Full pages left out of pool D altogether: off topic pages a search brought back, and forum threads on hosts the host rule does not know as forums. Matched by URL. Reviewed with the dealer group as a whole: every other full page that is neither maker nor listed is a dealer page.",
+  "not_documentation": [
+    {
+      "url": "https://hypebeast.com/tags/adidas-zx-9000",
+      "reason": "a sneaker news page (adidas ZX 9000) that a search for the AquaRest ZX-9000 Pro brought back"
+    },
+    {
+      "url": "https://stockx.com/adidas-zx-9000-30-years-of-torsion",
+      "reason": "a sneaker listing (adidas ZX 9000) that a search for the AquaRest ZX-9000 Pro brought back"
+    },
+    {
+      "url": "https://www.sos.mo.gov/CMSImages/Business/llc1A.pdf?v=2",
+      "reason": "a state business filing form that a filetype search for the 880 Series brought back"
+    },
+    {
+      "url": "https://www.weyerhaeuser.com/application/files/2817/7757/5597/LB-4020_Weyerhaeuser_Framer_Series_Lumber.pdf",
+      "reason": "a lumber product guide that a filetype search for the 880 Series brought back"
+    },
+    {
+      "url": "https://sos.wyo.gov/Forms/WyoBiz/Series_LLC_Rules.pdf",
+      "reason": "state rules for series LLCs that a filetype search for the 880 Series brought back"
+    },
+    {
+      "url": "https://www.lseg.com/content/dam/ftse-russell/en_us/documents/ground-rules/ftse-uk-index-series-ground-rules.pdf",
+      "reason": "stock index rules that a filetype search for the 880 Series brought back"
+    },
+    {
+      "url": "https://www.ucop.edu/academic-personnel-programs/_files/apm/apm-220.pdf",
+      "reason": "a university personnel policy that a filetype search for the 880 Series brought back"
+    },
+    {
+      "url": "https://www.poolspaforum.com/forum/index.php?%2Ftopic%2F53734-flo-error-on-sundance-850-looks-like-flow-is-too-weak-to-move-the-flow-switch%2F=",
+      "reason": "a forum thread; the host rule does not know this host as a forum, and forum pages are not documentation"
+    },
+    {
+      "url": "https://www.poolspaforum.com/forum/index.php?%2Ftopic%2F52950-sundance-optima-880-wont-run-open-flow-switch-error%2F=",
+      "reason": "a forum thread; the host rule does not know this host as a forum, and forum pages are not documentation"
+    },
+    {
+      "url": "https://www.facebook.com/groups/338520711888137/posts/995123169561218",
+      "reason": "a post in a social media group: owners talking, as on a forum, not documentation"
+    }
+  ],
+  "considered_not_listed": [
+    {
+      "url": "https://www.yumpu.com/en/document/view/30722091/2013-880-series-owners-manual-sundance-spas",
+      "title": "2013 880 Series Owners Manual - Sundance Spas",
+      "reason": "the title names the Sundance 2013 880 manual, but the stored text is the viewer site's page, with only the viewer's own copyright line"
+    },
+    {
+      "url": "https://www.scribd.com/document/436712295/Sundance-Spas-880-Series-2017-Manual",
+      "title": "Sundance Spas 880 Series 2017 Manual",
+      "reason": "a stub of under 500 characters; nothing in the stored text shows the maker wrote it"
+    },
+    {
+      "url": "https://www.scribd.com/document/807887427/Trane-XR16-Install-Manual",
+      "title": "Trane XR16 Installation Guide",
+      "reason": "a stub of under 500 characters; nothing in the stored text shows the maker wrote it"
+    },
+    {
+      "url": "https://sundancespasoflindora.com/documents/sundance-880-series-owners-manual",
+      "title": "Sundance 880 Series Owner's Manual - Sundance Spas of Lindora",
+      "reason": "a dealer's landing page for the manual, not the manual's text"
+    },
+    {
+      "url": "https://en.sundancespas.lv/customer-care",
+      "title": "Owner Resources - Sundance Spas",
+      "reason": "a regional distributor's web page, not a manual"
+    },
+    {
+      "url": "https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "title": "Trane Rooftop Unit Troubleshooting Guide",
+      "reason": "written by the parts dealer about Trane units, not by Trane"
+    }
+  ],
+  "reviewed": "29 September 2026, by Claude under Roanuk's instruction to keep progressing: each entry's reason checked against the stored page (copyright line, maker document or part number, or the maker's own host), and each exclusion checked against its URL and title. Fixed before any labeling (decision 53). Families were added for decision 58 (29 September 2026), before any labeling, so the listed manuals of one family land in one half. The also_in_family entry was added for decision 59 (29 September 2026), before any labeling: a revision of a listed manual on the maker's own site takes that manual's family."
+}

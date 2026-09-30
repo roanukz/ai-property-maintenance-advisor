@@ -68,7 +68,8 @@ def is_secret_name(name: str) -> bool:
 CACHE_DIRS = {"__pycache__", ".pytest_cache", ".hypothesis", "node_modules", ".DS_Store"}
 # The key and tracing variables conftest scrubs; a mutation may plant them on purpose.
 SCRUB_PREFIXES = ("ANTHROPIC_", "LANGSMITH_", "LANGCHAIN_")
-SCRUB_NAMES = ("TAVILY_API_KEY",)
+SCRUB_NAMES = ("TAVILY_API_KEY", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL",
+               "TYPESAFE_LOG_LEVEL")
 RUN_TIMEOUT_S = 600
 _SUMMARY_LINE = re.compile(r"^(FAILED|ERROR) (\S+)")
 

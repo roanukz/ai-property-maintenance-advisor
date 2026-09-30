@@ -86,6 +86,13 @@ class AdvisorState(TypedDict, total=False):
     # candidate code, and the run's summary (verified, unverifiable, failed).
     grounding: list[dict[str, Any]]
     grounding_status: str | None
+    # safety_check's record of Jev's answers for the current draft (one writer):
+    # None, or {status, reason, question_hash, model, steps: [{step_sha256,
+    # noul, model, request_id, input_tokens, error}]}, matched to steps by hash.
+    safety_signals: dict[str, Any] | None
+    # validate's per step safety provenance for the last validated brief
+    # (`safety.raise_flags`), in the brief's step order; persist records it.
+    safety_provenance: list[dict[str, Any]]
     # Mirrors of the ledger (the ledger is the truth); writers return deltas.
     cost_usd: Annotated[float, operator.add]
     tavily_credits: Annotated[int, operator.add]

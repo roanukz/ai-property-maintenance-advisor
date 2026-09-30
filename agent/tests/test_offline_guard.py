@@ -220,13 +220,17 @@ def test_sc5_and_sc1b_children_use_spawn_helper() -> None:
 
 
 def test_spawn_helper_scrubs_child_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mutation: skip scrub_environ(env) in helpers.child_env."""
-    for name in ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "LANGSMITH_API_KEY", "LANGCHAIN_TRACING_V2", "LANGSMITH_GATEWAY"):
+    """Mutations: skip scrub_environ(env) in helpers.child_env; helpers_scrub_misses_typesafe_key
+    (TYPESAFE_API_KEY left off the scrub list)."""
+    planted = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "LANGSMITH_API_KEY", "LANGCHAIN_TRACING_V2", "LANGSMITH_GATEWAY",
+               config.TYPESAFE_KEY_NAME, "TYPESAFE_BASE_URL", "TYPESAFE_LOG_LEVEL")
+    for name in planted:
         monkeypatch.setenv(name, "dummy-value-for-scrub-test")
     code = "import json, os; print(json.dumps(dict(os.environ)))"
     proc = spawn_offline_child(["-c", code], kind="python", timeout=60)
     child_env = json.loads(proc.stdout.strip().splitlines()[-1])
     assert _scrubbed_names_present(child_env) == []
+    assert [name for name in planted if name in child_env] == []
     assert child_env.get("LANGGRAPH_STRICT_MSGPACK") == "true"
 
 

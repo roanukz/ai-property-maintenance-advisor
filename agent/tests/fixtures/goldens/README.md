@@ -32,6 +32,12 @@ refusal cites no source, so it shows none), tiers are lowered to the host
 ceiling, safety steps move first, and the warranty age statement is written by
 code. Those are validate differences (Phase 2, decision 21), not renderer ones.
 
+Safety step flagging also runs in validate. The configuration SC12a shipped
+(`config.SAFETY_LAYERS = ("jev",)`, decision 62) raises a flag only from a recorded
+Jev answer, and these replay cassettes hold none, so the goldens carry the writer's
+own flags, unchanged. (While the word rule was the production layer, from 29 to 30
+September 2026, it raised three flags here; that is recorded in DECISION-LOG.)
+
 Model text keeps its U+2014 and U+2013 dashes as recorded; the v2 renderer
 writes them as `&#8212;` and `&#8211;`, so the browser shows the same
 character and no file here holds a raw dash (the repo style scan).

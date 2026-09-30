@@ -22,6 +22,7 @@ from agent.replay import privacy_diff
 from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
     FAKE_ANTHROPIC,
     FAKE_TAVILY,
+    FAKE_TYPESAFE,
     NRA_DRAFT,
     CheckedChat,
     LiveFakes,
@@ -32,7 +33,7 @@ from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
     type_line,
 )
 
-WATCHED = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "LANGSMITH_API_KEY", "UNRELATED_SECRET")
+WATCHED = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "LANGSMITH_API_KEY", "UNRELATED_SECRET", config.TYPESAFE_KEY_NAME)
 FAKE_LANGSMITH = fake_key("lsv2" + "_pt_", "langsmith")
 FAKE_OTHER = fake_key("other-", "unrelated")
 
@@ -53,7 +54,7 @@ def check_schema_env(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixt
     type_line(monkeypatch, "proceed\n")
     code = cli.main(["check-schema", "--live", "--new-ledger"])
     out, err = capsys.readouterr()
-    assert FAKE_ANTHROPIC not in out + err and FAKE_TAVILY not in out + err
+    assert FAKE_ANTHROPIC not in out + err and FAKE_TAVILY not in out + err and FAKE_TYPESAFE not in out + err
     return code, seen, err
 
 
@@ -71,6 +72,11 @@ DOTENVS = {
         f'ANTHROPIC_API_KEY="{FAKE_ANTHROPIC} #kept"\n',
         {"ANTHROPIC_API_KEY": f"{FAKE_ANTHROPIC} #kept", "TAVILY_API_KEY": None},
     ),
+    # check-schema makes no Jev call, so it never loads the TypeSafe key (read only when needed).
+    "typesafe_key_not_needed": (
+        f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\n{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n",
+        {"ANTHROPIC_API_KEY": FAKE_ANTHROPIC, config.TYPESAFE_KEY_NAME: None},
+    ),
     "other_names_ignored": (
         f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nUNRELATED_SECRET={FAKE_OTHER}\nLANGSMITH_API_KEY={FAKE_LANGSMITH}\n",
         {"ANTHROPIC_API_KEY": FAKE_ANTHROPIC, "UNRELATED_SECRET": None, "LANGSMITH_API_KEY": None},
@@ -83,7 +89,8 @@ def test_dotenv_parses_comments_quotes_and_export(case: str, live_env: Path, mon
                                                   capsys: pytest.CaptureFixture[str]) -> None:
     """Mutations: env_export_not_stripped; env_quotes_kept; env_inline_comment_kept;
     env_reads_any_name (a stray .env variable reaches the process); env_tracing_names_always
-    (LANGSMITH_* read without ADVISOR_TRACING=1)."""
+    (LANGSMITH_* read without ADVISOR_TRACING=1); env_typesafe_key_always_read (a command that
+    needs no Jev call loads TYPESAFE_API_KEY anyway)."""
     dotenv, expected = DOTENVS[case]
     code, seen, err = check_schema_env(monkeypatch, capsys, dotenv)
     assert code == cli.EXIT_OK, err
@@ -91,6 +98,29 @@ def test_dotenv_parses_comments_quotes_and_export(case: str, live_env: Path, mon
         assert seen.get(name) == value, name
     # The command's keys are gone from the environment once it ends.
     assert all(name not in os.environ for name in WATCHED)
+
+
+def test_typesafe_key_loaded_when_needed_while_jev_is_disabled(tmp_path: Path,
+                                                                monkeypatch: pytest.MonkeyPatch) -> None:
+    """With JEV_SAFETY_ENABLED False, LIVE_KEY_NAMES drops TYPESAFE_API_KEY, but a command that
+    needs it (advisor eval sc12a --live) still loads it and redacts it.
+
+    Mutation: env_typesafe_key_only_while_enabled (the key is read only from LIVE_KEY_NAMES, so
+    the command refuses it as missing and nothing redacts it)."""
+    from datetime import date
+
+    monkeypatch.setattr(config, "LIVE_KEY_NAMES", ("ANTHROPIC_API_KEY", "TAVILY_API_KEY"))
+    monkeypatch.setattr(config, "ENV_FILE", tmp_path / "no.env")
+    monkeypatch.setattr(cli, "_today", lambda: date(2026, 9, 29))
+    ledger = Ledger(tmp_path / "ledger.sqlite", create=True)
+    environ = {config.TYPESAFE_KEY_NAME: FAKE_TYPESAFE}
+    session = cli.LiveSession("eval sc12a", "cheap", ledger, need=(config.TYPESAFE_KEY_NAME,), environ=environ)
+    assert session.sources == {config.TYPESAFE_KEY_NAME: "environment"}
+    assert FAKE_TYPESAFE in session.secrets
+    # A command that does not need it still never reads it.
+    environ["ANTHROPIC_API_KEY"] = FAKE_ANTHROPIC
+    session = cli.LiveSession("check-schema", "cheap", ledger, need=("ANTHROPIC_API_KEY",), environ=environ)
+    assert config.TYPESAFE_KEY_NAME not in session.sources and FAKE_TYPESAFE not in session.secrets
 
 
 def test_langsmith_keys_read_only_when_tracing_is_opted_in(live_env: Path, monkeypatch: pytest.MonkeyPatch,
@@ -153,7 +183,8 @@ def test_planted_key_never_written_or_printed(live_env: Path, tmp_path: Path, mo
     # Redacted where each file is written, not only by the backstop scrub afterwards.
     assert "warning: a key value was found" not in output
 
-    for secret in (FAKE_ANTHROPIC, FAKE_TAVILY):
+    assert fakes.jev_requests  # the run called Jev with the TypeSafe key loaded
+    for secret in (FAKE_ANTHROPIC, FAKE_TAVILY, FAKE_TYPESAFE):
         assert secret not in output
         assert secret not in os.environ.values()
         for path in _files_under(live_env):

@@ -480,3 +480,52 @@ def test_charge_estimated_charges_the_whole_reservation(ledger: Ledger) -> None:
     assert charge[0]["usd"] == pytest.approx(hold.usd) and charge[0]["estimated"] == 1
     assert "a reply with no usage" in charge[0]["note"]
     assert ledger.run_total("run") == pytest.approx(hold.usd)
+
+
+JEV_IN = config.PRICES_PER_MTOK[config.JEV_MODEL]["input"] / 1_000_000
+
+
+def test_jev_call_priced_on_input_only_with_typesafe_on_every_row(ledger: Ledger) -> None:
+    # Mutations: ledger_jev_output_priced (output tokens are charged);
+    # ledger_provider_not_carried (the reserve row says anthropic);
+    # ledger_charge_ignores_provider (the charge prices a Jev call at Anthropic
+    # or replay rates). The judge's own reserve before call order is held by
+    # test_safety_judge.py.
+    model = _FakeModel()
+    kw = dict(mode="cheap", node="safety_check", model=config.JEV_MODEL, provider=config.JEV_PROVIDER)
+    hold = ledger.reserve("jev", input_tokens_est=900, max_tokens=1_000, **kw)
+    assert hold.usd == pytest.approx(900 * JEV_IN) and hold.provider == config.JEV_PROVIDER
+    usage = model.invoke("step")  # 100 in, 10 out
+    assert ledger.charge(hold, usage) == pytest.approx(100 * JEV_IN)
+    ledger.release(ledger.reserve("jev", input_tokens_est=450, max_tokens=0, **kw))
+    rows = ledger.rows("jev")
+    assert [(r["kind"], r["provider"]) for r in rows] == [
+        ("reserve", "typesafe"), ("charge", "typesafe"), ("release", "typesafe"),
+        ("reserve", "typesafe"), ("release", "typesafe")]
+    charge = rows[1]
+    assert (charge["input_tokens"], charge["output_tokens"]) == (100, 10)  # recorded, output priced at 0
+    # The same call in replay is priced the same way, never at the Haiku replay rates.
+    replay = ledger.reserve("jev-replay", input_tokens_est=900, max_tokens=1_000, **{**kw, "mode": "replay"})
+    assert replay.usd == pytest.approx(900 * JEV_IN)
+    assert ledger.charge(replay, {"input_tokens": 900, "output_tokens": 1_000}) == pytest.approx(900 * JEV_IN)
+    # Anthropic stays the default, and an unknown provider is refused.
+    assert ledger.reserve("a", mode="cheap", node="synthesize", model=HAIKU, input_tokens_est=10,
+                          max_tokens=10).provider == "anthropic"
+    with pytest.raises(ValueError):
+        ledger.reserve("x", input_tokens_est=10, max_tokens=0, **{**kw, "provider": "tavily"})
+
+
+def test_build_cap_refuses_a_jev_reservation_that_would_cross_it(ledger: Ledger) -> None:
+    # Mutation ledger_refusal_drops_provider: the stop row of a refused Jev
+    # call carries no provider.
+    need = 450 * JEV_IN
+    _preload(ledger.path, mode="cheap", usd=config.BUILD_CAP_USD - need / 2)
+    with pytest.raises(BudgetExceeded) as err:
+        ledger.reserve("jev", mode="cheap", node="safety_check", model=config.JEV_MODEL, input_tokens_est=450,
+                       max_tokens=0, provider=config.JEV_PROVIDER)
+    assert err.value.reason == "build_cap"
+    [stop] = ledger.rows("jev")
+    assert (stop["kind"], stop["provider"]) == ("stop", config.JEV_PROVIDER)
+    # A Jev call that fits what is left goes through.
+    ledger.reserve("jev", mode="cheap", node="safety_check", model=config.JEV_MODEL, input_tokens_est=100,
+                   max_tokens=0, provider=config.JEV_PROVIDER)

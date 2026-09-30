@@ -4,8 +4,8 @@ Phase 4 wiring:
 
     START -> intake -> read_plate -> confirm_identity (loops on itself until a
     model is given) -> route -> {history, graph_lookup, research} -> gather
-    -> synthesize -> validate -> [upgrade_check -> validate, once, on an ok
-    brief] -> render -> persist -> END
+    -> synthesize -> safety_check -> validate -> [upgrade_check -> validate,
+    once, on an ok brief] -> render -> persist -> END
 
 with these branches:
 
@@ -26,7 +26,10 @@ with these branches:
   after that upgrade pass; a second failure to refuse; a first failure to retry_gate, which takes the
   retry through research alone when it is affordable (decision 23) and
   otherwise ends the run budget_stopped with stop reason "retry not
-  affordable". A budget stop never reaches refuse.
+  affordable". A budget stop never reaches refuse. The retry drafts again,
+  so safety_check asks Jev about the new draft, and the affordability test
+  counts those calls; the upgrade pass skips synthesize and safety_check and
+  reuses the signals, matched to steps by their text (decision 56).
 - persist runs after render on every path that reaches END, and writes the
   lookup row, the run record and the graph edges (decision 37).
 """
@@ -58,6 +61,7 @@ from agent.nodes.refuse import build_budget_stopped_brief, refuse
 from agent.nodes.render import render
 from agent.nodes.research import research
 from agent.nodes.route import route
+from agent.nodes.safety_check import safety_check
 from agent.nodes.synthesize import open_ledger, synthesize
 from agent.nodes.upgrade_check import upgrade_check, upgrade_pass_done
 from agent.nodes.validate import validate
@@ -88,9 +92,25 @@ def synthesize_reservation_usd(mode: str) -> float:
     )
 
 
+def jev_reservation_usd(steps: int) -> float:
+    """What safety_check reserves for `steps` Jev calls (none while the check is disabled).
+
+    Each call reserves every attempt it may make, since a retried attempt may
+    also be billed (agent/safety_judge.py), and a timeout is charged at that.
+    """
+    if not config.JEV_SAFETY_ENABLED or steps <= 0:
+        return 0.0
+    attempts = 1 + config.JEV_RETRY_MAX
+    per_call = price_usage(config.PRICES_PER_MTOK[config.JEV_MODEL],
+                           {"input_tokens": config.JEV_EST_INPUT_TOKENS * attempts, "output_tokens": 0})
+    return steps * per_call
+
+
 def retry_need_usd(mode: str) -> float:
-    """What a retry must be able to spend: the retry pass's typical cost plus the synthesize reservation."""
-    return config.RETRY_TYPICAL_USD + synthesize_reservation_usd(mode)
+    """What a retry must be able to spend: the retry pass's typical cost, the synthesize
+    reservation, and safety_check's Jev calls on the new draft (planned as the preflight plans them)."""
+    return config.RETRY_TYPICAL_USD + synthesize_reservation_usd(mode) + jev_reservation_usd(
+        config.JEV_PLAN_STEPS_PER_PASS)
 
 
 def retry_affordable(ctx: RunContext) -> tuple[bool, float, float]:
@@ -173,6 +193,7 @@ def build_graph(checkpointer: Any) -> Any:
     builder.add_node("research", research)
     builder.add_node("gather", gather)
     builder.add_node("synthesize", synthesize)
+    builder.add_node("safety_check", safety_check)
     builder.add_node("validate", validate)
     builder.add_node(RETRY_GATE, retry_gate)
     # upgrade_check returns Command(goto=...): validate when it added options,
@@ -196,7 +217,8 @@ def build_graph(checkpointer: Any) -> Any:
     # A budget stop goes through validate, which writes the budget stop brief
     # and checks nothing, so every budget stop carries the same brief.
     builder.add_conditional_edges("gather", next_after_gather, ["validate", "synthesize"])
-    builder.add_edge("synthesize", "validate")
+    builder.add_edge("synthesize", "safety_check")
+    builder.add_edge("safety_check", "validate")
     builder.add_conditional_edges("validate", after_validate, ["render", "refuse", RETRY_GATE, UPGRADE_CHECK])
     builder.add_conditional_edges(RETRY_GATE, after_retry_gate, ["render", "research"])
     builder.add_edge("refuse", "render")

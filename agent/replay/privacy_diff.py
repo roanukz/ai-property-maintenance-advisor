@@ -14,6 +14,8 @@ build_cassettes), and:
 - strips tracking and session parameters from URLs in the staged files;
 - rejects any referenced plate image, or any image in staging, that carries
   a JPEG APP1 (EXIF or XMP) segment;
+- holds a cassette's recorded Jev answers ("safety_check") to their shape:
+  hashes, a model name, a request ID and numbers, never step or page text;
 - writes a readable report to STAGING_DIR / "privacy_diff.md".
 
 It never writes into agent/tests/cassettes/: nothing leaves staging until
@@ -37,6 +39,7 @@ from typing import Any, Callable, Iterator
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from agent import config
+from agent.replay.cassettes import REQUEST_ID_RE, CassetteError, check_safety_check_entries
 
 # Staging layout, shared with build_cassettes.
 CASSETTES_SUBDIR = "cassettes"
@@ -82,6 +85,8 @@ KEY_PREFIXES = {
     "Anthropic key prefix": "sk" + "-ant-",
     "LangSmith key prefix": "lsv2" + "_",
     "Tavily key prefix": "tvly" + "-",
+    # TypeSafe keys begin "apikey_" (checked against a real key's shape, not its value, on 29 September 2026).
+    "TypeSafe key prefix": "apikey" + "_",
 }
 KEY_RES = {name: re.compile(re.escape(prefix) + KEY_CHARS + "{8,}") for name, prefix in KEY_PREFIXES.items()}
 # Any mention of an auth header name in staged data fails closed.
@@ -195,6 +200,31 @@ def scan_string(text: str, denylist: list[str] = ()) -> list[tuple[str, str]]:
     if text.lower().startswith("file:"):
         hits.append(("non web URL", text[:40]))
     return hits
+
+
+# A recorded Jev answer's request ID is TypeSafe's opaque identifier for the
+# call: high entropy by design and no secret. Only that kind of hit, only at
+# that path, only for one token of request ID characters, is exempt; a key
+# prefix or anything else found there still blocks.
+_REQUEST_ID_PATH = re.compile(r"^safety_check\[\d+\]\.request_id$")
+EXEMPT_REQUEST_ID_KIND = "high entropy token"
+
+
+def is_exempt_hit(path: str, kind: str, text: str) -> bool:
+    """True for the one hit the diff does not count: a high entropy recorded request ID."""
+    return (kind == EXEMPT_REQUEST_ID_KIND and _REQUEST_ID_PATH.match(path) is not None
+            and REQUEST_ID_RE.match(text) is not None)
+
+
+def scan_safety_check(data: Any) -> list[dict[str, str]]:
+    """A hit when a cassette's safety_check list is not in its fixed, text free shape."""
+    if not isinstance(data, dict) or "safety_check" not in data:
+        return []
+    try:
+        check_safety_check_entries(data["safety_check"])
+    except CassetteError as exc:
+        return [{"path": "safety_check", "kind": "safety_check shape", "match": str(exc).split(": ", 1)[-1][:80]}]
+    return []
 
 
 def strip_tracking(url: str) -> tuple[str, list[str]]:
@@ -371,10 +401,12 @@ def diff_file(path: Path, staging: Path, denylist: list[str], demo_hashes: dict[
                         entry["value"] = clean
                 text = clean
         for kind, match in scan_string(text, denylist):
-            result.hits.append({"path": spath, "kind": kind, "match": match})
+            if not is_exempt_hit(spath, kind, text):
+                result.hits.append({"path": spath, "kind": kind, "match": match})
         if any(d in text for d in DASHES):
             result.dash_notes.append(spath)
     result.hits += scan_keys_and_numbers(data, denylist)
+    result.hits += scan_safety_check(data)
 
     # The copy log must describe the file exactly.
     for entry in result.copies:

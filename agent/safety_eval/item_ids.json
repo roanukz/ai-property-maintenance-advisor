@@ -1,0 +1,2726 @@
+{
+  "exhausted": true,
+  "families": {
+    "aquarest-owners-manual": {
+      "forced": false,
+      "half": "tune",
+      "items": 39,
+      "stratum": "hot tub"
+    },
+    "question:sundance-spas:optima880:code:FLO": {
+      "forced": true,
+      "half": "tune",
+      "items": 11,
+      "stratum": "hot tub"
+    },
+    "question:sundance-spas:optima880:symptom:not heating": {
+      "forced": true,
+      "half": "tune",
+      "items": 12,
+      "stratum": "hot tub"
+    },
+    "question:trane:xr164ttr6036:symptom:ac not cooling upstairs": {
+      "forced": true,
+      "half": "tune",
+      "items": 16,
+      "stratum": "air conditioner"
+    },
+    "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin": {
+      "forced": true,
+      "half": "tune",
+      "items": 6,
+      "stratum": "air conditioner"
+    },
+    "sundance-880-owners-manual": {
+      "forced": false,
+      "half": "heldout",
+      "items": 54,
+      "stratum": "hot tub"
+    },
+    "trane-condensing-units-18-ac98d1-7e-en": {
+      "forced": false,
+      "half": "tune",
+      "items": 21,
+      "stratum": "air conditioner"
+    },
+    "trane-xr16-4ttr6-product-data": {
+      "forced": false,
+      "half": "tune",
+      "items": 2,
+      "stratum": "air conditioner"
+    },
+    "url:https://aqualivingstores.com/support/list-of-spa-error-codes": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "hot tub"
+    },
+    "url:https://aquarestspas.com/product-category/parts-and-accessorieshttps://aquarestspas.com/parts-and-accessories/page/8?add-to-cart=517&product_view=grid&product_order=asc": {
+      "forced": false,
+      "half": "tune",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://aquarestspas.com/product/ar-400": {
+      "forced": false,
+      "half": "tune",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://en.sundancespas.lv/customer-care": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "hot tub"
+    },
+    "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems": {
+      "forced": false,
+      "half": "heldout",
+      "items": 5,
+      "stratum": "air conditioner"
+    },
+    "url:https://lesliespool.com/blog/spa-error-codes-the-big-list.html": {
+      "forced": false,
+      "half": "heldout",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance": {
+      "forced": false,
+      "half": "tune",
+      "items": 9,
+      "stratum": "hot tub"
+    },
+    "url:https://shopaquarest.com/products/premium-150-spa": {
+      "forced": false,
+      "half": "tune",
+      "items": 2,
+      "stratum": "hot tub"
+    },
+    "url:https://soakandswim.com/flo-error-sundance-spa": {
+      "forced": false,
+      "half": "heldout",
+      "items": 3,
+      "stratum": "hot tub"
+    },
+    "url:https://sundancespasoflindora.com/documents/sundance-880-series-owners-manual": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "hot tub"
+    },
+    "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information": {
+      "forced": false,
+      "half": "heldout",
+      "items": 6,
+      "stratum": "hot tub"
+    },
+    "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16": {
+      "forced": false,
+      "half": "heldout",
+      "items": 7,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes": {
+      "forced": false,
+      "half": "heldout",
+      "items": 5,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.hotspring.com/blog/fix-your-hot-tub-with-this-complete-troubleshooting-guide": {
+      "forced": false,
+      "half": "heldout",
+      "items": 3,
+      "stratum": "hot tub"
+    },
+    "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors": {
+      "forced": false,
+      "half": "heldout",
+      "items": 5,
+      "stratum": "hot tub"
+    },
+    "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes": {
+      "forced": false,
+      "half": "heldout",
+      "items": 9,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error": {
+      "forced": false,
+      "half": "tune",
+      "items": 3,
+      "stratum": "hot tub"
+    },
+    "url:https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide": {
+      "forced": false,
+      "half": "tune",
+      "items": 4,
+      "stratum": "hot tub"
+    },
+    "url:https://www.sundancespas.com/manuals-user-guides": {
+      "forced": false,
+      "half": "tune",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf": {
+      "forced": false,
+      "half": "heldout",
+      "items": 18,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf": {
+      "forced": false,
+      "half": "tune",
+      "items": 23,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC51D1-9-EN.pdf": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC79D1-8-EN.pdf": {
+      "forced": false,
+      "half": "tune",
+      "items": 2,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf": {
+      "forced": false,
+      "half": "heldout",
+      "items": 18,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/products/air-conditioners": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/products/air-conditioners/choice-16": {
+      "forced": false,
+      "half": "heldout",
+      "items": 1,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners": {
+      "forced": false,
+      "half": "tune",
+      "items": 12,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-fan-not-working": {
+      "forced": false,
+      "half": "heldout",
+      "items": 1,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-blowing-cold-air": {
+      "forced": false,
+      "half": "tune",
+      "items": 3,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on": {
+      "forced": false,
+      "half": "heldout",
+      "items": 7,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/heat-pump-fan-not-spinning": {
+      "forced": false,
+      "half": "heldout",
+      "items": 4,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips": {
+      "forced": false,
+      "half": "heldout",
+      "items": 8,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.youtube.com/watch?v=2OivX8U9zZY": {
+      "forced": false,
+      "half": "heldout",
+      "items": 2,
+      "stratum": "hot tub"
+    },
+    "url:https://www.youtube.com/watch?v=MVs1XMman1Y": {
+      "forced": false,
+      "half": "heldout",
+      "items": 4,
+      "stratum": "hot tub"
+    },
+    "url:https://www.youtube.com/watch?v=NhdpEBLM-kw": {
+      "forced": false,
+      "half": "heldout",
+      "items": 1,
+      "stratum": "air conditioner"
+    },
+    "url:https://www.youtube.com/watch?v=PQHupzl4G6E&vl=en-US": {
+      "forced": false,
+      "half": "tune",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://www.youtube.com/watch?v=pxdGhfn9chw": {
+      "forced": false,
+      "half": "tune",
+      "items": 1,
+      "stratum": "hot tub"
+    },
+    "url:https://www.yumpu.com/en/document/view/30722091/2013-880-series-owners-manual-sundance-spas": {
+      "forced": false,
+      "half": "heldout",
+      "items": 3,
+      "stratum": "hot tub"
+    }
+  },
+  "forced_families": [
+    "question:sundance-spas:optima880:code:FLO",
+    "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+    "question:sundance-spas:optima880:symptom:not heating",
+    "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin"
+  ],
+  "forced_tune": [
+    "t-267045726dd04118",
+    "c45b900046bf",
+    "db572cf7b81b",
+    "t-a6cc7b63e63b41d0",
+    "t-32b097b6a454440e"
+  ],
+  "items": [
+    {
+      "document_sha256": "8b317b3ea4ba6f32badbd98f56196d3fbbd78687a2337bbbb420e1d908b0bcfe",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "b9f38f3a860e161efa9b43b42dadb59c4574c752e6b18aa87eff4992020ac846",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8b317b3ea4ba6f32badbd98f56196d3fbbd78687a2337bbbb420e1d908b0bcfe",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "0c84ad70cdd514e940b1a409dc92dd768363c879e22e96d4bf22d87618d79649",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "b45f6a30fb1fc324612ee1af8c8640ff16a880f1025bac9a2dabe8966eb1e727",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "f071622dd1a3a3ff08b7bd970f7dd51ad1f461b252a537ceccecf45fe40c45db",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "ab85962fdecf434f722219644aeb9659961b6b5e16afdf7c3a49b3529d8c1df8",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "66fd35bca0b35d60970a8bf56636092d7f43ab9bdadd2a871d6e9df8a5aee6f6",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "200ba11bccbac8cfe99b91684fe6f9a48d7459fdb9bd3312752094ccf958b25d",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "b2228f728dbea637300d8ae0d674dd8b4335741cb818d09305184cdbbf68c97f",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "c87fc6b8eb0bb77c23a1736938dae8fc01b525d8a4b7dd47784fa831f9ad23d0",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "58d013f1593e91363a3dd6d35f2c37bd885dda0322215efd64d9204d95659e17",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "4b8460b8176459f3c139df5cb8d6dd66730113c08c2eec3dd7bef9c9b7400993",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "da0e18a47550951b6782b1425e7af4b0c7ab60501528fefb3bc039687793879e",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "1d077e3b5809ce0ed6eec9f3d0c8e5950be5b7263fc84de784a6bc5f01162043",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "62d679ce7ab1b1598ab18717022f596ba907f8e192d47829f6a7c76b7afb77b6",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "98bed5dfd0fd26dacda62ff04cc3c8b707fea820a0996a3cca87125f56a0608a",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e4e023016aad2ec45dae5eb520e4ae282ed2f138277c3d05cb291ba365f1defa",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "cf76a34807a7b5dcb1eaf5e2b50aee6b8160fcb41c376481dee67a019a3f0169",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "fa59d384539377df01b3259e67168603980d729a92c6062ef302d087dccad8e0",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "6ccc668c5cdc005241eb5caf196d250fbf0bce1bc7b6e83b07b523e8a56d6066",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "fa59d384539377df01b3259e67168603980d729a92c6062ef302d087dccad8e0",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "cb0845a608c71c7de1427317c01d5b3dd890fcc3643d78eb90d34dca8083d11d",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "fa59d384539377df01b3259e67168603980d729a92c6062ef302d087dccad8e0",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "11d97484dd12a212a953cd346281122267a15f17e1bc49007768c93b990de07b",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "fa59d384539377df01b3259e67168603980d729a92c6062ef302d087dccad8e0",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "ca066b241cdb5a5a67d2daa71aacc763a5a7c4dbc48a50c8d1d08a6f0b75e6c8",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "11a89516706bb384b93cd641bfaddb005885c56a698f3ddd9ec553da5453cd00",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "f77049f0e89437343e3cef95ad012d1c6dcb7fa3347b1bca7a50066d9fddd61e",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "11a89516706bb384b93cd641bfaddb005885c56a698f3ddd9ec553da5453cd00",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "f0eeba04440d51fb37a5550e7609277ece13b9cf677841641199ae23d27e30e5",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "11a89516706bb384b93cd641bfaddb005885c56a698f3ddd9ec553da5453cd00",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "0e6a99485fc906c6a8c42960568c8ed34d19c94b9e9ade8a5b1cebabadff871a",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "11a89516706bb384b93cd641bfaddb005885c56a698f3ddd9ec553da5453cd00",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "4d2eaa568d6f0d2c2052199e460ad3e16daa7e53576563f02f3c9ce0917d7522",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "afd758b2f5db4774f52f27cb1a4781b86a5491a017632401c32fde44c182e1ee",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "73b2e6f9e700e6ca55a1e17aa253f47550db4c6996b50245e7b539c9e1839993",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "afd758b2f5db4774f52f27cb1a4781b86a5491a017632401c32fde44c182e1ee",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "1787af236291a2db3dc6e5e0339809a6971cd3d0947d96721c077290825c0a36",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "afd758b2f5db4774f52f27cb1a4781b86a5491a017632401c32fde44c182e1ee",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "6348d2a7dc067924b5503c7383cb71b3b54738ee38e7d3636704ebf1ebcc4ca0",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "afd758b2f5db4774f52f27cb1a4781b86a5491a017632401c32fde44c182e1ee",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "0de622c97f57c31365bc3fb94e357d9aa32fdd1753c392ef36becaaa063f8c59",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "44bf48ceaea8fec0f5ed5361345b8f85224f7ed890993de6343b5d1d10c93473",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "bc16118f4ad18bff472a4683ec94bb49f898738a5c471da20181864329a7df8c",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "44bf48ceaea8fec0f5ed5361345b8f85224f7ed890993de6343b5d1d10c93473",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "9d92cb2ed896cb651f5a03d9f44dba31a55768be3e7760908cf6691351ffc12f",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e36302dd5808db667a987b33e43e3305ea68fa9220c12806ba049d284d6877e7",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "873e0b1bc419a12cddfe96afc3757b7b47f84f74c6e2b79999e31e07d06c44d8",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e36302dd5808db667a987b33e43e3305ea68fa9220c12806ba049d284d6877e7",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "d899c87ef4496e0390f3ed8a1b3c6d2f594f5513059cfe977fe63da093df62e7",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "e36302dd5808db667a987b33e43e3305ea68fa9220c12806ba049d284d6877e7",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "abdd20848594658dae5c76f631fb831b05a44619fe636a3009dcd26a70c50155",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "1c9ed07f2c819abcd447e08b9f7d92d31c466bef0e13136bda6a7690dd696908",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "994e72eb0fcb412b11545cc36bb55912e8ef60a31bec34f63e0346a5b37a8854",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "1c9ed07f2c819abcd447e08b9f7d92d31c466bef0e13136bda6a7690dd696908",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "26a0f67cad62f8737e77bc4eb037eca69b5280d3fa90a1c4c949b47441582d78",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "1c9ed07f2c819abcd447e08b9f7d92d31c466bef0e13136bda6a7690dd696908",
+      "family": "question:trane:xr164ttr6036:symptom:outdoor unit runs but the fan does not spin",
+      "half": "tune",
+      "id": "122ddcf645874718978e8591e278b1cee12faeec409289fe8d5b2447fa2822a2",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "d5c8b7d110b323fe29dd6a11550bd6a99b7979e1f7809c6d2dc63df7199b4ee6",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "53a5f42191c65255e3fda1a1a674ae4efbcac3b1be58a1af5778efed9be26d7d",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "d5c8b7d110b323fe29dd6a11550bd6a99b7979e1f7809c6d2dc63df7199b4ee6",
+      "family": "question:sundance-spas:optima880:symptom:not heating",
+      "half": "tune",
+      "id": "c3fe6fe2e24f38d00f1b13d6a4aa0e2a7ba18c78ed55026e6ea7bd55c4521b8d",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "b17d7f71fe5a76df3a6148ed243e571dc457b68cc8081c54c07874f05c6ca6b8",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "bc85d7c542d047a0c893b9d021505fbb3733c25df1a0fb325ba93348a576c077",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "b17d7f71fe5a76df3a6148ed243e571dc457b68cc8081c54c07874f05c6ca6b8",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "5edd4794d8bdadd2a6789c1982cf22321b98b6bc66801c48659f3c1e7e70a62d",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "b17d7f71fe5a76df3a6148ed243e571dc457b68cc8081c54c07874f05c6ca6b8",
+      "family": "question:sundance-spas:optima880:code:FLO",
+      "half": "tune",
+      "id": "c3d2a84b4975bd066e537e91691f13abdcf5a611760ed49f5f6969bec6340bae",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8ba8bc541905b25577dd873597677aefb4e1bb15f9effd501caf2e85d9b51467",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "f64ff4ad5172d4e73e8bab5e0da85e1dd87261e91d7d3b55c5cf53b925d9e2ba",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8ba8bc541905b25577dd873597677aefb4e1bb15f9effd501caf2e85d9b51467",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "05008033f6429fff42c6c15adb7293a75ce8b3c9a2e8e48fa018e0cade08e637",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8ba8bc541905b25577dd873597677aefb4e1bb15f9effd501caf2e85d9b51467",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "bdd1b13c021baad0468fb5147fbe31ee950ebfac90d0d2bef007f3769351de8c",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8ba8bc541905b25577dd873597677aefb4e1bb15f9effd501caf2e85d9b51467",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "4378f6f2fc8623fe1f3a771caa3afad56d1b734934e21ec1d232f2df223c4175",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "8ba8bc541905b25577dd873597677aefb4e1bb15f9effd501caf2e85d9b51467",
+      "family": "question:trane:xr164ttr6036:symptom:ac not cooling upstairs",
+      "half": "tune",
+      "id": "0b273cc30c0d10ab9ded8f14c3d8bbe9b19cda8f4c935d6a91f13ab10c3804b2",
+      "pool": "G"
+    },
+    {
+      "document_sha256": "6711bac4e2fbecd855caf08d4f0a7b58ea2b8392a0598bd193b6812eb2e68ffc",
+      "family": "url:https://www.sundancespas.com/manuals-user-guides",
+      "half": "tune",
+      "id": "98b6fe169f7c286c6af0353005789ec3e57137cd715f8e5b7a64509ae92c2ff7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "d41469f8da28a058d73513d94bdede93494f587658da701dbd6835eebe07434b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "24408b484fbb7f34b2b765ae1e34c46609ce27348168cbfb6d555210f7dcbcd7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "8f97d09c60f8527848fbaacb337eeb656afef3d20cf1e2f17c430d721bf1bbee",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "5749b97dd07e41e2583d118d4676954a9ae7c65e28c2f272006c27af723fa130",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "f5334c34e70c2a2958dc0ffc0395db5f39684df63b0977f7e67baa20f51d7de9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "dff0cfcfe9c31fa30820dd3edafbfa0ab5b27a3e665ee5fdce8ef985ffaba92e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "5056f29883ef44ef2efca5325c53f7b4951d28055a877ef215edade0ec498e2c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "d7c6a5133c42768f36a9a8c843e7fb438f321779447085bfabb39283725daf3a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "30643b51c73c8f59c30d33b780d3963342e2f67a2d9587805f7a563232a01e0c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "14617ec29b415ba13d3cfd2048a913746af1c67d6e39f3325b419e599d975d76",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "8de5107d0b297bfe4b1ef697f012c94655637c6f4ca3b0c4ec371e7aaac2332e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1fb2c9fda18ef6fd414fc27dbdf86cb4e06c26aa3cad78e4e9837ecae4b767e3",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners",
+      "half": "tune",
+      "id": "53ed4b8e64594eb2d83201a101c3a6126c102f7f8f1154f939c300b48ffadc6a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "8805a735888b09da89fb298e827549fbf48801507de88aa99c77b8c0cd8d2041",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "44a7291d1df3ea20eb3d0d7e93debb57085b7cd4d3b27d547cd13cc9029714b1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "e7da0e29f8d606775dc34a56f278199119c9cbb86f494a622e4d1e4512f2b8bc",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "ec0d4353ccbcd4cec310a2f30893dd44e1f72d7c2995ff8224a3e932abd091c0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "7af045612f0ee67a4a458f609c00e211d65c7958887fa65c3dc703615eeff73a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1cc4c87e4b3d8a441976e65bbdf1868ae2516c38b5f65df4a358e1df07f67893",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-turning-on",
+      "half": "heldout",
+      "id": "3a669e51be8f40db9b26ea6ea301347a60588aeef2ccf24bd6ac28480e19151e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "2cc58fd0a0533ebfbc1dc821ea101704acc623757495afd0168904bcfa8d6f5a",
+      "family": "url:https://www.trane.com/residential/en/products/air-conditioners",
+      "half": "heldout",
+      "id": "62eb36b7b6a56504a11aa16f27cf0587d6b47884fb46a38201e61b5ffc435d2c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "2cc58fd0a0533ebfbc1dc821ea101704acc623757495afd0168904bcfa8d6f5a",
+      "family": "url:https://www.trane.com/residential/en/products/air-conditioners",
+      "half": "heldout",
+      "id": "ea105cb0557f89849183cf37ef6b6f0184528a98405e2ebef138221c3bceeffb",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "9a9a4e8fbf3201803dc82bcd605193656fd26ae0537daf0eafeb277cf5279b67",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "c8687747bf91693000fde75dcefc02306fc7406f6ddfe77f6891a96f2fdc4580",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "6e1db2eb3ee3847d35d4142d90846bdbb5a224062b40a3ff173b99290b49d43a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "658ab5b982af8a3e2cffd596ef6844f02e52c2da336c0fefcd020aaed7e8b9a0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "01032fb3596d6441f3b0943b24b46ea9b73e14fb9d2608e953b2a7a2781de588",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "66b693727272d3391faec9c608ca5611a98239a2cebf5d5931ca8e0834dcf3c3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "60e54d06225a3eb1accca04bad915137b752d80435ce0b55705a8b74669ffe6f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "32f3ba21702dcb5846c0cd7bcab38d2c450adc7b62fb3b89417025d4195b867e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "5a5924816f36b3878d988777faad762870e90954c22c9ba6bc666c60f3a88fe4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "6cf17559e5147944ca2422458f367354c871b9c5c7020829791641a9c21c269f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "be81b9752818adc65a633473d3b31e301ac51a196ae85a0de016d3fed08f0168",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "361fddf6c67c06259af3be528051a39f3847dd2a3cdb2a4607a218d6a7e1e513",
+      "family": "url:https://www.trane.com/content/dam/Trane/residential/downloads/manuals/22-5213-WEB01_Outdoor_Units.pdf",
+      "half": "heldout",
+      "id": "104083e2d9d4ee5e21642a06967fb80aa1d5800db2e4e7a884ae64ecb8ed1e91",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "84b3a06146448aa6dbb4234bedf960c88a70c1440344ac32e5c24206ee20d95b",
+      "family": "url:https://www.trane.com/residential/en/products/air-conditioners/choice-16",
+      "half": "heldout",
+      "id": "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "6a847b66fd44d3977986b2b2479bf9262e6c289797fd6e3c97b9537a37238e49",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "ed55f3a82ea800095457209df4eee6417a70516d3a8f133a0f02e77afcfd7162",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "35f3b043642bb94537bf04dcfeaa68323072d0fff201e48f428713b976ac9a26",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "01003f72c9af530434d1000176fe8ced41a7b60f8cadf58346a883dc4ea8488d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "fd89c08bbce6922ead85720237d2bcfcaa6904b7c723bd6ed3f6b8de413f2839",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "f54ca1007fae797ecbc57bb83a3ec46a642a4f00248250c3d32ceb52371ebcb6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0530f2a613cbc2f7983d75b4a7c0a2ebbb8dc2e999dd6b1554615e637a823b0d",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/why-is-my-heat-pump-not-cooling-troubleshooting-tips",
+      "half": "heldout",
+      "id": "af58760c5dde2c58aa2499d933900e8de7cab804e594d67693ed25efba7c342e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "4397aa4473637276426a3bde103c7329b00a7bc9deb71ea870f9e45ede60eca9",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-blowing-cold-air",
+      "half": "tune",
+      "id": "0a99b5b7ac6d8fda3c0108e85ee08543a11862e16376adf354afa01f6a0e2791",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "4397aa4473637276426a3bde103c7329b00a7bc9deb71ea870f9e45ede60eca9",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-blowing-cold-air",
+      "half": "tune",
+      "id": "198ea1e54e38d642dba18cff4b4f1c6497db23598429b8b1cbf4cfd343b996e1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "4397aa4473637276426a3bde103c7329b00a7bc9deb71ea870f9e45ede60eca9",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-not-blowing-cold-air",
+      "half": "tune",
+      "id": "403d6e50a4642ead077ba62f7cbb4ed9bbf3ceed8faa7dae42ecfa600bbb7348",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "d6799fc588afdb4fda7008dc95a230feefbdf8608db758f5e2e384e58b1f5cbe",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "aaa2da0f68c832b5536a1a73466e80f74791d32d28f678ee3831b54c410266a5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "7fe6d54149d33d58abfbce0ba7afa5fe6dc6751f0a720f5ead6b1848c62a2b65",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "bccab1efd515a09d111e0fc869cbcb2ebd0791e0e5c1af27476c4245d40f8a8b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "f0e9ea37b9d4473e64c075fd2e85c7062d62dcb572fd6ba07881e3adf1c336a8",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "6302e2d925185802ef4a037ce6ac6d61ddc638b6f2b127b2c54a393ce5a34383",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "65f8954a29ca44f872347dc507f2b52b83243decb96da173639128c605acfbef",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "53d28d1f94755368c3bda5879c13468731fef6d6f78738aa92cd1b21a74200d5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "c3c462db1842a582690fc5ea0d652a35086d505ae7191fdc690207dde882f49d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "615aec5a3b3499632d509f15b59d33ec47ac2ddf94004fa2d72fd56c322419ed",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "cde9924ce5c26cea2748d5d7c4c31cd3686cd622e387df936e075be5bc677281",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "bb5be42549e884510b18c4355fa03a341cb92d355a7c3b37e3216e42fa3b16a9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "44ac8777bd3a31d1b197687e9dec6f4791fcf79207537a3c168eac725771b1c7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "d289dc531f9d36d56036c2d6f386f5134bee436630dd15aba3206f66ff42c277",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "230a183904cf6028bdbd49203f7f348db936d9f2c9922fb41ffa5a5a2b6e6fdd",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "79736394dae1cea85cb2d369a482a0f0be3ffee9d9902a6eaef01f10585825c7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "2b6b226faaed73aa5482951093e8a72bc509b1e123703422f8a7eb9d7321fb63",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "0f3c5837c2720418c89a46c39ee99dd0ea547d7edd433d05df0a735beacbbac8",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "c0d275898042bee2502bdba18a453fb562e22b96a1f8aaf03de7106e8590bd09",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "10b91f1382c0927b53846e8920713f4672e42073e9116ee8ecc6804d7068bf27",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "f4d9963ab4c24cf0168ac1c02ab0098f6a8d122d222d1fc7462e664ece913580",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "714203accbed1f062d9bb3aaa6aed3c8665fb9862bac27f67fd9f0a278db7299",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "68f40f801836b1eb76b6ade68c5e9a7950b2ec789db7e7e10ff87fc63c4b468c",
+      "family": "url:https://www.trane.com/Resources/Partners/9fd8ef59-5205-4335-aa7e-5a827345876b/documents/Installation%20Manual.pdf",
+      "half": "tune",
+      "id": "6e44ddfe60293b609b604622b8ff1870253f1525a4890c4fa5f249a070ac6947",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "efd105e0af1e49b832f2dad081c1ead558852fdb967ff148e4f72418c8fdb47b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "ee60f5a63b02a9de6c51d62bf63945cd1aa05fbec1a91acd04d3043334efcbc6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "1c823e8f823d5d444784976a6d32c4d3adac9f48392882531f8f42db121df74c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "ce0c2376794d262ed316f66de8d6b1f7684c4f6853283ee869c43ef3ded53552",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "07e85269b15ff4c82041ab779888c070f1a41b4c288669ea54de4d9dce5e50cf",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "c697e56c9f6bec4d64ed79c3f297f961da488a02b990a609428d96701e1ecfd2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "90b1a3158522f5a58193dd1de8cab3eb3f593228a784dbc7397dc237f3e5d698",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "b2f432ce34e524cdd2f1583404de16c5b15f5431ee77e2360e430cea4dea5f63",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "6a8857eb8e996e878eafd47bdb0893b81d58017e8211f66ae1bd6bee6b878f91",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "c8def5e5ae97e69bb99e21309b01dc9a67f39a7baf61241ef9ab293520f1f798",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "4d5ff8fb3b2c26df87259c60e4e2e78a48616831e3609cb804a879576981c97f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "40009c5005d79e3699e3fbc861a5297ece816a6a9dc7f887630f1e02c5dfd3e4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "eb30d65230a7d6ba9391c847ef7f596a90eb38e1d575076a00ea5dbe46a3a76b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "c5f59dd18b04c19eff31b56dee6118d8515e93705bb02a46d7b3823e7226ab21",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "a9b48c92019faad4f32d955bfbc8ac634da383bb43f715d722525231ade90f2c",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "dc610c961db4530f6416528e13fadd435e42e198607b7a662f988539ed75ac59",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "29ea1faa79400f137c268178b6c13f1eaf295ac36085ee294eda7827855fd398",
+      "family": "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC51D1-9-EN.pdf",
+      "half": "heldout",
+      "id": "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "29ea1faa79400f137c268178b6c13f1eaf295ac36085ee294eda7827855fd398",
+      "family": "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC51D1-9-EN.pdf",
+      "half": "heldout",
+      "id": "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "c0bec6dfc1e19efb5e910fc09b628e8f6d5316688c6a6768bfb3c92f8f1f6057",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/heat-pump-fan-not-spinning",
+      "half": "heldout",
+      "id": "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "c0bec6dfc1e19efb5e910fc09b628e8f6d5316688c6a6768bfb3c92f8f1f6057",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/heat-pump-fan-not-spinning",
+      "half": "heldout",
+      "id": "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "c0bec6dfc1e19efb5e910fc09b628e8f6d5316688c6a6768bfb3c92f8f1f6057",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/heat-pump-fan-not-spinning",
+      "half": "heldout",
+      "id": "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "c0bec6dfc1e19efb5e910fc09b628e8f6d5316688c6a6768bfb3c92f8f1f6057",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/heat-pumps/heat-pump-fan-not-spinning",
+      "half": "heldout",
+      "id": "54367a8e487cad20a5d2b618af231cbd74235989c0173439b296591171118eda",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "99dd74fe01530654e27e76deda8c8b71faf289962a22e362441d3acc723d5866",
+      "family": "url:https://www.trane.com/residential/en/resources/troubleshooting/air-conditioners/ac-fan-not-working",
+      "half": "heldout",
+      "id": "4aa05cfb1e611b5e066537917736fc9e6fb9d5494c651995956a6f39004001b0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "1f0dff625913eb097a695b8437565490c65ca03438414e9eaada1ac90b3d996b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "6a09fdea119038a63c11f9b0e3dd32201c48a326139721223d3869cbabe05618",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "c659e33bd11a639f01746028f97c22746b4bcdc04c04e982eedcd59a6e761c46",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "b2cd3b6ca0dda84dcac3ddbd1240f745b5c73a3327f8fb1be4cc62e1c8c528b7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "df1c654667164f59dc844b98960f18a2f507db1ae9103d54810a862cb0e36690",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "b9f7befb846f0af2955a5c1d8c8208e3b3665ea66cd20b53bf80351cde3bd29e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "e16574bc2a7be2036348326e9c399c5415e584ee75a9883b99e1a6f5dc528d08",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "a67cb3f0d7ce4be04d34b6ee07ef1ebb43e6f37e6cfd7287a2c0a6a3111e1701",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "041a9df5d330641e0959f1c3fd50399475153b1263cba40cf852b256f1f9c44a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "eada223cd067e926bf00c62ef116e233ab638e4b0794263ec468a31599365a85",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "0ae3f8525c5a3d051a07ca2041c4547aa5fdbeefff069b691b1243e230e2777a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "95d46fc3668e53cd8bc6ed4a471b750e4d4930e616f4cd056313a2bbc432cd55",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0b760d0527b9499fabf1f368a949a68e34724ece8999772039125e1c4baa3c9e",
+      "family": "url:https://www.trane.com/Resources/Partners/7e819082-38b6-42bc-b5bb-8dbef83402f1/documents/Mini_Operation%20Maunal.pdf",
+      "half": "heldout",
+      "id": "75bc3dd926d33d1d08f8009eabb4924348985f9a5f516a62830e30b9c968b1e1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1bd60d49ae4c2e312a081eceb98236b2f5ca623a928d1e54a5fdcbe82ae2dc66",
+      "family": "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC79D1-8-EN.pdf",
+      "half": "tune",
+      "id": "aca1ea79e4cf91e670e6f3acc801098003210ec65b854b79327a55ad23b08b9a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1bd60d49ae4c2e312a081eceb98236b2f5ca623a928d1e54a5fdcbe82ae2dc66",
+      "family": "url:https://www.trane.com/content/dam/Trane/Commercial/global/products-systems/equipment/unitary/split-systems/Small%20Splits/Air%20Conditioners/18-AC79D1-8-EN.pdf",
+      "half": "tune",
+      "id": "3a4bf60076ed9f5dbdfc0db10cb11ca6e0ba955d0ec759a09889723c377a6012",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "07fd625cb6371ae45d2f743b49b714941599b519b9bbe59789e0d1d2a6834f96",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "13e33104e0da8324a9c1e87acf15071d1051242d9c8eb38b83ede25074b620a1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "8b67e250b74a172260838e47b71148851138d2eb20bfa52ab16e415e3d8d010f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "308a73d56fe415a8c24b0aa0da49e06b930be217ed3b97f51371dceb0aa59821",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "e7b6907a9d868c2cf0887ecce6bd12d5fc56eca38f02a24d12cf634aa6721f36",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "38414f336ea16d89cdc66f4943d0322336983c5de0678b6c6944abfadabcc67e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "54396bbe307bf5ed2677d9ae8f8b9cfdf4855e7e60f158465abbc6698bc8fcc6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "4f2cc493c96ddf249720058d238bacb0669defc8cac10f4cea094f94f72644e6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "8f4822e3243349dd2f71b9715a4bf0f528c2903e0a0ebce41859b82ef338a6eb",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "46519ccdcb721c373564c96144dcf27669bba780fab86c2c7b7f49b41ca17695",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "39cecc4de5303889c397d17a4b4265f4b8302b7b7f92aef6302db6807b174bad",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "ac6005acb102694ead60c4d0955f310f49a698ece16a391617f2de501efcf8b7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "aaffd79a04d1fa7992354a99f5242b6a9285cd056780a18efeff508270a0ba5f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "bbedb3ae6b6686464cd351c7e7b8a62c03343bf34f15404a20e0520eae56a49d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "4cad575f0857f77e2fa3e20099543f40084cf73615eb4cfdd1f861f31ddd673e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "2c3338f030da96030ab071fa46723583183726d208e7508c770d343ef89c980b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "f17503875bf64454681e9c7dccc04df48b7d01104386f7dc6b15bba420b9fe05",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "7234efaa45058ba9aa7f6ceaad172e37dc80044abeb993f0a123be1d7368f401",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "22582c947a3aca8a72269122fe6a5800fe247fa889aad4783ff8c4fed72a90ed",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "563bdbb75843fdc89b48cf82ba97f025fe7c7cd605efe1ec86a49358d5d8fd00",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "a3e657594b51e9746bac3cfffec4e00c49e707839097e50d132633a87c3ac8c4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "f7065cdfc151974c5e639da5cd0c46620f98c9b9599b45e73db586d3074002ac",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "e7e5813d36e45df16f457b858c6b9155ea709687c0d9b3ca0b78411eb6fd5380",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "2fc1d286a06e6548470d5482d81510d5e2cb786938dd839548ba418a6501a842",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "37fd88be028e3a6383d3c5949e18bb34e116bea642c0d753fc7cf39a7ad47306",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "2514e06610f4c862af86e6077df5feb12075b5a5c38d4cba7331d760780f36bb",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "8099a594ff38a4f8dcf463ff2bb9b8a89d5423d7bedc344a44a1ce5553bac993",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "6621597f5028a869d42cd2af7db1de35447c7df8e4d542a52e36f47c51e2a9b1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "1a186ee340a399c208a34ef442f01b7814855b34bd95fb823bc51495cc154477",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "bc4dfc01f4ad67ac3821e8849ac429fcc13ff2c36b42a3b974d20a73a6904d89",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "86fd1901c6b613af5dc2975dbb28eb06a1bbbf722c24efb8dee03b62940607e9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "af6738224a7ee1fe5ac9a5590261314c24f11abea829ee9c1abecb767e8715a2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "5ecab917226105172d22999729e2e410b8ab98a530601e9f166012449f358919",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "a9c11c046a61855fd439107d541d5cc67bce777b419f5270358199712a9a0b47",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "67ae0985f895b3fb83e62db712cc7a50e32599cd9416958638650c098c970ea7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "41ff04035c9de92a95d283926fea819395ba464fe4fa068ae67975b7360475c7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "ea2543675b65d1269875b33aeeb35bd2deca0ca044782258e71ae7e5b5c605fe",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "adf7359c7ab16cd9863fabf6fd013e46f3eb36c89d0045fdf4ac14dfdfbba945",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "5b5e65e87b996be2be83e4811174dfaa52c954d97a2e76dbed44362b3332603d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "4cb7ae49f70e8e725cb4fb3af6cce1553a3799d14f9d2811b78dcc510410e9e2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "74a4b5d7f398f9a12832f659049fd95079efe5b862ef15ad0cfa1294114daab7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "bbade82ad972a6a310853ab9392c8dcf4234c032fb72ff166cf31a95371b2601",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "e184d979a148be891c8e7db11e795f3fe85c5cdd328c42c60638ab8f5d2f4c99",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "ac79420c2749c5c9d3dd1f292cd9bb20eb06802d9b6600239cbd87e3a70e2d20",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3321225b354ce4f6ab4197cc3f81cfb14fd8c782d97d50760af70b77c0ee3a28",
+      "family": "sundance-880-owners-manual",
+      "half": "heldout",
+      "id": "bc5462e534ae8ffc158247aea3ed9b3c9646f24f1cddc2c13442c54ae8b3c65e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "f4675f0923b9ba7d3f534b7e31f9f1c3d16cc96ce9a86cc4178c8c07b43dd793",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "2384f2b98ed4721baaa80dc93078a9670c40c1c68a6a10a93668a277d2e66d73",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "e280c23b5a0a693187f7b510d50f99cd22b745d48855ef752003d72d77e2f4c9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "1968ad9ecf2ac4072fa15a5a2bb17487f3346701a1064032d9c20945a9a400e7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "9ff25200bfaccf928e84bfa310fa30deeb2f2142d75358558dfe4bd631a7e8d5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "f701e2a9978042e61f9aba62d59b7b98355ee3d0efa6c46916412f72a0844737",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "1818c096e4f2755015824703fd565759503f85a2915a5b88212a270c300ad63b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "42fba41145514edaaf09541dba2261e7eb8ac94f762c82f3abbbd9db1a1bffb7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "44554c8928d032610c2d96fbfeb7601bafb4cf8c7dad5b2d12d15c5e5452dc5a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "f8264f092a77ceec08ef0f1a33370aaafe08684680ff9f9ebdc905656dc27d6a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "5c037dffd9763d00a77d8e34f963c3d2b1af49cb6d1f0ceec779c5d3c7e3acdd",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "82883bfd6a14afd91beb09554f2664172bfb39beb85b573009100b498efc4910",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "f730d853de37f71eaffead680589322cb0596e4bf077c8c69db54e66d1fb960f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "23a47bafec90f5b8137e82c48cf321e0ab056ca0c7b6e6a65caa46f113d92ef3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "712758f714e685099b67e5d9e089a52a780b9a818035f261d26b44889a680f6b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "8e1fc5585d2af237a624a5ad91340aec4c266eab1b1e719b5ba5c822cf586f2a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "2c1b264519cd9bd98c0129ec97bedc1e9086fe23194cc403918eee461ea26a43",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "9fce46c2166128443a0261aa2810783f1da79720c113afa0de9831c42384ce27",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "c21751b76855e267cf4c63183f5bcdd7796abf0fe6e3fda338ca155329553bb6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "4aa6cc46a171ac51109fbf4847a017321c561e51c9f6bf437528168b92c999bb",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "63c372686d9225ac3bcdf217e29a5ec1feddb3110ad3bbc4f9fa0dc3766169b2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "681046be4315e08da0ae563f36cd871ceed14179225a07f0674bf3db3c06bb5d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "039df56fdd57c977de526d83f847630723bd2963ed8da395d4c30f180173b6f8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "8b9846df3fd0649437207501d9d2599b3446dda695c34b6a4d89084a56fe01cc",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "a37944762d6f8e3328d40d9c1cb1b553f9776c6ae3cb52c549dc2e22f408d40b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "9426fb148087698d1a22e9254b54d69e315093da8e35dc4443f672f026a11b82",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "424142de83b3122b650542bf05f5edfff2c812437ca71094afdfb313a668e826",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "5cc7af7dee35567f1b8523125f577c412065e831297ee705c6aac28461e7650a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "75b6aa95aa1657ef82db0e9eaf79d05d21859528bd7d50dad1502d4288fc63d5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "5affb287d33225b9e26af2272b1fc1d690c3bf7e6403ec5959c6e545b4669178",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "992ad693d2e4b7d36498829f8a63ffc4d49498144db436366b6198b724682ae1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "5a15224bc7f8cc0d85c57de1d4d90651b77336463cf4d8de190905c2e08075c3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "dbb66f8bfd7af49f2876f8ab371370bf1b15b74caf9f926b00e6e1c438a09ab3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "ea868e6cdb98bad4d8f59d3d7082271a6b4ad60e179d0a42da732a356b1bd707",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "5e1ac5323981d3c81671d4bf775b5db2526ca8f7a14cf219028f1b0b340b13f5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "e1bc5c2cada10d7fc968b9292ac26be8e80dfea916f84cf4793e7f5fa2946d3c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "31c09292054e8b0f0039634777b0ba2ba801af3db68d9d80c1e6d7a8d36d39b6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "103ce4087e659108cc087a6fca5f118a30491212573faa40fae8d6b878885fa8",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "da1f70b79955441aec0db6bddd3577847d67208ae8383b827a4e0ddbab0bb986",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3b70daa0e2399ba6879afc71aaa5d2ca8b3db95870ec6ed261fd5f49ba87b62f",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "18da72b9ad691e601412e2280225d39fa17b45871760ace54d9e1fc05cbb9bd7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3b70daa0e2399ba6879afc71aaa5d2ca8b3db95870ec6ed261fd5f49ba87b62f",
+      "family": "aquarest-owners-manual",
+      "half": "tune",
+      "id": "43309fc5cf479012a51aa6fda0bc16f1121d0219e705f82b61422b8e605f4387",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "c7eac6f30afc1b178b55d1c042705b21916e2c142cbecd315d11a94942013b67",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "89c8f99d2227c2e0d620a12a777d3b0d24e7c4c04afc53fdc7b1dd2aac04ca89",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "9d1196f100b55e58f056515e6a214b8aebc3b35013f9e2cbdd428a0ca2371f06",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "3b941a3497954d72f6c84e485f9ccaad685fd0fa11e2d7b68c76e571ed8bf680",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "5b2d5fa69eeb30194c07d6641d9e16696ff7640d2b2275e898401dd27e4405e0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5c51fec9b4aaa7e1777939ebef7202df211bb944ea3fe1576fddb2a881e26c42",
+      "family": "trane-condensing-units-18-ac98d1-7e-en",
+      "half": "tune",
+      "id": "f18169d41c932d799461cb49a983519cd3c24702239193868541f7c422d326b0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3b5fc4d356f013341f581f0211608730ccd767c34d51d53ea14dc504c7c9cc9c",
+      "family": "trane-xr16-4ttr6-product-data",
+      "half": "tune",
+      "id": "8cb8f48bc5f7be20cd90625acd89e627439c3e2288fda2bcd4d609a985cb6d4e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3b5fc4d356f013341f581f0211608730ccd767c34d51d53ea14dc504c7c9cc9c",
+      "family": "trane-xr16-4ttr6-product-data",
+      "half": "tune",
+      "id": "47d0f060a555e387c6fc4e1e0fa54ab20aa245294ba66aa162149d235c042f93",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "224d5ad3112c31b214eb86682fa68196a721057cb8dd7f958e60a01c29ec34d8",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "cf7451b48aea0c5a033f7f6898d930c4044de44e73877d8e459d0b98dd35c613",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "a72f6b0d7db4fcda9ae119b8651765b5867c652f64eb87642a32b4689127c415",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "b78cbb67084e4672309a37196f276bf686a36d93f2915fde13a5ed2dd63e6d90",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "5a24977d670278f7f173dd259ad431315e9713c384a0b114c6381621051b9d68",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "5533197370eb4c47afe40ca63a59534dd3bfdb95611b432954b435eaaffec9e6",
+      "family": "url:https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information",
+      "half": "heldout",
+      "id": "6cba0d2406677fd690eb315bbf7a04285b1ecab3c875c53d9c6f0fa8d5f8d2e2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f9466f7189f95c0ffe449616257fc1740670eda747616539504763b68aae08cd",
+      "family": "url:https://www.youtube.com/watch?v=2OivX8U9zZY",
+      "half": "heldout",
+      "id": "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f9466f7189f95c0ffe449616257fc1740670eda747616539504763b68aae08cd",
+      "family": "url:https://www.youtube.com/watch?v=2OivX8U9zZY",
+      "half": "heldout",
+      "id": "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8a879b388221eacb9aae79c114deb87cb909492476a50d8d57b42cf12eadfdce",
+      "family": "url:https://www.youtube.com/watch?v=pxdGhfn9chw",
+      "half": "tune",
+      "id": "81929059332abe5b5c35440f0d6abeb5a4aedb1a7dab9f4a060c241c0e01966d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dff7906b17061c20d2e5a189fa3782b7c7a1d15d6bd121851a4bf9432f7cc036",
+      "family": "url:https://www.hotspring.com/blog/fix-your-hot-tub-with-this-complete-troubleshooting-guide",
+      "half": "heldout",
+      "id": "d727fde9f76d9e3af3646dfb242dd4707149ddc52abd614469aa421e561d7ae9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dff7906b17061c20d2e5a189fa3782b7c7a1d15d6bd121851a4bf9432f7cc036",
+      "family": "url:https://www.hotspring.com/blog/fix-your-hot-tub-with-this-complete-troubleshooting-guide",
+      "half": "heldout",
+      "id": "49da631445308b3894b790d7650191d4b42e1c3cee33f05340c68053f4f0652f",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dff7906b17061c20d2e5a189fa3782b7c7a1d15d6bd121851a4bf9432f7cc036",
+      "family": "url:https://www.hotspring.com/blog/fix-your-hot-tub-with-this-complete-troubleshooting-guide",
+      "half": "heldout",
+      "id": "c3efaffae563adecd153298e262dc42135f7695a6983242ebd9597d2e6f88868",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "8ae36fb9f571c5057e95fab42410837628bf54cac3b8710c348e1a412087d403",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "e1dae16db60ed86aa8d02bb49dc9c7b7cb1c04cda43c9f1ade6a14355d2539b7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "ad0b97a9b1acc785287bae7a4d9dac21de8c776b80d9c5d393f3886d2c5a494a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "282da68623a4fe7f499f7717c714dcf6e316987618b7bc1d565c1ec5a9c8c9e4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "b3973c7d627bdbc18993d3394a3ade8bef6a94fe158c1e426849b96a952df182",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "0c95d3dee304620fada116bb9a82d3c4e5c788a49989638f777a595b499022b9",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "f29d05462a204449f2834f18432ac36c72340706bad2126bacbc308fb0e052c0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "020ab6d753319619c441209231844d3aef7f8393d84cee6ff1c7ce34ea73b844",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8dd6f348446923d3a3d5057c42c5f3bae7a8c6f7a28354eee60a0f70c2771ab3",
+      "family": "url:https://shopaquarest.com/blogs/blog/hot-tub-maintenance",
+      "half": "tune",
+      "id": "2fa3b3dd75d2f4e1e3e77fb0a52b6547bfe6596858d61bb084f3d87709d70b1a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "32a81296318c655fbeb828946817626a03255f2d5438ba2edca48e1985d377ad",
+      "family": "url:https://www.youtube.com/watch?v=MVs1XMman1Y",
+      "half": "heldout",
+      "id": "4e03f8b707c6eeeaac4911a4442f4822db3944ce4bf0e2f7aa2fa595d826bc98",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "32a81296318c655fbeb828946817626a03255f2d5438ba2edca48e1985d377ad",
+      "family": "url:https://www.youtube.com/watch?v=MVs1XMman1Y",
+      "half": "heldout",
+      "id": "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "32a81296318c655fbeb828946817626a03255f2d5438ba2edca48e1985d377ad",
+      "family": "url:https://www.youtube.com/watch?v=MVs1XMman1Y",
+      "half": "heldout",
+      "id": "519ec66c062092fc3f2fb4c77ae9970c90ec742cee9a0fcf3b35f86d481d0224",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "32a81296318c655fbeb828946817626a03255f2d5438ba2edca48e1985d377ad",
+      "family": "url:https://www.youtube.com/watch?v=MVs1XMman1Y",
+      "half": "heldout",
+      "id": "fc30694c08478f45cedb4f5dd90414957095618c448cba85cbaddea801d2a770",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0adf2344bc5ab44a29f619678e60654e4ecd9382364e081c6b377af56a3d14e0",
+      "family": "url:https://aqualivingstores.com/support/list-of-spa-error-codes",
+      "half": "heldout",
+      "id": "9ad6327249f1d1144bb7ddb1c0e8da178d2b3fa9d8103da4fcfbf04fae0e5724",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "0adf2344bc5ab44a29f619678e60654e4ecd9382364e081c6b377af56a3d14e0",
+      "family": "url:https://aqualivingstores.com/support/list-of-spa-error-codes",
+      "half": "heldout",
+      "id": "393b1e66066f8037ba203e4d4eae851421d4a0280b3a68b5ce58ecda9c3ea117",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "2a1b870e99f025132250db44f059eb65eec211cd7347d4db139757324d205667",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "00e343e3b90b9590c3e6e758c1b70501dde323ae5d59dbb7ba4c3e84d20a0531",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "3d47629cbbaf754f249e0944dd8b8f6ac69494b6805bb3df9c11a05c44c2067a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "6f7fc5bcbbc87adf030f6a67b7d120a1701c57aacde66a337eb7ee90175e8ff2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "030c1b6f192caa477a9b829b55c98e0f9850056e590c22594f056da7f8faadf5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "537ff2521fb9d21af7280fcee0e6a257059fa20163f34cd1ca8a83e9da2635b2",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "97af8f4e311811b362bdea722d2ac0e2c8b8991ba75cbd78f667b1763558044e",
+      "family": "url:https://www.aeheatingandcooling.com/blog/pros-cons-cost-of-the-trane-xr16",
+      "half": "heldout",
+      "id": "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "fa243833885f2075b807b01f0f7fd76ad908b15868e0a462b05055a559795f8e",
+      "family": "url:https://en.sundancespas.lv/customer-care",
+      "half": "heldout",
+      "id": "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "fa243833885f2075b807b01f0f7fd76ad908b15868e0a462b05055a559795f8e",
+      "family": "url:https://en.sundancespas.lv/customer-care",
+      "half": "heldout",
+      "id": "e4e71019c07c6e2b695233687d8861ace75300c3116dbb9cf4b61f9bb4c61470",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "29b399ca01de3b47c6ac4f905f6d0c466581bff24711313c99477f4e6f2e6760",
+      "family": "url:https://www.yumpu.com/en/document/view/30722091/2013-880-series-owners-manual-sundance-spas",
+      "half": "heldout",
+      "id": "330ccbad495a81fa834cac547fe5cfc07a98db24a6a8a127df5b825d989b0eed",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "29b399ca01de3b47c6ac4f905f6d0c466581bff24711313c99477f4e6f2e6760",
+      "family": "url:https://www.yumpu.com/en/document/view/30722091/2013-880-series-owners-manual-sundance-spas",
+      "half": "heldout",
+      "id": "c74e8286d6ab8df8624ea330ecab39b9bf9322b690d68607f78aab9b1aaab97c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "29b399ca01de3b47c6ac4f905f6d0c466581bff24711313c99477f4e6f2e6760",
+      "family": "url:https://www.yumpu.com/en/document/view/30722091/2013-880-series-owners-manual-sundance-spas",
+      "half": "heldout",
+      "id": "a6ffc5d1e0f2f645d0f8d6f89c24ab2bbb9dfc7cf6f09115d8e760776031cf9d",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "33a50ff1fc5c16e3be7fbcdcf0c37c6c41e546a893db6a3a0344344db30521fe",
+      "family": "url:https://sundancespasoflindora.com/documents/sundance-880-series-owners-manual",
+      "half": "heldout",
+      "id": "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "33a50ff1fc5c16e3be7fbcdcf0c37c6c41e546a893db6a3a0344344db30521fe",
+      "family": "url:https://sundancespasoflindora.com/documents/sundance-880-series-owners-manual",
+      "half": "heldout",
+      "id": "ba7f7d6b94fb64fdc88984396c679482ee1b89244f0138ee5f5ed8edf90fc4b4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f3a400e8579b0e2635daf4abfa289a450651b8e838c010c588ae1b1c0db378a6",
+      "family": "url:https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide",
+      "half": "tune",
+      "id": "e11cef386c7f0c193f7a2b0a128d4aed5a5f9254a2674c6216e05f1813a4a6e1",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f3a400e8579b0e2635daf4abfa289a450651b8e838c010c588ae1b1c0db378a6",
+      "family": "url:https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide",
+      "half": "tune",
+      "id": "95ad7ab578eedaf49dc897f970b48163e48934f81d3bc33bdcf1616ddaecc4e0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f3a400e8579b0e2635daf4abfa289a450651b8e838c010c588ae1b1c0db378a6",
+      "family": "url:https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide",
+      "half": "tune",
+      "id": "0a0114370c9890f76c915c5ca3a41bbfcacf4fd271cc5a0eeffcbac507871b75",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f3a400e8579b0e2635daf4abfa289a450651b8e838c010c588ae1b1c0db378a6",
+      "family": "url:https://www.spastore.com/blog/troubleshooting-your-sundance-spa-a-stepbystep-guide",
+      "half": "tune",
+      "id": "557110fe9d16b4cf9ac756ddd8770636987b38ebb5c63e434b073828bdc9f0b3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "9eec6445cb9b73e35de8750e770b57891f764412ae1f33aa651f1e971eff1cd7",
+      "family": "url:https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error",
+      "half": "tune",
+      "id": "3fbe11322e1d71837bf513f591557ccc93e66e454ebef0af0cbf091196e81dee",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "9eec6445cb9b73e35de8750e770b57891f764412ae1f33aa651f1e971eff1cd7",
+      "family": "url:https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error",
+      "half": "tune",
+      "id": "167c5840f64318d9212f7f5fcfc9396d69e700cf7c390ffe90ede7ebecc66edd",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "9eec6445cb9b73e35de8750e770b57891f764412ae1f33aa651f1e971eff1cd7",
+      "family": "url:https://www.spastore.com/blog/how-to-fix-the-sundance-spa-flo-error",
+      "half": "tune",
+      "id": "bd2cc10ca9407f9a53b5cee12e3f7197212a6cb7b36a50f3bee3af8dffaa38d3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "efee703e66cabb659c30db5e003d097d2d00398640189ddab8ea4548b72fb3fb",
+      "family": "url:https://www.youtube.com/watch?v=PQHupzl4G6E&vl=en-US",
+      "half": "tune",
+      "id": "bb5820c2b9f42a27c96ba3edfb44703ed581fec230e2edd75a996d6bb748bac8",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f85adc5a239939060f1fe89dbc0de7493fc2299c4b7ccef5315ee419a177f53d",
+      "family": "url:https://soakandswim.com/flo-error-sundance-spa",
+      "half": "heldout",
+      "id": "72bde3a3bdc7a764aadbc00aaa6a36c852fa2cc93849e345f11398aeb6ad099e",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f85adc5a239939060f1fe89dbc0de7493fc2299c4b7ccef5315ee419a177f53d",
+      "family": "url:https://soakandswim.com/flo-error-sundance-spa",
+      "half": "heldout",
+      "id": "30121948d0be404b1241e438b4358b31e523327225c2a9ca8aeb436eab67a460",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "f85adc5a239939060f1fe89dbc0de7493fc2299c4b7ccef5315ee419a177f53d",
+      "family": "url:https://soakandswim.com/flo-error-sundance-spa",
+      "half": "heldout",
+      "id": "c6188a7a8d07275dd9b44729f718a3d6c80a7f5291cf9cfd100ac896f4722726",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dad3e4fea8dc30fd85ef1109fb10b0183487fac67c76091d5359c2b4e86bada5",
+      "family": "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors",
+      "half": "heldout",
+      "id": "6dc77a34a8365796d9e66864b91c47b43f0ba074e34adfcf1799156fd9f7af53",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dad3e4fea8dc30fd85ef1109fb10b0183487fac67c76091d5359c2b4e86bada5",
+      "family": "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors",
+      "half": "heldout",
+      "id": "1575df40a6695c3193cde644e2eb9d9a5e6a6740f72b2e93d7d7e155a253d561",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dad3e4fea8dc30fd85ef1109fb10b0183487fac67c76091d5359c2b4e86bada5",
+      "family": "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors",
+      "half": "heldout",
+      "id": "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dad3e4fea8dc30fd85ef1109fb10b0183487fac67c76091d5359c2b4e86bada5",
+      "family": "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors",
+      "half": "heldout",
+      "id": "68b2e2b579eb47e39a76318c5b2043cc87a1a16257c2704408946db23d6f42ce",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "dad3e4fea8dc30fd85ef1109fb10b0183487fac67c76091d5359c2b4e86bada5",
+      "family": "url:https://www.outdoorlivinghottubs.co.uk/blogs/maintenance/how-to-fix-hot-tub-flow-errors",
+      "half": "heldout",
+      "id": "f645379bec7a7b272ce9bd3c2cb43acc08ed7bec7f5c3fec529b789dcb6e73fa",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "11246b248146cffeda156607ea94c3c2c83dca57931108b39c6c18cdf55849aa",
+      "family": "url:https://shopaquarest.com/products/premium-150-spa",
+      "half": "tune",
+      "id": "05caa84b7299aa52ac0099eafe2ad3c75e3dc35c9b022cc966463ed6d364cd97",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "11246b248146cffeda156607ea94c3c2c83dca57931108b39c6c18cdf55849aa",
+      "family": "url:https://shopaquarest.com/products/premium-150-spa",
+      "half": "tune",
+      "id": "19d56db73348cb888e3ece572e1e5a1512352552fc96f6f79fcbdc1b2af0a273",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "556e8cf344d78a879127ed7ef08760afe6d97ed83c9806d40459dde23717b39b",
+      "family": "url:https://aquarestspas.com/product-category/parts-and-accessorieshttps://aquarestspas.com/parts-and-accessories/page/8?add-to-cart=517&product_view=grid&product_order=asc",
+      "half": "tune",
+      "id": "aba15b1dc435179c6d7ba8d4f2c359515d53949bcec656c3f84fc2e3cd88ab3a",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "be8ef84703bf4b2694d18aa516929017be6188e1e8c2bed9a3a2dace4dd41bd5",
+      "family": "url:https://lesliespool.com/blog/spa-error-codes-the-big-list.html",
+      "half": "heldout",
+      "id": "ced8f87a86714f344128b3cd482e1ac10e39c049138b7d91dcbf8dc22fb3ac26",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "2ca0696233cddb3d7ce701efde8480a33444d92a04696df2a342b237a028b80c",
+      "family": "url:https://aquarestspas.com/product/ar-400",
+      "half": "tune",
+      "id": "62c821eacb2ec1088129ff09c2caa1e7bc43b4bf4d8032cfd2a14cccddb677c3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "d819400c8ca61a05feb95c0b20c7eb4a46d5e00db5b5e721bce9fb90c7f0c735",
+      "family": "url:https://www.youtube.com/watch?v=NhdpEBLM-kw",
+      "half": "heldout",
+      "id": "fafe5b5c7f475b6fbacb204b7c4d31f41aa558bc8edd988a505c123b52cefdc3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "e0a44cb4c9185b4e6eab8e2618faad4afb6d0f95f19b7b15b78e4d1f70713c11",
+      "family": "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems",
+      "half": "heldout",
+      "id": "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "e0a44cb4c9185b4e6eab8e2618faad4afb6d0f95f19b7b15b78e4d1f70713c11",
+      "family": "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems",
+      "half": "heldout",
+      "id": "d7f4beb39244d7e5dbc5f8c5e3a140b8a7b321a56b01a7845659e3a9ae432508",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "e0a44cb4c9185b4e6eab8e2618faad4afb6d0f95f19b7b15b78e4d1f70713c11",
+      "family": "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems",
+      "half": "heldout",
+      "id": "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "e0a44cb4c9185b4e6eab8e2618faad4afb6d0f95f19b7b15b78e4d1f70713c11",
+      "family": "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems",
+      "half": "heldout",
+      "id": "98094782b74c2d5306cfb58bd8b747338711d25c4fd25e15591df399a4a38222",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "e0a44cb4c9185b4e6eab8e2618faad4afb6d0f95f19b7b15b78e4d1f70713c11",
+      "family": "url:https://heatland.ca/here-is-a-list-of-common-error-codes-for-trane-hvac-systems",
+      "half": "heldout",
+      "id": "1632484fe2d6ac40c6eaea7d77714bda71a0f004a0b0123a3e4852939ef1455b",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "8134d444a3878689e726e43bdf03f2667e95b36237c2a94d1d132c9d3a4d0c44",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "b0c2c7ce87053a7847d6f40437c7dafc1f7b1b1cc3cfce8ca2097c2d9b263eb7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "adc1b4a4d30ab4f869557ee7ce16c356d22326616afc2bf0e25abc649abdd576",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "5afb1ea2128a1f965b7ed1eebe62f8295c98633cf75f35f1db1f46109a4463f5",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "01b411299888047fa028c9f7daa2fe6993b99362e6a6fae7ea0ceec1f5e0c7ea",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "af2c119715a9ea10a91a9683c9350f004a8e93b857edee94dcf1aecda1a0c6f4",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "132e3dcaa09d5654681984231b836bce137f3a612251fcfe5f4018985bd425d7",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "8e74c8c13822e309a99f4968b61c833fe6d696ff5430c8e331bb1a5e86a726d1",
+      "family": "url:https://www.partstown.com/cm/resource-center/guides/gd2/trane-rooftop-troubleshooting-error-codes",
+      "half": "heldout",
+      "id": "1f8a5c90f3cb4051be470c226e4a37020d2ed0bfa4295f19d4d6b402dcbefe3c",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3062c68d50a063ccb56ea339de38b43426792a338abee5b3b16f491da33c8178",
+      "family": "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes",
+      "half": "heldout",
+      "id": "ecaa843e99ddca81ef79a3ec2395e9664ecc42491ed89e4ca440c75cff1aa049",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3062c68d50a063ccb56ea339de38b43426792a338abee5b3b16f491da33c8178",
+      "family": "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes",
+      "half": "heldout",
+      "id": "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3062c68d50a063ccb56ea339de38b43426792a338abee5b3b16f491da33c8178",
+      "family": "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes",
+      "half": "heldout",
+      "id": "034ca3c91707063b9aa8efb9b46b291e60ec704fb7342c8339e02c4d600d9743",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3062c68d50a063ccb56ea339de38b43426792a338abee5b3b16f491da33c8178",
+      "family": "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes",
+      "half": "heldout",
+      "id": "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+      "pool": "D"
+    },
+    {
+      "document_sha256": "3062c68d50a063ccb56ea339de38b43426792a338abee5b3b16f491da33c8178",
+      "family": "url:https://www.burkhardtheating.com/blog/trane-ac-error-codes",
+      "half": "heldout",
+      "id": "1d256cf663fcafc15a387e370348ed07f2cbbc9a3a4f963dc05aec34bb698a7e",
+      "pool": "D"
+    }
+  ],
+  "maker_documents_sha256": "dd513bf70a30b54eb88c5fe0fc2a77b5ecaca42333945aa739c047443abc8f78",
+  "near_duplicates": {
+    "across_halves": {
+      "identical_stripped": 0,
+      "ratio_at_least_0.8": 2,
+      "ratio_at_least_0.9": 1,
+      "shared_span_at_least_60": 0
+    },
+    "within_a_half": {
+      "identical_stripped_groups": 7,
+      "items": 15
+    }
+  },
+  "note": "SC12a item IDs (sha256 of the normalized step and detail); text stays in data/eval/sc12a/items.json",
+  "sampling": "decision 59"
+}

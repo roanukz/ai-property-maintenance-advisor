@@ -26,7 +26,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import httpx2
 import pytest
+import typesafe_sdk
 from pydantic import Field
 
 from agent import cli, config, models
@@ -36,10 +38,11 @@ from agent.replay.tool_stubs import StubInner
 from agent.tests.helpers import SYNTHETIC_CASSETTE_DIR
 
 FLO_CASSETTE = SYNTHETIC_CASSETTE_DIR / "flo_three_candidates.json"
+REAL_TYPESAFE_CLIENT = typesafe_sdk.TypeSafeClient
 PLATE = config.REPO_ROOT / "demo-assets" / "plate-clear.jpg"
 SYMPTOM = "panel shows FLO"
 RESUME_FLAGS = ["--manufacturer", "Sundance Spas", "--model", "Optima 880", "--code", "FLO"]
-KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY")
+KEY_NAMES = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", config.TYPESAFE_KEY_NAME)
 
 
 def fake_key(prefix: str, seed: str) -> str:
@@ -49,6 +52,7 @@ def fake_key(prefix: str, seed: str) -> str:
 
 FAKE_ANTHROPIC = fake_key("sk" + "-ant-" + "api03-", "anthropic")
 FAKE_TAVILY = fake_key("tvly" + "-" + "dev-", "tavily")
+FAKE_TYPESAFE = fake_key("apikey" + "_", "typesafe")
 
 
 def open_reservations(ledger_path: Path, provider: str) -> int:
@@ -115,6 +119,9 @@ class LiveFakes:
     echo_key: bool = False  # the fake prints the key it sees, as a leaky client library might
     chat_failures: dict[str, str] = field(default_factory=dict)  # node -> error text its calls raise
     search_failure: tuple[str, str] | None = None  # ("raise" or "error", text) for the first search
+    jev_noul: float = 0.5  # every Jev answer the fake TypeSafe API gives
+    jev_requests: list[dict[str, Any]] = field(default_factory=list)  # each request body's state
+    jev_checks: list[bool] = field(default_factory=list)
 
     def responses(self, node: str) -> list[dict[str, Any]]:
         if node == "read_plate":
@@ -147,15 +154,33 @@ class LiveFakes:
             self.stubs[name] = CheckedStub(name, results, self.search_failure if name == "search" else None)
         return self.stubs[name]
 
+    def jev_answer(self, request: httpx2.Request) -> httpx2.Response:
+        """The fake TypeSafe API: one Noul answer, after checking the ledger holds its reservation."""
+        self.jev_checks.append(open_reservations(config.LEDGER_PATH, config.JEV_PROVIDER) > 0)
+        body = json.loads(request.content)
+        self.jev_requests.append(body["state"])
+        answers = {name: {"type": "noul", "noul": self.jev_noul} for name in body["questions"]}
+        return httpx2.Response(200, json={"model": config.JEV_MODEL, "answers": answers,
+                                          "usage": {"input_tokens": 384, "output_tokens": 3}},
+                               headers={"x-typesafe-request-id": f"req-{len(self.jev_requests)}"})
+
+    def jev(self, **kwargs: Any) -> Any:
+        """The real TypeSafeClient on a mock transport: the SDK runs, the network is never reached."""
+        self.keys_seen.append({"typesafe": os.environ.get(config.TYPESAFE_KEY_NAME)})
+        if self.echo_key:
+            print(f"debug jev key {os.environ.get(config.TYPESAFE_KEY_NAME)}")
+        return REAL_TYPESAFE_CLIENT(**kwargs, transport=httpx2.MockTransport(self.jev_answer))
+
     def install(self, monkeypatch: pytest.MonkeyPatch) -> LiveFakes:
         monkeypatch.setattr(models, "ChatAnthropic", self.chat)
         monkeypatch.setattr(models, "TavilySearch", lambda **kw: self.tool("search", **kw))
         monkeypatch.setattr(models, "TavilyExtract", lambda **kw: self.tool("fetch", **kw))
+        monkeypatch.setattr(typesafe_sdk, "TypeSafeClient", self.jev)
         return self
 
     def all_checks(self) -> list[bool]:
         return [c for chat in self.chats.values() for c in chat.checks] + \
-               [c for stub in self.stubs.values() for c in stub.checks]
+               [c for stub in self.stubs.values() for c in stub.checks] + list(self.jev_checks)
 
 
 def flo_data() -> dict[str, Any]:
@@ -189,7 +214,8 @@ def live_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv(config.ENV_MODE, "cheap")
     monkeypatch.chdir(config.REPO_ROOT)
     (tmp_path / ".env").write_text(
-        f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nTAVILY_API_KEY={FAKE_TAVILY}\n", encoding="utf-8")
+        f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nTAVILY_API_KEY={FAKE_TAVILY}\n"
+        f"{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n", encoding="utf-8")
     return data
 
 
@@ -275,6 +301,13 @@ def test_live_ask_and_resume_end_to_end_on_fakes(live_env: Path, monkeypatch: py
     assert {r["mode"] for r in charges} == {"cheap"}
     assert {r["node"] for r in charges if r["provider"] == "anthropic"} == {"read_plate", "research", "synthesize"}
     assert Ledger(config.LEDGER_PATH).build_total() > 0
+    # Jev ran through the real SDK on a mock transport: one reserved call per step, each charged under
+    # provider typesafe, the state filtered to three keys, and the key read from the environment.
+    jev = [r for r in charges if r["provider"] == config.JEV_PROVIDER]
+    assert fakes.jev_requests and len(jev) == len(fakes.jev_requests) and all(fakes.jev_checks)
+    assert {r["node"] for r in jev} == {"safety_check"} and {r["model"] for r in jev} == {config.JEV_MODEL}
+    assert all(set(state) == {"appliance", "step", "detail"} for state in fakes.jev_requests)
+    assert {seen.get("typesafe") for seen in fakes.keys_seen if "typesafe" in seen} == {FAKE_TYPESAFE}
 
     # The run record carries the SC11 post condition and latency for every node that ran.
     record = run_record(thread_id)
@@ -441,7 +474,8 @@ def _nothing_spent(fakes: LiveFakes) -> None:
 
 
 REFUSALS = ("replay_with_live", "live_flag_missing", "ledger_missing", "ledger_empty", "budget_below_run_cap",
-            "anthropic_key_missing", "tavily_key_missing", "haiku_retirement", "haiku_retirement_full",
+            "anthropic_key_missing", "tavily_key_missing", "typesafe_key_missing", "haiku_retirement",
+            "haiku_retirement_full",
             "full_mode", "typed_yes")
 
 
@@ -454,13 +488,15 @@ def test_live_ask_refusals(case: str, live_env: Path, tmp_path: Path, monkeypatc
     ledger_empty_file_accepted (an empty ledger file passes as a ledger, finding M1);
     cli_full_mode_allowed (full mode runs live on the typed proceed alone, findings M2 and P5);
     T_retirement_check_synth_only (the Haiku check reads only the synthesize model, so full mode,
-    whose other steps run on Haiku, loses it; finding T6)."""
+    whose other steps run on Haiku, loses it; finding T6); config_live_keys_skip_typesafe (a run
+    with Jev enabled starts without TYPESAFE_API_KEY)."""
     fakes = LiveFakes(flo_data()).install(monkeypatch)
     argv = ["--new-ledger"]
     expect = {
         "replay_with_live": "--live needs", "live_flag_missing": "needs --live", "ledger_missing": "no ledger file",
         "budget_below_run_cap": "build budget", "anthropic_key_missing": "missing ANTHROPIC_API_KEY",
         "tavily_key_missing": "missing TAVILY_API_KEY", "haiku_retirement": "Recheck the model list",
+        "typesafe_key_missing": f"missing {config.TYPESAFE_KEY_NAME}:",
         "typed_yes": 'not exactly "proceed"',
     }.get(case, "")
     typed = "proceed\n"
@@ -485,9 +521,15 @@ def test_live_ask_refusals(case: str, live_env: Path, tmp_path: Path, monkeypatc
                          "('2026-09-01T00:00:00+00:00', 'earlier', 'cheap', 'synthesize', 'anthropic', 'charge', ?)",
                          (config.BUILD_CAP_USD - config.RUN_CAP_USD["cheap"] / 2,))
     elif case == "anthropic_key_missing":
-        (tmp_path / ".env").write_text(f"TAVILY_API_KEY={FAKE_TAVILY}\n", encoding="utf-8")
+        (tmp_path / ".env").write_text(f"TAVILY_API_KEY={FAKE_TAVILY}\n{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n",
+                                       encoding="utf-8")
     elif case == "tavily_key_missing":
-        (tmp_path / ".env").write_text(f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\n", encoding="utf-8")
+        (tmp_path / ".env").write_text(
+            f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\n{config.TYPESAFE_KEY_NAME}={FAKE_TYPESAFE}\n", encoding="utf-8")
+    elif case == "typesafe_key_missing":
+        assert config.JEV_SAFETY_ENABLED
+        (tmp_path / ".env").write_text(f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC}\nTAVILY_API_KEY={FAKE_TAVILY}\n",
+                                       encoding="utf-8")
     elif case == "haiku_retirement":
         monkeypatch.setattr(config, "HAIKU_RETIREMENT_EARLIEST", cli._today().isoformat())
     elif case == "haiku_retirement_full":
@@ -510,7 +552,7 @@ def test_live_ask_refusals(case: str, live_env: Path, tmp_path: Path, monkeypatc
     assert expect in err, err
     assert "advisor ask: thread" not in out
     assert fakes.constructed == [] and fakes.stubs == {}
-    if case == "full_mode":
+    if case in ("full_mode", "typesafe_key_missing"):
         assert not config.LEDGER_PATH.exists()  # refused before the ledger was even opened
     if case == "ledger_empty":
         with pytest.raises(LedgerMissing):

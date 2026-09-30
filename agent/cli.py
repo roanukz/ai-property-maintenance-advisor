@@ -191,10 +191,26 @@ def build_parser() -> argparse.ArgumentParser:
     ledger = sub.add_parser("ledger", help="run and build spend, credits, remaining budget")
     ledger.add_argument("--run", dest="run_id", metavar="RUN_ID", help="show one run only")
 
-    ev = sub.add_parser("eval", help="LIVE evaluations (cheap mode only)")
+    ev = sub.add_parser("eval", help="evaluations: LIVE with --live (cheap mode only); --score and sc12a score offline")
     ev.add_argument("which", choices=EVAL_SUITES)
     ev.add_argument("--live", action="store_true")
     add_eval_flags(ev)
+
+    sset = sub.add_parser("safety-set",
+                          help="the SC12a labeled step set: build, packet, labels, lock (no call is made)")
+    sset_sub = sset.add_subparsers(dest="safety_set_command", required=True)
+    build = sset_sub.add_parser("build", help="write data/eval/sc12a/items.json and agent/safety_eval/item_ids.json")
+    build.add_argument("--extend", action="store_true",
+                       help="the stopping rule: add the next D items to a labeled set")
+    build.add_argument("--sc12b", action="store_true",
+                       help="write data/eval/sc12b/items.json from the SC12b run records, for the readers")
+    packet = sset_sub.add_parser("packet", help="write the items the three readers label: id, appliance, step, "
+                                 "detail only, sorted by id, unlabeled items only")
+    packet.add_argument("--sc12b", action="store_true", help="the SC12b steps (data/eval/sc12b/reader_items.json)")
+    labels = sset_sub.add_parser("labels", help="import the readers' labels files; writes agent/safety_eval/labels.json")
+    labels.add_argument("files", nargs="+", metavar="FILE")
+    lock = sset_sub.add_parser("lock", help="Gate 2: write data/eval/sc12a/lock.json from the tune half")
+    lock.add_argument("--reason", metavar="TEXT", help="a logged reason to replace an existing lock")
 
     schema = sub.add_parser(
         "check-schema", help="LIVE: one minimal synthesize call to confirm the API accepts BriefDraft (decision 22)",
@@ -208,7 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-EVAL_SUITES = ("sc3b", "sc7b", "plates")
+EVAL_SUITES = ("sc3b", "sc7b", "plates", "sc12a", "sc12b")
 
 
 def _add_run_flags(p: argparse.ArgumentParser) -> None:
@@ -989,6 +1005,14 @@ def add_eval_flags(p: argparse.ArgumentParser) -> None:
         "--score", action="store_true",
         help="score the run records already in data/eval and print the result; spends nothing",
     )
+    p.add_argument("--wording", type=int, metavar="N", help="sc12a: the Jev question wording to ask or score")
+    p.add_argument("--heldout", action="store_true",
+                   help="sc12a: the held out half (after the lock; scored once)")
+    p.add_argument("--rescore-reason", metavar="TEXT",
+                   help="sc12a: the recorded reason for scoring the held out half again")
+
+
+SC12A_FLAGS = ("wording", "heldout", "rescore_reason")
 
 
 def eval_score(which: str, records: list[dict], first_lookups: list[dict] | None = None, *,
@@ -1006,6 +1030,8 @@ def eval_score(which: str, records: list[dict], first_lookups: list[dict] | None
     if which == "plates":
         score = evaluators.score_plates(records)
         return score, evaluators.format_plates(score)
+    if which != "sc7b":
+        raise CliRefusal(f"no evaluator scores suite {which!r} from run records.")
     repeats = None
     if planned:
         from agent.live.eval_sc7b import planned_repeats
@@ -1058,7 +1084,17 @@ def cmd_eval_score(args: argparse.Namespace) -> int:
 
 
 def cmd_eval_live(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
-    """`advisor eval sc3b --live` and `advisor eval sc7b --live` (PLAN 8.13), or --score."""
+    """`advisor eval SUITE --live` (PLAN 8.13), or --score; every suite has its own branch."""
+    if args.which != "sc12a" and any(getattr(args, flag, None) for flag in SC12A_FLAGS):
+        raise CliRefusal("--wording, --heldout and --rescore-reason apply to sc12a only.")
+    if args.which == "sc12a":
+        return cmd_eval_sc12a(args, environ)
+    if args.which == "sc12b":
+        if args.score:
+            return cmd_eval_sc12b_score(args)
+        from agent.live.sc12b import cmd_eval_sc12b
+
+        return cmd_eval_sc12b(args, environ)
     if args.score:
         return cmd_eval_score(args)
     if args.which == "sc3b":
@@ -1069,9 +1105,119 @@ def cmd_eval_live(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
         from agent.live.eval_plates import cmd_eval_plates
 
         return cmd_eval_plates(args, environ)
-    from agent.live.eval_sc7b import cmd_eval_sc7b
+    if args.which == "sc7b":
+        from agent.live.eval_sc7b import cmd_eval_sc7b
 
-    return cmd_eval_sc7b(args, environ)
+        return cmd_eval_sc7b(args, environ)
+    raise CliRefusal(f"unknown eval suite {args.which!r}; the suites are {', '.join(EVAL_SUITES)}.")
+
+
+# ---------------------------------------------------------------------------
+# SC12a and SC12b (safety step flagging): the labeled set, its lock and the
+# scorer are offline (agent/safety_eval); the paid halves are
+# agent/live/sc12a.py and agent/live/sc12b.py.
+# ---------------------------------------------------------------------------
+
+
+def cmd_eval_sc12a(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
+    """`advisor eval sc12a [--live] [--wording N] [--heldout] [--rescore-reason TEXT]`.
+
+    Without --live it scores recorded replies only: the tune half, or with
+    --heldout the held out half, once, against a lock that matches the
+    current config and prompt.
+    """
+    from agent.safety_eval import harness
+
+    if args.live:
+        if args.rescore_reason:
+            raise CliRefusal("--rescore-reason is for scoring; --live only records replies.")
+        from agent.live.sc12a import cmd_eval_sc12a as live_sc12a
+
+        return live_sc12a(args, environ)
+    resolve_mode(environ, live=False)
+    if args.fix or args.new_ledger:
+        raise CliRefusal("advisor eval sc12a without --live only scores recorded replies; leave out --fix and "
+                         "--new-ledger.")
+    if args.rescore_reason and not args.heldout:
+        raise CliRefusal("--rescore-reason applies to --heldout only.")
+    if args.heldout and args.wording is not None:
+        raise CliRefusal("the held out half is scored with the locked wording only; leave out --wording.")
+    try:
+        result = harness.score_heldout(args.rescore_reason) if args.heldout else harness.score_tune(args.wording)
+    except harness.EvalRefusal as exc:
+        raise CliRefusal(str(exc)) from None
+    for line in harness.format_result(result):
+        print(line)
+    return EXIT_OK
+
+
+def cmd_eval_sc12b_score(args: argparse.Namespace) -> int:
+    """`advisor eval sc12b --score`: the SC12b steps against their labels; no call is made."""
+    if any((args.live, args.fix, args.new_ledger)):
+        raise CliRefusal("--score only reads run records; leave out --live, --fix and --new-ledger.")
+    from agent.safety_eval import harness, sc12b
+
+    labels = harness.load_labels()
+    baseline = None
+    if harness.items_path().is_file():
+        baseline = sc12b.writer_baseline(harness.load_items(), labels)
+    for line in sc12b.format_sc12b(sc12b.score_sc12b(sc12b.load_records(), labels), baseline):
+        print(line)
+    return EXIT_OK
+
+
+def cmd_safety_set(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
+    """`advisor safety-set build|packet|labels|lock`: offline, and never a paid call."""
+    import json
+
+    from agent.safety_eval import harness, pools, sc12b
+
+    try:
+        if args.safety_set_command == "build":
+            if args.sc12b:
+                items = sc12b.sc12b_items(sc12b.load_records())
+                path, reused = harness.write_sc12b_items(items)
+                print(f"advisor safety-set build --sc12b: {len(items)} steps in {path}; {reused} already have an "
+                      f"SC12a label and are not labeled again; {len(items) - reused} go to the readers "
+                      "(advisor safety-set packet --sc12b)")
+                return EXIT_OK
+            roots, documents = pools.Roots.from_config(), pools.load_document_list()
+            print(f"maker document list {pools.MAKER_DOCUMENTS_PATH.name}: sha256 {documents.sha256}, "
+                  f"status {documents.status!r}")
+            if documents.status != "final":
+                print("  note: the list is not marked final; a change to it after this build blocks --extend and "
+                      "the lock until the set is built again")
+            result = (harness.extend_set if args.extend else harness.build_set)(roots, documents)
+            print(f"advisor safety-set build: {len(result.items)} items in {harness.items_path()}; IDs in "
+                  f"{harness.COMMITTED_DIR / harness.ITEM_IDS}")
+            lines = harness.counts_lines(harness.load_items(), harness.load_labels())
+        elif args.safety_set_command == "packet":
+            labels = harness.load_labels()
+            if args.sc12b:
+                if not harness.sc12b_items_path().is_file():
+                    raise CliRefusal("no SC12b steps yet: run advisor safety-set build --sc12b first.")
+                items = harness.read_json(harness.sc12b_items_path())["items"]
+            else:
+                items = harness.load_items()["items"]
+            path, count = harness.write_reader_packet(items, labels, sc12b=args.sc12b)
+            print(f"advisor safety-set packet: {count} unlabeled items for the readers in {path}; give each reader "
+                  "PROTOCOL.md and this file, and nothing else")
+            return EXIT_OK
+        elif args.safety_set_command == "labels":
+            harness.import_labels([Path(f) for f in args.files])
+            print(f"advisor safety-set labels: labels by id in {harness.COMMITTED_DIR / harness.LABELS}")
+            lines = harness.counts_lines(harness.load_items(), harness.load_labels())
+        elif args.safety_set_command == "lock":
+            lock = harness.write_lock(args.reason)
+            print(f"advisor safety-set lock: Gate 2 written to {harness.lock_path()}; copy it into DECISION-LOG.md:")
+            lines = json.dumps(lock, indent=2, sort_keys=True, ensure_ascii=False).splitlines()
+        else:
+            raise CliRefusal(f"unknown safety-set command {args.safety_set_command!r}")
+    except harness.EvalRefusal as exc:
+        raise CliRefusal(str(exc)) from None
+    for line in lines:
+        print(line)
+    return EXIT_OK
 
 
 def _dispatch(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
@@ -1085,7 +1231,11 @@ def _dispatch(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
         return cmd_ledger(args, environ)
     if args.command == "check-schema":
         return cmd_check_schema(args, environ)
-    return cmd_eval_live(args, environ)
+    if args.command == "safety-set":
+        return cmd_safety_set(args, environ)
+    if args.command == "eval":
+        return cmd_eval_live(args, environ)
+    raise CliRefusal(f"unknown command {args.command!r}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1105,4 +1255,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run as `python -m agent.cli`, this file is __main__ while the live modules
+    # import agent.cli, so each has its own CliRefusal class. Delegating to the
+    # imported module keeps one class, as the `advisor` entry point does.
+    from agent.cli import main as _main
+
+    sys.exit(_main())

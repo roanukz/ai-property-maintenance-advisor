@@ -1,9 +1,11 @@
 """The .env loader for live commands (PRD Part A rules 1 and 8, PLAN 8.13).
 
 Live commands (`advisor ask --live`, `advisor resume --live`, `advisor
-check-schema --live`) read ANTHROPIC_API_KEY and TAVILY_API_KEY, and
-LANGSMITH_* only when ADVISOR_TRACING=1, from the environment or from the
-repo's gitignored .env (config.ENV_FILE). Replay never calls anything here.
+check-schema --live`) read ANTHROPIC_API_KEY and TAVILY_API_KEY,
+TYPESAFE_API_KEY only when the command needs it (Jev enabled and the command
+can reach safety_check), and LANGSMITH_* only when ADVISOR_TRACING=1, from the
+environment or from the repo's gitignored .env (config.ENV_FILE). Replay
+never calls anything here.
 
 Rules, all tested in agent/tests/test_env_loader.py:
 
@@ -94,9 +96,16 @@ def read_dotenv(path: Path) -> dict[str, str]:
     return parse_dotenv(path.read_text(encoding="utf-8"), str(path))
 
 
-def wanted_names(found: Sequence[str], *, tracing: bool) -> list[str]:
-    """The names a live command reads: the two keys, plus LANGSMITH_* when tracing is opted in."""
-    names = list(config.LIVE_KEY_NAMES)
+def wanted_names(found: Sequence[str], *, tracing: bool, need: Sequence[str] | None = None) -> list[str]:
+    """The names a live command reads: config.LIVE_KEY_NAMES, plus LANGSMITH_* when tracing is opted in.
+
+    TYPESAFE_API_KEY only goes to Jev, so it is read only when `need` names it
+    (or when no need is given); a command that cannot call Jev never loads it.
+    A command that needs it gets it whatever config.JEV_SAFETY_ENABLED says, so
+    SC12a can still ask Jev (and redact the key) after Jev is switched off.
+    """
+    names = [n for n in config.LIVE_KEY_NAMES if n != config.TYPESAFE_KEY_NAME or need is None or n in need]
+    names += [n for n in (need or ()) if n == config.TYPESAFE_KEY_NAME and n not in names]
     if tracing:
         names += sorted({n for n in found if n.startswith(config.TRACING_KEY_PREFIX)} - set(names))
     return names
@@ -116,7 +125,7 @@ def load_live_keys(
     in `environ` wins over .env, even when empty.
     """
     from_file = read_dotenv(path)
-    names = wanted_names([*environ, *from_file], tracing=tracing)
+    names = wanted_names([*environ, *from_file], tracing=tracing, need=need)
     report = KeyReport()
     additions: dict[str, str] = {}
     for name in names:

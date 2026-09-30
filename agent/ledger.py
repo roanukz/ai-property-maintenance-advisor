@@ -25,6 +25,10 @@ BUSY_TIMEOUT_MS = config.LEDGER_BUSY_TIMEOUT_MS
 # Float sums of many small charges drift by far less than this.
 _EPSILON = 1e-9
 
+# Providers whose calls reserve() holds; Tavily credits go through reserve_credits.
+PROVIDER_ANTHROPIC = "anthropic"
+CALL_PROVIDERS = (PROVIDER_ANTHROPIC, config.JEV_PROVIDER)
+
 STOP_REASONS = (
     "run_cap",
     "build_cap",
@@ -119,6 +123,18 @@ def _prices_for(model_or_prices: str | dict[str, float]) -> dict[str, float]:
     if isinstance(model_or_prices, dict):
         return model_or_prices
     return config.PRICES_PER_MTOK[model_or_prices]
+
+
+def call_prices(mode: str, provider: str, model: str | None) -> dict[str, float]:
+    """Per million token prices for one call.
+
+    A TypeSafe call is priced from Jev's row in every mode, with output at 0
+    (TypeSafe bills input only). An Anthropic call uses its model's row, or
+    REPLAY_PRICES in replay.
+    """
+    if provider == config.JEV_PROVIDER:
+        return {"input": config.PRICES_PER_MTOK[config.JEV_MODEL]["input"], "output": 0}
+    return config.REPLAY_PRICES if mode == "replay" else _prices_for(model or "")
 
 
 def _cache_tokens(usage_metadata: dict[str, Any]) -> tuple[int, int, int]:
@@ -332,9 +348,10 @@ class Ledger:
         return min(config.RUN_CREDIT_CAP, run_credit_cap)
 
     def _refuse(self, conn: sqlite3.Connection, run_id: str, mode: str, node: str,
-                reason: str, message: str, thread_id: str | None = None) -> BudgetExceeded:
+                reason: str, message: str, thread_id: str | None = None,
+                provider: str | None = None) -> BudgetExceeded:
         self._insert(conn, run_id=run_id, thread_id=thread_id, mode=mode, node=node,
-                     kind="stop", note=f"{reason}: {message}")
+                     provider=provider, kind="stop", note=f"{reason}: {message}")
         return BudgetExceeded(reason, message)
 
     # model calls --------------------------------------------------------------
@@ -350,10 +367,17 @@ class Ledger:
         max_tokens: int,
         thread_id: str | None = None,
         run_cap_usd: float | None = None,
+        provider: str = PROVIDER_ANTHROPIC,
     ) -> Reservation:
-        """Hold budget for one model call, or raise BudgetExceeded before it is made."""
+        """Hold budget for one model call, or raise BudgetExceeded before it is made.
+
+        `provider` is carried into every row of the call: "anthropic", or
+        config.JEV_PROVIDER for a Jev call, priced by call_prices.
+        """
         self._check_mode(mode)
-        prices = config.REPLAY_PRICES if mode == "replay" else _prices_for(model)
+        if provider not in CALL_PROVIDERS:
+            raise ValueError(f"unknown call provider {provider!r}; expected one of {CALL_PROVIDERS}")
+        prices = call_prices(mode, provider, model)
         usd = price_usage(prices, {"input_tokens": input_tokens_est, "output_tokens": max_tokens})
         cap = self.run_cap(mode, run_cap_usd)
         error: BudgetExceeded | None = None
@@ -363,7 +387,7 @@ class Ledger:
                 error = self._refuse(
                     conn, run_id, mode, node, "run_cap",
                     f"spent {spent:.6f} + reserved {held:.6f} + this call {usd:.6f} > run cap {cap:.6f}",
-                    thread_id,
+                    thread_id, provider,
                 )
             elif mode in config.LIVE_MODES:
                 build_used, _ = self._build_used(conn)
@@ -372,18 +396,18 @@ class Ledger:
                         conn, run_id, mode, node, "build_cap",
                         f"build spent and reserved {build_used:.6f} + this call {usd:.6f} > build cap "
                         f"{config.BUILD_CAP_USD:.2f}",
-                        thread_id,
+                        thread_id, provider,
                     )
             if error is None:
                 rid = self._insert(
                     conn, run_id=run_id, thread_id=thread_id, mode=mode, node=node,
-                    provider="anthropic", model=model, kind="reserve",
+                    provider=provider, model=model, kind="reserve",
                     input_tokens=input_tokens_est, output_tokens=max_tokens, usd=usd,
                 )
         if error is not None:
             raise error
         return Reservation(
-            id=rid, run_id=run_id, mode=mode, node=node, model=model, provider="anthropic",
+            id=rid, run_id=run_id, mode=mode, node=node, model=model, provider=provider,
             usd=usd, input_tokens_est=input_tokens_est, max_tokens=max_tokens,
             thread_id=thread_id,
         )
@@ -401,7 +425,7 @@ class Ledger:
 
     def charge(self, reservation: Reservation, usage_metadata: dict[str, Any]) -> float:
         """Record a call's full actual cost, even above its reservation, and release it."""
-        prices = config.REPLAY_PRICES if reservation.mode == "replay" else _prices_for(reservation.model or "")
+        prices = call_prices(reservation.mode, reservation.provider, reservation.model)
         usd = price_usage(prices, usage_metadata)
         read, write_5m, write_1h = _cache_tokens(usage_metadata)
         note = f"reservation {reservation.id}"
