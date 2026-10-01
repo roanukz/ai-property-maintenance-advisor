@@ -82,7 +82,7 @@
   }
   var NODE_NAMES = {
     read_plate: "Reading the plate", classifier: "Checking the symptom", research: "Research",
-    synthesize: "Writing the brief", validate: "Checking the brief"
+    synthesize: "Writing the brief", safety_check: "Checking the steps for safety", validate: "Checking the brief"
   };
   var REFUSAL = {
     model: "The model declined to answer. No rule forced it.",
@@ -98,6 +98,8 @@
   }
   function runLabel(c) { return (isReplay(c) ? "replay run " : "live run ") + c.run_id; }
   function modelName(id) {
+    var j = /^jev-(\d+\.\d+\.\d+)$/.exec(id || "");
+    if (j) return "Jev " + j[1] + " (TypeSafe)";
     var m = /^claude-([a-z]+)-(\d+)-(\d+)/.exec(id || "");
     if (!m) return id || "";
     return "Claude " + m[1].charAt(0).toUpperCase() + m[1].slice(1) + " " + m[2] + "." + m[3];
@@ -609,6 +611,63 @@
     };
   }
 
+  /* The safety check, from the run record only: per step, the flag on the
+     brief, the layer that raised it and Jev's probability. The page never says
+     whether a step is a safety step; it shows what the run recorded. */
+  var LAYER_NAMES = { writer: "the writer", word: "the word rule", jev: "Jev" };
+  function prob(p) { return p == null ? "no answer" : Number(p).toFixed(2); }
+
+  function stepSafety(c) {
+    var sf = c.safety;
+    if (!sf) return null;
+    var steps = sf.steps || [];
+    return {
+      title: "The safety check on the steps to try first",
+      body: function (s) {
+        add(s, el("p", "step-note lead-note", "After the brief is drafted, Jev, a judgment model from TypeSafe, reads each step to try first and answers with a probability, from 0 to 1, that doing the step, or doing it wrong, involves electricity, gas or overheating. At " +
+          prob(sf.threshold) + " or above it adds a safety flag. It can add a flag, never remove one, so a flag the writer set stays."));
+        var p = add(s, el("p", "step-note"));
+        txt(p, "Jev answered " + sf.answered + " of " + plural(sf.steps_checked, "step", "steps") + ". ");
+        var flagged = steps.filter(function (x) { return x.flag; }).length;
+        if (!flagged) {
+          txt(p, "No step carries a flag: the writer set none, and no answer from Jev reached " + prob(sf.threshold) + ".");
+        } else {
+          var parts = [];
+          if (sf.flags_by_writer) parts.push(plural(sf.flags_by_writer, "flag", "flags") + " set by the writer");
+          if (sf.flags_by_jev) parts.push(plural(sf.flags_by_jev, "flag", "flags") + " raised by Jev");
+          txt(p, plural(flagged, "step carries", "steps carry") + " a flag on the brief: " + parts.join(" and ") + ".");
+        }
+        if (sf.notice) {
+          add(s, el("p", "callout callout-notice", "A safety check call failed on this run, so the brief carries this notice line above its steps:"));
+          verbatim(s, "The notice line, as the brief shows it", sf.notice);
+        }
+        (sf.jev_added || []).forEach(function (x) {
+          var call = add(s, el("p", "callout callout-info"));
+          txt(call, "Jev raised a flag the writer left off, on “" + x.step + "”, at " + prob(x.jev_probability) +
+            ". The writer had not flagged this step; the flag on the brief is Jev's.");
+        });
+        var table = add(s, el("table", "compare safety-table"));
+        add(table, el("caption", "sr-only", "Each step to try first, with Jev's probability and the flag on the brief"));
+        var hr = add(add(table, el("thead")), el("tr"));
+        ["Step to try first", "Jev's probability", "Flag on the brief"].forEach(function (h) {
+          var th = add(hr, el("th", null, h)); th.scope = "col";
+        });
+        var tb = add(table, el("tbody"));
+        steps.forEach(function (x) {
+          var tr = add(tb, el("tr"));
+          var th = add(tr, el("th", null, x.step)); th.scope = "row";
+          var a = add(tr, el("td", null, prob(x.jev_probability)));
+          a.setAttribute("data-label", "Jev's probability");
+          var b = add(tr, el("td"));
+          b.setAttribute("data-label", "Flag on the brief");
+          if (x.flag) add(b, el("span", "badge badge-flag", "flagged by " + (LAYER_NAMES[x.raised_by] || x.raised_by)));
+          else txt(b, "no flag");
+        });
+        add(s, el("p", "step-note", "Everything here is copied from the run record: the writer's flag, Jev's answer and the flag the brief shows. This page does not judge which steps are safety steps."));
+      }
+    };
+  }
+
   function stepBrief(c) {
     var o = c.outcome || {};
     return {
@@ -702,7 +761,10 @@
          ["Search credits (Tavily)", String(n.tavily_credits)],
          ["Processing time", secs(n.processing_s)]]
           .forEach(function (p) { add(dl, el("dt", null, p[0])); add(dl, el("dd", null, p[1])); });
-        add(s, el("p", "step-note", "Search credits are what the web search service, Tavily, charges for this run's lookups. The ledger counts them apart from the dollar cost, which is what Claude charged. These runs used Tavily's free tier, so the credits cost no dollars."));
+        var jevCharged = (n.by_node || []).some(function (r) { return r.provider === "typesafe"; });
+        add(s, el("p", "step-note", "Search credits are what the web search service, Tavily, charges for this run's lookups. The ledger counts them apart from the dollar cost, which is what " +
+          (jevCharged ? "Claude and TypeSafe, for Jev's answers, charged" : "Claude charged") +
+          ". These runs used Tavily's free tier, so the credits cost no dollars."));
         add(s, el("p", "step-note", n.processing_note));
         if (n.by_node && n.by_node.length) {
           var det = add(s, el("details", "by-node"));
@@ -735,7 +797,7 @@
 
   function stepsFor(c) {
     return [stepAsk(c), stepPlate(c), stepConfirm(c), stepRoute(c), stepRecords(c), stepMemory(c), stepTrail(c),
-            stepNra(c), stepCompare(c), stepBrief(c), stepNumbers(c)].filter(Boolean);
+            stepNra(c), stepCompare(c), stepSafety(c), stepBrief(c), stepNumbers(c)].filter(Boolean);
   }
 
   /* ---------------------------------------------------------------------- */

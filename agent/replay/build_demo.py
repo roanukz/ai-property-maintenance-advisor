@@ -57,7 +57,7 @@ import re
 import shutil
 import sqlite3
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -66,7 +66,7 @@ from urllib.parse import urlsplit
 from agent import build_info, config
 from agent.replay import privacy_diff
 
-BUILDER_VERSION = "build_demo.py 3"
+BUILDER_VERSION = "build_demo.py 4"
 STAND_IN_LABEL = "STAND-IN DATA FROM A SUPERSEDED BUILD, DO NOT PUBLISH"
 REPLAY_LABEL = "Replay of synthetic property records, no live call"
 # Builds already known to be superseded. The current build check below would
@@ -179,6 +179,34 @@ def https_only(url: str, where: str) -> str:
 
 def long_date(iso: str) -> str:
     day = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(UTC)
+    return f"{day.day} {MONTHS[day.month - 1]} {day.year}"
+
+
+def recorded_label(iso: str | None, recorded_on: str | None, mode_label: str, where: str,
+                   notes: Notes) -> str | None:
+    """The case's recorded line. The selection's recorded_on is the day the runs
+    were made in the time zone the published pages use (README.md and index.html
+    give that day); the run records and briefs keep UTC. The line leads with
+    recorded_on and adds the UTC day only when it differs, so the demo and the
+    pages give one date for one recording. Without recorded_on it falls back to
+    the UTC day, marked UTC."""
+    if not iso:
+        return None
+    utc_day = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(UTC).date()
+    if not recorded_on:
+        return f"Recorded {day_text(utc_day)} (UTC), on {mode_label}"
+    local_day = date.fromisoformat(recorded_on)
+    if abs((utc_day - local_day).days) > 1:
+        notes.fail(f"{where}: recorded on {utc_day.isoformat()} in UTC, more than a day from the "
+                   f"selection's recorded_on {recorded_on}")
+    text = f"Recorded {day_text(local_day)}"
+    if utc_day != local_day:
+        utc_text = day_text(utc_day) if utc_day.year != local_day.year else day_text(utc_day).rsplit(" ", 1)[0]
+        text += f" ({utc_text} in UTC, the clock the run records and briefs use)"
+    return f"{text}, on {mode_label}"
+
+
+def day_text(day: date) -> str:
     return f"{day.day} {MONTHS[day.month - 1]} {day.year}"
 
 
@@ -597,6 +625,111 @@ def outcome_of(rf: RunFiles) -> dict[str, Any]:
     }
 
 
+# How the page names the layer that raised a step's safety flag (the run record's raised_by).
+SAFETY_LAYER_NAMES = {"writer": "the writer", "word": "the word rule", "jev": "Jev"}
+
+
+def safety_section(role: str, rf: RunFiles, rows: list[sqlite3.Row], brief_bytes: bytes | None,
+                   notes: Notes) -> dict[str, Any] | None:
+    """What the run record's safety section says about the brief's steps to try first.
+
+    Copies, per step, the step's own words, the flag on the brief, the layer that
+    raised it and Jev's probability, all from the run record; never a judgment of
+    whether a step is a safety step. None when the run has no steps to try first and
+    no failed check to report. The record must agree with itself, with the brief's
+    steps, with the brief file's notice line, with the ledger's Jev calls and with
+    the threshold and model this build ships; any disagreement is a note.
+    """
+    from agent.nodes.safety_check import NOTICE_STATUSES, STATUSES
+    from agent.render.brief_html import SAFETY_NOTICE
+
+    run = rf.run
+    if run is None:
+        return None
+    try_first = [s for s in (run.get("brief") or {}).get("try_first") or [] if isinstance(s, dict)]
+    rec = run.get("safety")
+    if not isinstance(rec, dict):
+        if try_first:
+            notes.disagree(f"{role}: {rf.run_id}'s brief has steps to try first but its run record has no "
+                           "safety section")
+        return None
+    status = rec.get("status")
+    steps = [s for s in rec.get("steps") or [] if isinstance(s, dict)]
+    if status not in STATUSES:
+        notes.disagree(f"{role}: {rf.run_id}'s safety check status {status!r} is not a known status")
+    notice = status in NOTICE_STATUSES
+    if not steps and not notice:
+        if try_first:
+            notes.disagree(f"{role}: {rf.run_id}'s brief has {len(try_first)} steps to try first but its safety "
+                           f"section lists none (status {status!r})")
+        return None
+    if rec.get("model") != config.JEV_MODEL:
+        notes.disagree(f"{role}: {rf.run_id}'s safety check names model {rec.get('model')!r}, not the pinned "
+                       f"{config.JEV_MODEL}")
+    threshold = config.JEV_THRESHOLD
+    jev_on = "jev" in config.SAFETY_LAYERS and threshold is not None
+    if [s.get("step") for s in steps] != [s.get("step") for s in try_first]:
+        notes.disagree(f"{role}: {rf.run_id}'s safety section and its brief list different steps to try first")
+    for i, (s, t) in enumerate(zip(steps, try_first)):
+        if (s.get("final_flag") is True) != (t.get("safety_flag") is True):
+            notes.disagree(f"{role}: {rf.run_id}: step {i + 1}'s flag differs between the safety section and the brief")
+    shown = []
+    for i, s in enumerate(steps):
+        raised_by, flag, writer = s.get("raised_by"), s.get("final_flag") is True, s.get("writer_flag") is True
+        noul = s.get("jev_noul")
+        noul = None if isinstance(noul, bool) or not isinstance(noul, (int, float)) else float(noul)
+        where = f"{role}: {rf.run_id}: step {i + 1}"
+        if raised_by not in (None, *SAFETY_LAYER_NAMES):
+            notes.disagree(f"{where} names an unknown layer {raised_by!r}")
+        if flag != (raised_by is not None):
+            notes.disagree(f"{where}'s flag and the layer that raised it disagree")
+        if (raised_by == "writer") != writer:
+            notes.disagree(f"{where}: the writer's flag and the layer that raised it disagree")
+        if raised_by == "jev" and not (jev_on and noul is not None and noul >= threshold):
+            notes.disagree(f"{where} is put down to Jev, but Jev's answer {noul} is not at or above "
+                           f"the shipped threshold {threshold}")
+        if raised_by is None and jev_on and noul is not None and noul >= threshold:
+            notes.disagree(f"{where} has no flag, but Jev's answer {noul} is at or above the shipped "
+                           f"threshold {threshold}")
+        if raised_by == "word" and "word" not in config.SAFETY_LAYERS:
+            notes.disagree(f"{where} is put down to the word rule, which this build does not ship")
+        shown.append({"step": s.get("step"), "flag": flag, "raised_by": raised_by, "writer_flag": writer,
+                      "jev_probability": noul})
+    answered = sum(1 for s in shown if s["jev_probability"] is not None)
+    jev_calls = sum(1 for r in rows if r["node"] == "safety_check")
+    if jev_calls < answered:
+        notes.disagree(f"{role}: {rf.run_id}'s ledger has {jev_calls} Jev calls for {answered} answered steps")
+    if brief_bytes is not None and (SAFETY_NOTICE in brief_bytes.decode("utf-8")) != notice:
+        notes.disagree(f"{role}: {rf.run_id}'s brief file {'lacks' if notice else 'carries'} the safety notice "
+                       f"line, but the safety check status is {status!r}")
+    return {
+        "status": status,
+        "model": rec.get("model"),
+        "threshold": threshold,
+        "steps_checked": len(shown),
+        "answered": answered,
+        "notice": SAFETY_NOTICE if notice else None,
+        "steps": shown,
+        "flags_by_writer": sum(1 for s in shown if s["raised_by"] == "writer"),
+        "flags_by_jev": sum(1 for s in shown if s["raised_by"] == "jev"),
+        "jev_added": [{"step": s["step"], "jev_probability": s["jev_probability"]}
+                      for s in shown if s["raised_by"] == "jev" and not s["writer_flag"]],
+    }
+
+
+def safety_takeaway(case: dict[str, Any]) -> str:
+    """The sentence the takeaway gains when Jev added a flag or the safety check failed; else empty."""
+    safety = case.get("safety") or {}
+    out = ""
+    added = safety.get("jev_added") or []
+    if added:
+        out += (f" Jev raised a safety flag the writer left off, on {count(len(added), 'step', 'steps')} "
+                "to try first.")
+    if safety.get("notice"):
+        out += " The automatic safety check failed on this run, so the brief carries its notice line."
+    return out
+
+
 def label_nra_searched(nra: dict[str, Any], trail: list[dict[str, Any]], rf: RunFiles) -> None:
     sent = {t.get("query") for t in trail if t["tool"] == "search" and t["status"] == "sent"}
     sent |= {e.get("query") for e in rf.lookups if e.get("tool") == "search" and e.get("status") != "blocked"}
@@ -687,6 +820,12 @@ def load_selection(path: Path) -> dict[str, Any]:
             raise BuildError(f"also_count names a role the selection does not use: {role}")
         for run_id in extra:
             safe_run_id(run_id)
+    recorded_on = sel.get("recorded_on")
+    if recorded_on is not None:
+        try:
+            date.fromisoformat(str(recorded_on))
+        except ValueError:
+            raise BuildError(f"recorded_on {recorded_on!r} is not a date such as 2026-09-30") from None
     return sel
 
 
@@ -1128,6 +1267,7 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
         html_name = Path(run.get("html_path") or "").name
         if html_name and html_name != src.name:
             notes.fail(f"{role}: the run record's brief is {html_name}, not {src.name}")
+    safety = safety_section(role, rf, rows, ctx["briefs"].get(rf.run_id), notes)
 
     case: dict[str, Any] = {
         "id": f"c{index + 1}",
@@ -1137,8 +1277,8 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
         "records_label": SYNTHETIC_RECORDS_LABEL if synthetic_records else None,
         "records": property_records(role, rf, repo_root, notes) if synthetic_records else None,
         "run_id": rf.run_id,
-        "recorded": (f"Recorded {long_date(recorded)}, on {MODE_LABELS.get(mode, mode + ' mode')}"
-                     if recorded else None),
+        "recorded": recorded_label(recorded, ctx.get("recorded_on"), MODE_LABELS.get(mode, mode + " mode"),
+                                   f"{role}: {rf.run_id}", notes),
         "button": button,
         "title": title,
         "compare_with": None,
@@ -1156,6 +1296,7 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
                                             "confirmed_candidates": 0, "try_first_steps": 0, "sources": [],
                                             "no_reliable_answer": None},
         "brief": brief,
+        "safety": safety,
         "numbers": numbers,
         "also_count": None,
         "warnings": [],
@@ -1418,7 +1559,7 @@ VERBATIM_KEYS = frozenset({
     "reason", "classifier_verdict", "evidence", "brief_quote", "found", "why_insufficient", "why_shown",
     "symptom", "query", "queries", "searched_instead", "source_title", "stop_reason",
     "manufacturer", "model", "serial", "manufacture_date", "value", "confirmed_code",
-    "summary", "statement", "terms",
+    "summary", "statement", "terms", "step",
 })
 
 
@@ -1673,6 +1814,7 @@ def build(args: argparse.Namespace) -> int:
         "report": {"runs": {}},
         "current_build": current, "superseded": superseded_builds(data_dir),
         "first_question_run": sel["roles"]["hot_tub_code_first"],
+        "recorded_on": sel.get("recorded_on"),
     }
 
     for role, rf in runs.items():
@@ -1728,7 +1870,7 @@ def build(args: argparse.Namespace) -> int:
         nsm["also_count"] = {"runs": rows, "no_reliable_answer": nra_count, "total": len(rows)}
 
     for case in cases:
-        case["takeaway"] = takeaway(case, by_role)
+        case["takeaway"] = takeaway(case, by_role) + safety_takeaway(case)
 
     if notes.errors:
         raise BuildError("build checks failed:\n  " + "\n  ".join(notes.errors))

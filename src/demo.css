@@ -437,3 +437,18 @@ a.ext, .ext { overflow-wrap: anywhere; }
 }
 .cut-mark { font-family: var(--font-sans); font-size: 0.8125rem; font-style: italic; color: var(--text-muted); white-space: nowrap; }
 .exact-note { margin: var(--space-4) 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+
+/* ===========================================================================
+   The safety check step: each step to try first, Jev's probability and the
+   flag on the brief. The flag badge carries its words, not color alone.
+   =========================================================================== */
+
+.safety-table tbody th { font-weight: 400; color: var(--text-body); }
+.safety-table td { white-space: nowrap; }
+.badge-flag {
+  background: var(--warning-tint); color: var(--warning-text);
+  border-color: var(--warning-line); border-left: 4px solid var(--warning-bar);
+}
+@media (max-width: 40rem) {
+  .safety-table td { white-space: normal; }
+}

@@ -14,7 +14,7 @@
  "searches": 1,
  "fetches": 0,
  "tavily_credits": 1,
- "cost_usd": 0.02,
+ "cost_usd": 0.02006,
  "latency_s": 10.0,
  "generated_at": "2026-09-20T10:04:00+00:00",
  "grounding": [],
@@ -41,7 +41,21 @@
     "origin": "search"
    }
   ],
-  "no_reliable_answer": null
+  "no_reliable_answer": null,
+  "try_first": [
+   {
+    "step": "Turn off the synthetic unit at its breaker",
+    "detail": "Synthetic step",
+    "safety_flag": true,
+    "source_index": 0
+   },
+   {
+    "step": "Check the synthetic thermostat setting",
+    "detail": "Synthetic step",
+    "safety_flag": false,
+    "source_index": 0
+   }
+  ]
  },
  "graph_edges": {
   "written": 2,
@@ -53,6 +67,34 @@
  "sc11": {
   "result": "pass",
   "run_cap_usd": 0.15,
-  "run_total_usd": 0.02
+  "run_total_usd": 0.02006
+ },
+ "safety": {
+  "model": "jev-1.13.0",
+  "question_hash": "34fb2f3b18541662",
+  "reason": "Jev answered every step",
+  "status": "ran",
+  "steps": [
+   {
+    "final_flag": true,
+    "jev_error": null,
+    "jev_noul": 0.98,
+    "raised_by": "writer",
+    "step": "Turn off the synthetic unit at its breaker",
+    "step_sha256": "678683480bdd1505077f45e1d07c64d076209fba32c36fa8714c36bc7effab73",
+    "word_rule": false,
+    "writer_flag": true
+   },
+   {
+    "final_flag": false,
+    "jev_error": null,
+    "jev_noul": 0.12,
+    "raised_by": null,
+    "step": "Check the synthetic thermostat setting",
+    "step_sha256": "b44d252cffcd404c14c5485c2af3df6057596e622a9343793336c5c85a85b2c4",
+    "word_rule": false,
+    "writer_flag": false
+   }
+  ]
  }
 }

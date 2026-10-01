@@ -1182,3 +1182,80 @@ no keys, in normal and gate mode; all 1,105 planted bugs are caught.
 
 **Cost:** $0. Nothing is committed; the SC12b recordings stay untracked until
 Roanuk approves the privacy diff.
+
+---
+
+## The demo re-recorded on the build with the safety check, 30 September 2026
+
+Roanuk asked for the recorded demo to be re-recorded on the new build, and
+typed "proceed" after a preflight of every batch. The demo's cases are the same
+runs as the refusal, repeat question and plate tests, so those were run again
+too, and the published numbers for them move to this build.
+
+**Decided:**
+- **65. The build fingerprint covers the agent's runtime code only.** It now
+  leaves out the demo tooling and the evaluation harness under
+  `agent/safety_eval/`, whose committed labels change whenever labels are
+  imported. Before this, run records and the demo builder computed the build
+  differently and could never match.
+- **66. A repeat is compared only with a first lookup from its own build,**
+  never with an SC12a, SC12b or plates run.
+- **67. The 18 September build's results leave the published pages.** Its run
+  records, evaluation records, recordings, briefs, lookup logs, graph and
+  registry (89 files) moved to
+  `data/superseded/2026-09-30-build-839b1854a0aaf25e/`; nothing was deleted,
+  and the ledger still counts its spend. Its published briefs under
+  `briefs/v2/` are replaced by the new ones. Its numbers stay here, in the
+  entries above, as history. Build 839b1854a0aaf25e had no known defect; it is
+  replaced because the demo now shows the build that ships.
+
+**Measured, build da738a1559ced359, Claude Haiku 4.5 with Tavily and Jev:**
+- The invented model was refused three times out of three, each time by the
+  model, with 5 searches each, for $0.0311, $0.0451 and $0.0270.
+- Repeat questions: the FLO repeat used 0 searches and $0.0082 in 4.3 seconds,
+  against 3 searches, $0.0435 and 28.7 seconds for its first lookup. The vague
+  "not heating" question took the graph plus a top up of 2 searches for
+  $0.0226. The Trane first lookup used 5 searches, $0.0431 and 25.8 seconds;
+  the new symptom on the same unit took a top up of 2 searches for $0.0207.
+- The clear plate was read exactly; the blurry plate's model, serial and date
+  were marked unreadable.
+- With the seeded hot tub's synthetic records attached, the FLO question used
+  0 searches, $0.0067 and 5.5 seconds, and the brief cited the earlier service
+  record and the unit's age.
+- The safety check ran on every brief that had steps. The writer, under the
+  revised instruction, flagged the breaker steps itself. Jev raised one flag
+  the writer left off, on "Run the spa for a few minutes without the filter
+  installed" (0.87). The three readers labeled the same step, with a different
+  detail, not a safety step in SC12a; this one was not labeled. The demo shows
+  it as Jev's flag and says nothing more.
+
+**Cost:** $0.2536 and 31 Tavily credits. The build has spent $1.3321 of its $5
+cap and 141 of its 300 Tavily credits.
+
+---
+
+## The re-recorded demo and pages, published, 30 September 2026
+
+The demo is rebuilt from the re-recorded runs (build da738a1559ced359) and now
+shows the safety check on every case that has steps to try first: how many
+steps Jev answered and, for each flagged step, whether the writer or Jev set
+the flag, with Jev's answer. It never says which steps are safety steps. The
+teardown and README carry this build's numbers. A fact check, a house style
+review and a demo check raised 18 problems, each checked by a second reader,
+and all were fixed.
+
+**Worth recording:**
+- Under decision 67 the teardown no longer describes the unflagged breaker
+  step that started this work, since it came from the replaced build; it keeps
+  the general reason a check in code was needed. The history is in the entries
+  above.
+- The runs were made in the evening of 30 September, US Eastern time, which is
+  early on 1 October in UTC, the clock the run records use. The demo gives both.
+- SC12a's labeled set is fixed by its items file and its lock. Its pool G was
+  built partly from `briefs/v2/`, whose briefs are now the new build's;
+  re-deriving pool G would give a different set, so it is not re-derived.
+
+**Final checks on this tree:** 2,649 tests pass, with the network blocked and
+no keys, in normal and gate mode; all 1,136 planted bugs are caught.
+
+**Cost:** $0.

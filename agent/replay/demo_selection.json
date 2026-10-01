@@ -1,23 +1,23 @@
 {
   "format": 1,
   "data_status": "rerun",
-  "note": "The recorded v2 demo's runs, by role: the fixed build rerun of 18 September 2026. Built with agent/replay/build_demo.py, which refuses any run whose own records name another build.",
-  "build_id": "839b1854a0aaf25e",
-  "recorded_on": "2026-09-18",
+  "note": "The recorded v2 demo's runs, by role: the re-record on the build with the safety check (Jev checks every step to try first), made on 30 September 2026. Built with agent/replay/build_demo.py, which refuses any run whose own records name another build.",
+  "build_id": "da738a1559ced359",
+  "recorded_on": "2026-09-30",
   "roles": {
-    "hot_tub_code_first": "t-267045726dd04118",
-    "hot_tub_code_repeat": "t-274c71d4e47f481e",
-    "hot_tub_vague": "t-43ffbe945ce64f29",
-    "ac_first": "t-32b097b6a454440e",
-    "ac_new_symptom": "t-a6cc7b63e63b41d0",
-    "no_such_model": "t-ea3dc31aae684e5a",
-    "blurry_plate": "t-d3f71b57c5c048f4",
-    "hot_tub_with_history": "t-550f902f22f846d5"
+    "hot_tub_code_first": "t-f3a9466b85c84f0b",
+    "hot_tub_code_repeat": "t-9d92b1f1d1d44b7f",
+    "hot_tub_vague": "t-86a2271093f9495a",
+    "ac_first": "t-c702f1d53c7c442a",
+    "ac_new_symptom": "t-57bec10bc10f4c93",
+    "no_such_model": "t-88e2f7a26b49464a",
+    "blurry_plate": "t-49809b07ac4b4af4",
+    "hot_tub_with_history": "t-bbad96be657444a5"
   },
   "also_count": {
     "no_such_model": [
-      "t-34c911e1f5384a68",
-      "t-cf986eb8dda9472d"
+      "t-370bc4256e1b4ef5",
+      "t-673aec872a904788"
     ]
   },
   "compare": {

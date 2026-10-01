@@ -21,6 +21,10 @@ every check passes. A missing denylist is a failure, not a skip.
    its records step, its numbers and its brief caption (the fixtures carry the
    label and src/demo.js shows it in each place).
 7. A rerun build names no superseded build or run anywhere.
+8. The safety check is shown: every live case whose brief has steps to try first
+   carries the run record's safety section with one row per step, every flagged
+   row names the layer that raised it, a failed check carries the brief's notice
+   line (and the brief file has it), and src/demo.js draws the safety step.
 """
 
 from __future__ import annotations
@@ -131,12 +135,49 @@ def check(site: Path, denylist: list[str] | None = None) -> list[str]:
             if needle not in demo_js:
                 problems.append(f"label: src/demo.js does not show the synthetic records label on the {where}")
 
+    # 8. the safety check, from the run record, wherever a brief has steps to try first
+    problems += safety_problems(site, demo, demo_js)
+
     # 7. no superseded build or run named anywhere in a rerun build
     if demo.get("data_status") == "rerun":
         forbidden = set(build_demo.KNOWN_SUPERSEDED_BUILDS)
         if Path(config.DATA_DIR).is_dir():
             forbidden |= build_demo.superseded_ids(Path(config.DATA_DIR))
         problems += [f"superseded: {h}" for h in build_demo.superseded_hits(site, forbidden, files)]
+    return problems
+
+
+def safety_problems(site: Path, demo: dict, demo_js: str) -> list[str]:
+    """Check 8: the safety display is present and says only what the run recorded."""
+    from agent.render.brief_html import SAFETY_NOTICE
+
+    problems: list[str] = []
+    shown = False
+    for case in demo.get("cases") or []:
+        steps = (case.get("outcome") or {}).get("try_first_steps") or 0
+        safety = case.get("safety")
+        if steps and not safety:
+            problems.append(f"safety: case {case.get('id')} has {steps} steps to try first but no safety check shown")
+            continue
+        if not safety:
+            continue
+        shown = True
+        rows = safety.get("steps") or []
+        if steps and len(rows) != steps:
+            problems.append(f"safety: case {case.get('id')} shows {len(rows)} safety rows for {steps} steps to try first")
+        for i, row in enumerate(rows):
+            if row.get("flag") and row.get("raised_by") not in build_demo.SAFETY_LAYER_NAMES:
+                problems.append(f"safety: case {case.get('id')} step {i + 1} is flagged with no layer named")
+        if safety.get("notice") not in (None, SAFETY_NOTICE):
+            problems.append(f"safety: case {case.get('id')}'s notice line is not the brief's notice line")
+        share = (case.get("brief") or {}).get("share")
+        if safety.get("notice") and share and (site / share).is_file() \
+                and SAFETY_NOTICE not in (site / share).read_text(encoding="utf-8"):
+            problems.append(f"safety: case {case.get('id')} shows the notice line but its brief file lacks it")
+    if shown:
+        for needle in ("function stepSafety", "stepSafety(c), stepBrief(c)", "Jev raised a flag the writer left off"):
+            if needle not in demo_js:
+                problems.append(f"safety: src/demo.js does not draw the safety check ({needle!r} missing)")
     return problems
 
 

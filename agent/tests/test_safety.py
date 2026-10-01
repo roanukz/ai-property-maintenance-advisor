@@ -201,16 +201,14 @@ def test_raise_only_through_run_rules(specs, active, words, threshold, status) -
 
 
 def test_published_miss_is_flagged_by_the_shipped_configuration() -> None:
-    """Run t-267045726dd04118's step list (a tracked fixture copied from the
-    published brief, since its draft lives only under data/) through the rules
-    as shipped, with Jev's recorded 0.98 for the breaker step, flags that step
-    and puts it first.
+    """Run t-267045726dd04118's step list (a tracked fixture whose steps were
+    copied from that run's brief while it was published, before it was
+    withdrawn on 30 September 2026) through the rules as shipped, with Jev's
+    recorded 0.98 for the breaker step, flags that step and puts it first.
 
     Mutation: safety_words_published_no_breaker_power (the word list loses
     "breaker" and "power" while the Jev threshold rises above 0.98)."""
-    published = (config.REPO_ROOT / PUBLISHED_MISS["published_brief"]).read_text(encoding="utf-8")
     for s in PUBLISHED_MISS["steps"]:
-        assert f"<strong>{s['step']}</strong>" in published and s["detail"] in published
         assert s["safety_flag"] is False  # the writer flagged nothing
     missed = next(s for s in PUBLISHED_MISS["steps"] if s["step"] == PUBLISHED_MISS["missed_step"])
     signals = signals_for({(missed["step"], missed["detail"]): PUBLISHED_MISS["jev_recorded"]["noul"]})

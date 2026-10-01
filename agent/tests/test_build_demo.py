@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -70,6 +71,19 @@ class Env:
 
     def fixtures(self) -> dict:
         return build_demo.parse_fixtures((self.out / "src" / "fixtures.js").read_text(encoding="utf-8"))
+
+
+def with_steps(record: dict, steps: list[dict]) -> None:
+    """Give a run record's brief these steps to try first, with a safety section that
+    agrees: no Jev answer recorded, so no flag and no ledger row is needed."""
+    record["brief"]["try_first"] = steps
+    record["safety"] = {
+        "model": config.JEV_MODEL, "question_hash": "34fb2f3b18541662",
+        "status": "not_recorded" if steps else "skipped",
+        "reason": "the cassette recorded no safety check for this draft" if steps else "the draft has no try_first steps",
+        "steps": [{"final_flag": False, "jev_error": None, "jev_noul": None, "raised_by": None, "step": s["step"],
+                   "step_sha256": "0" * 64, "word_rule": False, "writer_flag": False} for s in steps],
+    }
 
 
 @pytest.fixture
@@ -398,11 +412,11 @@ def test_repeat_takeaway_says_when_the_brief_was_thinner(env: Env) -> None:
     step = {"step": "Check water level", "detail": "Synthetic step", "safety_flag": False, "source_index": 0}
     first_rel = f"runs/{sel['roles']['hot_tub_code_first']}.json"
     first = env.json(first_rel)
-    first["brief"]["try_first"] = [step, step]
+    with_steps(first, [step, step])
     env.write(first_rel, first)
     repeat_rel = f"runs/{sel['roles']['hot_tub_code_repeat']}.json"
     repeat = env.json(repeat_rel)
-    repeat["brief"]["try_first"] = []
+    with_steps(repeat, [])
     env.write(repeat_rel, repeat)
     assert env.build() == 0
     by_role = {c["role"]: c for c in env.fixtures()["cases"]}
@@ -410,7 +424,7 @@ def test_repeat_takeaway_says_when_the_brief_was_thinner(env: Env) -> None:
     assert "The brief was thinner, though: it listed none of the 2 steps to try first" in case["takeaway"]
     assert [col["try_first_steps"] for col in case["compare_with"]["columns"]] == [2, 0]
     # With the same number of steps, nothing is said.
-    repeat["brief"]["try_first"] = [step, step]
+    with_steps(repeat, [step, step])
     env.write(repeat_rel, repeat)
     shutil.rmtree(env.out)
     assert env.build() == 0
@@ -443,3 +457,167 @@ def test_installed_demo_names_the_search_limit_and_compares_steps() -> None:
         text = " ".join(page.read_text(encoding="utf-8").split())
         assert "the cap blocked" not in text, page.name
         assert "a fixed limit on searches and page fetches, both enforced in code" in text, page.name
+
+
+# ---------------------------------------------------------------------------
+# The safety check (Jev checks every step to try first; it can add a flag, never remove one)
+# ---------------------------------------------------------------------------
+
+AC_NEW = "t-5a00000000000005"
+
+
+def test_safety_check_is_shown_from_the_run_record(env: Env) -> None:
+    """Each case whose brief has steps to try first carries its run record's safety
+    section: steps answered, and per step the flag, the layer that raised it and Jev's
+    probability. Jev's flag the writer left off and a failed check are said in the
+    takeaway. Mutations build_demo_jev_added_dropped, build_demo_safety_takeaway_silent,
+    build_demo_safety_notice_dropped and build_demo_safety_raised_by_dropped."""
+    from agent.render.brief_html import SAFETY_NOTICE
+
+    assert env.build() == 0
+    assert check_demo.check(env.out, env.denylist()) == []
+    by_role = {c["role"]: c for c in env.fixtures()["cases"]}
+    vague = by_role["hot_tub_vague"]
+    sf = vague["safety"]
+    assert (sf["status"], sf["answered"], sf["steps_checked"], sf["notice"]) == ("ran", 2, 2, None)
+    assert sf["threshold"] == config.JEV_THRESHOLD and sf["model"] == config.JEV_MODEL
+    assert [(x["flag"], x["raised_by"], x["jev_probability"]) for x in sf["steps"]] == [(True, "jev", 0.87),
+                                                                                        (False, None, 0.14)]
+    assert sf["jev_added"] == [{"step": "Run the synthetic spa with the filter out for a few minutes",
+                                "jev_probability": 0.87}]
+    assert vague["takeaway"].endswith(" Jev raised a safety flag the writer left off, on 1 step to try first.")
+    ac = by_role["ac_first"]["safety"]
+    assert (ac["flags_by_writer"], ac["flags_by_jev"], ac["jev_added"]) == (1, 0, [])
+    assert ac["steps"][0]["raised_by"] == "writer" and ac["steps"][0]["jev_probability"] == 0.98
+    assert "Jev raised" not in by_role["ac_first"]["takeaway"]
+    new = by_role["ac_new_symptom"]
+    assert new["safety"]["notice"] == SAFETY_NOTICE
+    assert (new["safety"]["status"], new["safety"]["answered"]) == ("partial", 1)
+    assert new["safety"]["steps"][0]["jev_probability"] is None
+    assert "the brief carries its notice line" in new["takeaway"]
+    # No steps to try first, no safety display; the halted plate has no run record at all.
+    for role in ("hot_tub_code_first", "hot_tub_code_repeat", "no_such_model", "blurry_plate"):
+        assert by_role[role]["safety"] is None, role
+
+
+@pytest.mark.parametrize("planted, message", [
+    pytest.param("below_threshold", "is not at or above the shipped threshold", id="below_threshold"),
+    pytest.param("brief_flag_differs", "flag differs between the safety section and the brief", id="brief_flag_differs"),
+    pytest.param("notice_missing", "lacks the safety notice line", id="notice_missing"),
+    pytest.param("no_section", "has steps to try first but its run record has no safety section", id="no_section"),
+])
+def test_safety_record_that_disagrees_fails_the_build(env: Env, capsys: pytest.CaptureFixture[str],
+                                                      planted: str, message: str) -> None:
+    """The safety display must agree with the run record, the brief and the shipped
+    threshold, or nothing is written. Mutations build_demo_safety_threshold_unchecked,
+    build_demo_safety_brief_flag_unchecked, build_demo_safety_notice_unchecked and
+    build_demo_safety_section_optional."""
+    if planted == "notice_missing":
+        brief = env.data / "briefs" / f"{AC_NEW}.html"
+        brief.write_text(brief.read_text(encoding="utf-8").replace("An automatic safety check did not run", "A"),
+                         encoding="utf-8")
+    else:
+        record = env.json(f"runs/{VAGUE}.json")
+        if planted == "below_threshold":
+            record["safety"]["steps"][0]["jev_noul"] = 0.3
+        elif planted == "brief_flag_differs":
+            record["brief"]["try_first"][0]["safety_flag"] = False
+        else:
+            del record["safety"]
+        env.write(f"runs/{VAGUE}.json", record)
+    assert env.build() == 1
+    assert message in capsys.readouterr().err
+    assert not env.out.exists()
+
+
+def test_check_demo_requires_the_safety_display(env: Env) -> None:
+    """A built page whose case has steps to try first but no safety display, or whose
+    script does not draw it, fails the checker. Mutations check_demo_safety_case_unchecked
+    and check_demo_safety_script_unchecked."""
+    assert env.build() == 0
+    fixtures = env.out / "src" / "fixtures.js"
+    original = fixtures.read_text(encoding="utf-8")
+    demo = build_demo.parse_fixtures(original)
+    vague = next(c for c in demo["cases"] if c["role"] == "hot_tub_vague")
+    vague["safety"] = None
+    fixtures.write_text(original.split("window.ADVISOR_DEMO = ", 1)[0] + "window.ADVISOR_DEMO = "
+                        + json.dumps(demo, indent=2, ensure_ascii=False) + ";\n", encoding="utf-8")
+    problems = check_demo.check(env.out, env.denylist())
+    assert any("has 2 steps to try first but no safety check shown" in p for p in problems), problems
+
+    fixtures.write_text(original, encoding="utf-8")
+    js = env.out / "src" / "demo.js"
+    js.write_text(js.read_text(encoding="utf-8").replace("stepSafety(c), stepBrief(c)", "stepBrief(c)"),
+                  encoding="utf-8")
+    problems = check_demo.check(env.out, env.denylist())
+    assert any("does not draw the safety check" in p for p in problems), problems
+
+
+def test_installed_demo_shows_the_safety_check() -> None:
+    """The installed page: every case whose brief has steps to try first shows its safety
+    check; the vague case says plainly that Jev raised a flag the writer left off, from its
+    run record; the page lists the check under New in version 2, linked to that case; the
+    script draws the step and judges no step itself. Mutations installed_demo_safety_dropped,
+    demo_page_safety_bullet_dropped and demo_js_safety_step_not_drawn."""
+    demo = build_demo.parse_fixtures((ROOT / "src" / "fixtures.js").read_text(encoding="utf-8"))
+    by_role = {c["role"]: c for c in demo["cases"]}
+    for case in demo["cases"]:
+        steps = (case.get("outcome") or {}).get("try_first_steps") or 0
+        assert bool(case.get("safety")) == bool(steps), case["role"]
+        if steps:
+            assert len(case["safety"]["steps"]) == steps, case["role"]
+    vague = by_role["hot_tub_vague"]
+    added = vague["safety"]["jev_added"]
+    assert len(added) == 1 and vague["id"] == "c3"
+    assert "Jev raised a safety flag the writer left off" in vague["takeaway"]
+    flagged = [x for x in vague["safety"]["steps"] if x["flag"]]
+    assert [(x["step"], x["raised_by"], x["writer_flag"]) for x in flagged] == [(added[0]["step"], "jev", False)]
+    for page in (ROOT / "tool.html", ROOT / "agent" / "replay" / "demo_page.html"):
+        text = " ".join(page.read_text(encoding="utf-8").split())
+        bullet = text.split('<h2 id="newTitle">New in version 2</h2>', 1)[1].split("</ul>", 1)[0]
+        assert "can add a safety flag, never remove one" in bullet, page.name
+        assert ('<a href="#c1">See case 1</a>, where Jev agrees with both of the writer\'s flags, and '
+                '<a href="#c3">case 3</a>, with the one flag Jev added that the writer left off.') in bullet, page.name
+    js = (ROOT / "src" / "demo.js").read_text(encoding="utf-8")
+    assert "stepSafety(c), stepBrief(c)" in js and "Jev raised a flag the writer left off" in js
+    assert "This page does not judge which steps are safety steps." in js
+
+
+def test_recorded_line_gives_the_selection_day_and_the_utc_day_when_they_differ(
+        env: Env, capsys: pytest.CaptureFixture[str]) -> None:
+    """The recorded line leads with the selection's recorded_on, the day the published
+    pages give, and adds the runs' UTC day only when it differs; a recorded_on more than
+    a day from the runs fails the build. Mutations build_demo_recorded_on_ignored and
+    build_demo_recorded_on_far_day_accepted."""
+    assert env.build() == 0
+    demo = env.fixtures()
+    live = [c["recorded"] for c in demo["cases"] if c["recorded"]]
+    assert live and all(r.startswith("Recorded 20 September 2026, on ") for r in live), live
+    assert demo["build"]["recorded"] == live[0]
+    sel = env.sel()
+    sel["recorded_on"] = "2026-09-19"
+    env.write_sel(sel)
+    shutil.rmtree(env.out)
+    assert env.build() == 0
+    live = [c["recorded"] for c in env.fixtures()["cases"] if c["recorded"]]
+    assert live and all(r.startswith("Recorded 19 September 2026 (20 September in UTC, the clock the "
+                                     "run records and briefs use), on ") for r in live), live
+    sel["recorded_on"] = "2026-09-10"
+    env.write_sel(sel)
+    shutil.rmtree(env.out)
+    assert env.build() != 0
+    assert "more than a day from the selection's recorded_on 2026-09-10" in capsys.readouterr().err
+
+
+def test_installed_demo_recorded_date_is_the_selection_day() -> None:
+    """The installed demo gives the day in demo_selection.json's recorded_on, the day
+    README.md and index.html give for the same runs. Mutation
+    demo_selection_recorded_on_moved."""
+    sel = json.loads((ROOT / "agent" / "replay" / "demo_selection.json").read_text(encoding="utf-8"))
+    day = date.fromisoformat(sel["recorded_on"])
+    want = f"Recorded {day.day} {build_demo.MONTHS[day.month - 1]} {day.year}"
+    demo = build_demo.parse_fixtures((ROOT / "src" / "fixtures.js").read_text(encoding="utf-8"))
+    recorded = [c["recorded"] for c in demo["cases"] if c["recorded"]] + [demo["build"]["recorded"]]
+    assert len(recorded) > 1
+    for line in recorded:
+        assert line.startswith((want + ",", want + " (")), line

@@ -1817,6 +1817,71 @@ the log wins.
 4. The labels come from three model readers, not people. No human labeled any
    item, so every recall and precision figure here is against model labels.
 
+### 10.12 The demo re-recorded on the build with the safety check (30 September 2026)
+
+Roanuk asked to re-record the recorded demo on the build with the Jev safety
+check, so that no published page reports build `839b1854a0aaf25e`. DECISION-LOG
+is the record; where this section and the log differ, the log wins.
+
+**The fingerprint change.** `build_info.build_id()` now leaves out
+`build_info.EXCLUDED`: the demo tooling (`replay/build_demo.py`,
+`replay/check_demo.py`, `replay/demo_selection.json`) and everything under
+`agent/safety_eval/` (the SC12a and SC12b scorer, pools, wordings and labels).
+Neither runs inside a question, so editing them no longer makes the same agent
+look like another build. The demo builder reads `build_id()` itself
+(`build_demo.DEMO_TOOLING` is now derived from `EXCLUDED`), so the run records
+and the demo agree on the build. Under this definition the agent is build
+`da738a1559ced359`, the `build_id` of every run below. SC12b's runs carry
+`9a64835e86a5a6c8`: the same agent graph code, fingerprinted under the older
+definition that counted the demo tooling and `agent/safety_eval/`. SC7b now
+compares each repeat only with a first lookup from the same build, never with
+an SC12a, SC12b or plates run.
+
+**The move.** Before the first live call, build `839b1854a0aaf25e`'s material
+moved to `data/superseded/2026-09-30-build-839b1854a0aaf25e/`; its `MOVED.txt`
+lists all 89 files: the run records, recordings, copy logs, captures, briefs,
+lookups and eval records of its 11 live runs, the three summaries of 18
+September, `graph.json` (its sha256 before the move is recorded there),
+`graph.drops.jsonl` and the registry files. The re-record started from an empty
+graph. The ledger is never deleted, so it keeps that build's spend. 10.9's rerun
+table is now history: the results below replace it on every published page,
+and DECISION-LOG keeps the old numbers.
+
+**Runs by demo role** (all `cheap`, build `da738a1559ced359`; costs from the
+run records, times are the run records' `latency_s`):
+
+| Role | Run | Result |
+|---|---|---|
+| `hot_tub_code_first` | `t-f3a9466b85c84f0b` | ok, grounding verified; FLO with the clear plate photo; research (row 5), 3 searches, 3 fetches, $0.0435, 28.7 s; wrote 1 `HAS_CODE` edge; 4 try first steps, the two that switch power at the breaker flagged by the writer (Jev 0.98 and 0.96) |
+| `hot_tub_code_repeat` | `t-9d92b1f1d1d44b7f` | graph (row 1), 0 searches, $0.0082, 4.3 s; 0 try first steps against the first lookup's 4, so the safety check skipped |
+| `hot_tub_vague` | `t-86a2271093f9495a` | graph plus top up (row 4: 0 verified documented causes), 2 searches, 1 fetch, $0.0226, 15.7 s; the top up limit blocked 1 search and 1 fetch; the only candidate is the stored FLO code, unconfirmed; Jev raised a flag on "Run the spa for a few minutes without the filter installed" at 0.87, which the writer left off; the three readers labeled the same step not a safety step when it carried a different detail; this version, whose detail speaks of heating resuming, was not labeled |
+| `ac_first` | `t-c702f1d53c7c442a` | ok; research (row 5), 5 searches, 3 fetches, $0.0431, 25.8 s; wrote 6 `DOCUMENTED_CAUSE` edges and dropped 3 (not in page text, too short, cause words not in the span); 4 try first steps, none flagged by the writer or by Jev (highest 0.37) |
+| `ac_new_symptom` | `t-57bec10bc10f4c93` | graph plus top up (row 4: 6 verified causes, classifier unsure), 2 searches, 1 fetch, $0.0207, 15.6 s; the limit blocked 2 searches and 3 fetches; all 3 candidates came from search, no stored cause used; the breaker step flagged by the writer (Jev 0.98) |
+| `no_such_model` | `t-88e2f7a26b49464a`, also counted `t-370bc4256e1b4ef5` and `t-673aec872a904788` | 3 of 3 `no_reliable_answer`, every one `refusal_origin` `model`; 5 searches each; $0.0311, $0.0451, $0.0270; 19.1 s, 18.7 s, 15.0 s; every trail reached the maker's documentation |
+| `blurry_plate` | `t-49809b07ac4b4af4` | E2: model, serial and date null and unreadable in the raw and final reading, $0.0028. The clear plate, E1 (not a demo case), is `t-4924dcdfd5af4cb1`: read exactly, every field high confidence, $0.0029 |
+| `hot_tub_with_history` | `t-bbad96be657444a5` | history plus graph (row 1), 0 searches, $0.0067, 5.5 s; cites the synthetic `service:svc-0001`; age from the synthetic install date 2021-06-10; quotes the synthetic warranty terms; the two power steps flagged by the writer (Jev 0.98 and 0.95) |
+
+Derived figures: the FLO repeat cost 0.19 of its first lookup and took 0.15 of
+its time; the two top ups cost 0.52 (hot tub) and 0.48 (air conditioner) of
+their first lookups. SC7b repeats used 0, 2 and 2 searches against first
+lookups of 3, 3 and 5. The writer flagged all 5 steps that switch power at a
+breaker; Jev scored them 0.95 to 0.98 and raised one flag of its own. No Jev
+call failed and no brief shows the notice line.
+
+**Spend.** The 11 runs cost $0.2536 and 31 Tavily credits. Every run passed
+SC11; the most expensive, a refusal, cost $0.0451. Build total from the ledger:
+$1.3321 of $5 and 141 of 300 credits.
+
+**What now reports this build.** SC3b, SC7b and plates report build
+`da738a1559ced359`: `data/eval/summary-sc3b-20261001T020732Z.json` (3 of 3),
+`summary-sc7b-20261001T020829Z.json` (repeat search range 0 to 2, limit 2) and
+`summary-plates-20261001T020937Z.json`, each passed with no problems and no
+superseded runs. SC12b still reports `9a64835e86a5a6c8`, and SC12a is tied to
+its lock and `jev-1.13.0`, not to a build. `index.html` and `README.md` report
+these numbers and link `briefs/v2/<run>.html` for the new runs, which the demo
+builder writes; `published_manifest.json` is regenerated after the demo is
+installed.
+
 ---
 
 ## 11. Risks, unknowns, and contradictions with the PRD

@@ -6,7 +6,7 @@
     <title>AI Property Maintenance Advisor: Recorded Demo v2</title>
     <meta
       name="description"
-      content="A recorded walkthrough of the upgraded tool: it reads an equipment data plate, waits for the owner to confirm, researches with a spending cap, remembers what it verified, uses the property's own records, and returns a cited service brief or says there is no reliable answer. Every case replays one recorded live run."
+      content="A recorded walkthrough of the upgraded tool: it reads an equipment data plate, waits for the owner to confirm, researches with a spending cap, remembers what it verified, uses the property's own records, checks each step to try first for safety, and returns a cited service brief or says there is no reliable answer. Every case replays one recorded live run."
     />
     <meta property="og:title" content="AI Property Maintenance Advisor: Recorded Demo v2" />
     <meta property="og:description" content="Eight cases replayed from recorded live runs: the first question, the same question answered from memory, a made up model the tool refuses to answer, and a blurry plate it will not guess at. Makes no API call." />
@@ -73,6 +73,15 @@
               <a href="#c1">See case 1</a>, <a href="#c6">case 6</a>.
             </li>
             <li>
+              Every step to try first gets a safety check. After the brief is
+              drafted, Jev, a judgment model from TypeSafe, checks each step
+              and can add a safety flag, never remove one, so a flag the writer
+              set always stays.
+              <a href="#c1">See case 1</a>, where Jev agrees with both of the
+              writer's flags, and <a href="#c3">case 3</a>, with the one flag
+              Jev added that the writer left off.
+            </li>
+            <li>
               It can use the property's own records. With the unit's service
               history attached, the brief says when this has happened before
               and states the unit's age, worked out by code from its install
@@ -93,7 +102,8 @@
             <strong>Nothing on this page calls an API or loads anything from another site.</strong>
             Each case replays one recorded live run, named by its run ID, and
             shows the brief file that run wrote, unedited. In those runs Claude
-            read the plate and wrote the brief, and Tavily ran the web searches.
+            read the plate and wrote the brief, Tavily ran the web searches,
+            and Jev, from TypeSafe, checked each step to try first.
             Every number on the page comes from a live run named next to it, and nothing is estimated.
           </p>
         </div>

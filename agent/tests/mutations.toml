@@ -9335,3 +9335,139 @@ search = '''        if not recording.is_file():'''
 replace = '''        if False:'''
 tests = ["agent/tests/test_safety_eval.py::test_sc12b_refuses_when_an_input_recording_is_missing"]
 why = "a recorded input filed under data/superseded/ refuses SC12b with the path named, never a crash"
+
+# ---------------------------------------------------------------------------
+# The demo re-recorded on the build with the safety check: the safety display
+# (build_demo.safety_section, check_demo check 8, demo.js stepSafety)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "build_demo_jev_added_dropped"
+file = "agent/replay/build_demo.py"
+search = '''                      for s in shown if s["raised_by"] == "jev" and not s["writer_flag"]],'''
+replace = '''                      for s in shown if False],'''
+tests = ["agent/tests/test_build_demo.py::test_safety_check_is_shown_from_the_run_record"]
+why = "the vague case must say plainly that Jev raised a flag the writer left off"
+
+[[mutation]]
+id = "build_demo_safety_takeaway_silent"
+file = "agent/replay/build_demo.py"
+search = '''        out += (f" Jev raised a safety flag the writer left off, on {count(len(added), 'step', 'steps')} "
+                "to try first.")'''
+replace = '''        out += ""'''
+tests = ["agent/tests/test_build_demo.py::test_safety_check_is_shown_from_the_run_record"]
+why = "the takeaway says when Jev added a flag the writer left off"
+
+[[mutation]]
+id = "build_demo_safety_notice_dropped"
+file = "agent/replay/build_demo.py"
+search = '''        "notice": SAFETY_NOTICE if notice else None,'''
+replace = '''        "notice": None,'''
+tests = ["agent/tests/test_build_demo.py::test_safety_check_is_shown_from_the_run_record"]
+why = "a failed safety check shows the brief's notice line"
+
+[[mutation]]
+id = "build_demo_safety_raised_by_dropped"
+file = "agent/replay/build_demo.py"
+search = '''        shown.append({"step": s.get("step"), "flag": flag, "raised_by": raised_by, "writer_flag": writer,'''
+replace = '''        shown.append({"step": s.get("step"), "flag": flag, "raised_by": None, "writer_flag": writer,'''
+tests = ["agent/tests/test_build_demo.py::test_safety_check_is_shown_from_the_run_record"]
+why = "each flagged step names the layer that raised it, the writer or Jev"
+
+[[mutation]]
+id = "build_demo_safety_threshold_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''        if raised_by == "jev" and not (jev_on and noul is not None and noul >= threshold):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_build_demo.py::test_safety_record_that_disagrees_fails_the_build[below_threshold]"]
+why = "a flag put down to Jev must carry an answer at or above the threshold the build ships"
+
+[[mutation]]
+id = "build_demo_safety_brief_flag_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''        if (s.get("final_flag") is True) != (t.get("safety_flag") is True):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_build_demo.py::test_safety_record_that_disagrees_fails_the_build[brief_flag_differs]"]
+why = "the safety display must match the flags the brief itself shows"
+
+[[mutation]]
+id = "build_demo_safety_notice_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''    if brief_bytes is not None and (SAFETY_NOTICE in brief_bytes.decode("utf-8")) != notice:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_build_demo.py::test_safety_record_that_disagrees_fails_the_build[notice_missing]"]
+why = "a failed check's notice line must be in the brief file the page frames"
+
+[[mutation]]
+id = "build_demo_safety_section_optional"
+file = "agent/replay/build_demo.py"
+search = '''        if try_first:
+            notes.disagree(f"{role}: {rf.run_id}'s brief has steps to try first but its run record has no "'''
+replace = '''        if False:
+            notes.disagree(f"{role}: {rf.run_id}'s brief has steps to try first but its run record has no "'''
+tests = ["agent/tests/test_build_demo.py::test_safety_record_that_disagrees_fails_the_build[no_section]"]
+why = "a brief with steps to try first and no safety record cannot be shown as checked"
+
+[[mutation]]
+id = "check_demo_safety_case_unchecked"
+file = "agent/replay/check_demo.py"
+search = '''        if steps and not safety:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_requires_the_safety_display"]
+why = "check 8: a case with steps to try first must show its safety check"
+
+[[mutation]]
+id = "check_demo_safety_script_unchecked"
+file = "agent/replay/check_demo.py"
+search = '''        for needle in ("function stepSafety", "stepSafety(c), stepBrief(c)", "Jev raised a flag the writer left off"):'''
+replace = '''        for needle in ():'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_requires_the_safety_display"]
+why = "check 8: src/demo.js must draw the safety step"
+
+[[mutation]]
+id = "installed_demo_safety_dropped"
+file = "src/fixtures.js"
+search = '''            "raised_by": "jev",'''
+replace = '''            "raised_by": null,'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_shows_the_safety_check"]
+why = "the installed vague case shows Jev's flag as Jev's, from its run record"
+
+[[mutation]]
+id = "demo_page_safety_bullet_dropped"
+file = "agent/replay/demo_page.html"
+search = '''              and can add a safety flag, never remove one, so a flag the writer'''
+replace = '''              and can add a safety flag, so a flag the writer'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_shows_the_safety_check"]
+why = "New in version 2 names the safety check and says it never removes a flag"
+
+[[mutation]]
+id = "demo_js_safety_step_not_drawn"
+file = "src/demo.js"
+search = '''stepNra(c), stepCompare(c), stepSafety(c), stepBrief(c), stepNumbers(c)].filter(Boolean);'''
+replace = '''stepNra(c), stepCompare(c), stepBrief(c), stepNumbers(c)].filter(Boolean);'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_shows_the_safety_check"]
+why = "the page draws the safety step for every case that has one"
+
+[[mutation]]
+id = "build_demo_recorded_on_ignored"
+file = "agent/replay/build_demo.py"
+search = '''        "recorded": recorded_label(recorded, ctx.get("recorded_on"), MODE_LABELS.get(mode, mode + " mode"),'''
+replace = '''        "recorded": recorded_label(recorded, None, MODE_LABELS.get(mode, mode + " mode"),'''
+tests = ["agent/tests/test_build_demo.py::test_recorded_line_gives_the_selection_day_and_the_utc_day_when_they_differ"]
+why = "the demo's recorded date is the selection's recorded_on, the day the published pages give, not the UTC day alone"
+
+[[mutation]]
+id = "build_demo_recorded_on_far_day_accepted"
+file = "agent/replay/build_demo.py"
+search = '''    if abs((utc_day - local_day).days) > 1:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_build_demo.py::test_recorded_line_gives_the_selection_day_and_the_utc_day_when_they_differ"]
+why = "a recorded_on more than a day from the runs' UTC day fails the build"
+
+[[mutation]]
+id = "demo_selection_recorded_on_moved"
+file = "agent/replay/demo_selection.json"
+search = '''  "recorded_on": "2026-09-30",'''
+replace = '''  "recorded_on": "2026-10-01",'''
+tests = ["agent/tests/test_build_demo.py::test_installed_demo_recorded_date_is_the_selection_day"]
+why = "the installed demo gives the day in the selection's recorded_on, the day README.md and index.html give"

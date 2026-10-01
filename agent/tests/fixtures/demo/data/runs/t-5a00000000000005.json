@@ -15,7 +15,7 @@
  "searches": 1,
  "fetches": 0,
  "tavily_credits": 1,
- "cost_usd": 0.015,
+ "cost_usd": 0.01506,
  "latency_s": 9.0,
  "generated_at": "2026-09-20T10:05:00+00:00",
  "grounding": [],
@@ -42,7 +42,21 @@
     "origin": "search"
    }
   ],
-  "no_reliable_answer": null
+  "no_reliable_answer": null,
+  "try_first": [
+   {
+    "step": "Switch off the synthetic outdoor unit at its disconnect",
+    "detail": "Synthetic step",
+    "safety_flag": true,
+    "source_index": 0
+   },
+   {
+    "step": "Rinse the synthetic outdoor coil",
+    "detail": "Synthetic step",
+    "safety_flag": false,
+    "source_index": 0
+   }
+  ]
  },
  "graph_edges": {
   "written": 0,
@@ -54,6 +68,34 @@
  "sc11": {
   "result": "pass",
   "run_cap_usd": 0.15,
-  "run_total_usd": 0.015
+  "run_total_usd": 0.01506
+ },
+ "safety": {
+  "model": "jev-1.13.0",
+  "question_hash": "34fb2f3b18541662",
+  "reason": "Jev failed on 1 of 2 steps (timeout)",
+  "status": "partial",
+  "steps": [
+   {
+    "final_flag": true,
+    "jev_error": "timeout",
+    "jev_noul": null,
+    "raised_by": "writer",
+    "step": "Switch off the synthetic outdoor unit at its disconnect",
+    "step_sha256": "602e0050d99d3fd80a2c3bb40c6fd424f12e0c80c9f88028d47a3058a1d9cb31",
+    "word_rule": false,
+    "writer_flag": true
+   },
+   {
+    "final_flag": false,
+    "jev_error": null,
+    "jev_noul": 0.22,
+    "raised_by": null,
+    "step": "Rinse the synthetic outdoor coil",
+    "step_sha256": "9034e434f2da2fd5b6de7ade136cb401ace9e993e509704881837a98ac6cd831",
+    "word_rule": false,
+    "writer_flag": false
+   }
+  ]
  }
 }

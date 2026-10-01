@@ -54,5 +54,12 @@
   "result": "pass",
   "run_cap_usd": 0.15,
   "run_total_usd": 0.03
+ },
+ "safety": {
+  "model": "jev-1.13.0",
+  "question_hash": "34fb2f3b18541662",
+  "reason": "the draft has no try_first steps",
+  "status": "skipped",
+  "steps": []
  }
 }
