@@ -12,8 +12,9 @@ call anything (`safety.raise_flags`).
   status "skipped", no call. A draft with no steps is skipped the same way.
 - Every call answered: "ran". Some failed: "partial"; all failed: "failed".
   A failure (SafetyCheckError of any kind but "not_recorded") leaves that step
-  with no Jev probability, so the word rule and the writer's flag still apply,
-  the run record says why, and the brief shows the notice line.
+  with no Jev probability, so the writer's flag still applies, the word rule
+  backs it up (as a production layer, or as the fallback of decision 68), the
+  run record says why, and the brief shows the notice line.
 - A replay whose cassette recorded no answer for any step: "not_recorded".
   Missing from a cassette is not a failure and shows no notice line.
 

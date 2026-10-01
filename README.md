@@ -105,8 +105,9 @@ remembers. Its source is in `agent/`.
 - **A safety check outside the writer.** Jev, a judgment model from TypeSafe,
   reads each step to try first and answers how likely it is to be a safety step
   (electrical, heat or gas). It can raise a safety flag the writing model left
-  off, never clear one, and never add a step. If the check fails, the brief says
-  so in one line.
+  off, never clear one, and never add a step. If a Jev call fails, a fixed list of safety words (the tuned word rule,
+  described below) can still flag that step, and the brief says in one line
+  that the check did not run.
 - **Spend capped in code.** Every paid call is reserved in a ledger before it is
   made: $0.15 per brief and $5 for the whole build, and every paid command shows
   its planned calls and cost and waits for a typed "proceed".
@@ -144,7 +145,7 @@ were real safety steps.
 | The brief is self contained and escaped | Pass | Nothing loads from outside the page, all model text is escaped, and a legacy mode reproduces the four published v1 briefs byte for byte. |
 | Spend stays under the caps | Pass, live | All 11 live runs of the re-recorded evaluation stayed under $0.15 (the highest was $0.0451, a refusal), and so did the ten SC12b lookups (the highest was $0.0589). The 11 re-recorded runs cost $0.2536 and 31 Tavily credits. The safety step work of 29 and 30 September cost $0.4878. The whole build, counting every live run on every build, stands at $1.3321 of $5 and 141 of its 300 Tavily credits. |
 | Safety steps are flagged, on a fixed labeled set (SC12a) | Measured, live: the choice rule picked Jev, which flagged 30 of 31 held out safety steps | 345 steps, labeled before any scoring: sentences from maker and dealer documentation and steps the tool wrote in earlier briefs. Three model readers, not people, labeled each one blind; they agreed on 338 of 345. The set was split into a tune half (170) and a held out half (175, with 31 safety steps); each check's settings were chosen on the tune half and locked in a file before the held out half was scored, once. Held out, against the 31 safety steps: the word rule as published (breaker, power, heat) flagged 20 (recall 0.645, precision 0.714); the word rule tuned on the tune half (it drops the bare word heat and adds wire, panel, door, disconnect, electrical, jumper and box), 22 (0.710, 0.647); Jev flagging when its answer, a probability from 0 to 1, is 0.51 or higher, 30 (0.968, 0.732); the tuned word rule plus Jev, 30 (0.968, 0.600). The held out half has no steps the tool wrote, so the writing model is measured by SC12b below. The choice rule, written before any result, drops a candidate (tuned word rule, Jev, or the tuned word rule plus Jev) below precision 0.60, then takes the highest recall, then the higher precision: all three stayed, Jev and the tuned word rule plus Jev tied on recall, and Jev had the higher precision, so Jev ships at 0.51. The tuned word list did not hold up: precision 0.955 on its tune half, 0.647 held out. 855 Jev calls, $0.0216. |
-| Every safety step in new live briefs is flagged (SC12b) | Pass, live: 14 of 14 | Ten first lookups in cheap mode on 30 September 2026 (build `9a64835e86a5a6c8`), five with the hot tub FLO question (the clear plate photo and "panel shows FLO") and five with the air conditioner's fan question ("outdoor unit runs but the fan does not spin"). Their briefs held 31 steps; the same three model readers called 14 of them safety steps, and all 14 were flagged, with 2 false flags (16 flagged). The writing model, under the revised instruction that spells out which steps count, flagged all 14 by itself with no false flag. Jev flagged the same 14 and added the two false flags, both fan blade steps, so it caught nothing the writer missed. The tuned word rule, which is not shipped, also flagged all 14, with 2 false flags on other steps (14 of 16). There is no clean comparator for the writer before the revised instruction, so no before and after comparison is reported. The sample is small: 14 safety steps from two inputs, mostly breaker steps, so the lower end of recall's 95% interval is 0.78; SC12a's held out half is the stronger evidence for Jev itself. $0.4662 and 47 Tavily credits. |
+| Every safety step in new live briefs is flagged (SC12b) | Pass, live: 14 of 14 | Ten first lookups in cheap mode on 30 September 2026 (build `9a64835e86a5a6c8`), five with the hot tub FLO question (the clear plate photo and "panel shows FLO") and five with the air conditioner's fan question ("outdoor unit runs but the fan does not spin"). Their briefs held 31 steps; the same three model readers called 14 of them safety steps, and all 14 were flagged, with 2 false flags (16 flagged). The writing model, under the revised instruction that spells out which steps count, flagged all 14 by itself with no false flag. Jev flagged the same 14 and added the two false flags, both fan blade steps, so it caught nothing the writer missed. The tuned word rule, which now ships only as the backup for a failed Jev call, also flagged all 14, with 2 false flags on other steps (14 of 16). There is no clean comparator for the writer before the revised instruction, so no before and after comparison is reported. The sample is small: 14 safety steps from two inputs, mostly breaker steps, so the lower end of recall's 95% interval is 0.78; SC12a's held out half is the stronger evidence for Jev itself. $0.4662 and 47 Tavily credits. |
 
 Latency had no target. Live briefs that researched from scratch took 25.8 and
 28.7 s, and refusals 15.0 to 19.1 s. Briefs answered from the graph alone took 4.3
@@ -155,9 +156,20 @@ switch power at a breaker, and Jev scored each 0.95 or higher. Jev raised one
 flag the writer left off, on a step to run the spa for a few minutes with the
 filter out to see whether heating resumes (0.87): a step the three readers
 labeled not a safety step when it carried a different detail; this version,
-whose detail speaks of heating resuming, was not labeled. With Jev alone
-shipped, a failed check falls back to the writer's own flags and a notice line,
-not to the word rule; whether it should is an open question.
+whose detail speaks of heating resuming, was not labeled.
+
+With Jev alone shipped, the tuned word rule now backs up any step whose Jev call
+fails: it can add a flag to that step, never remove one, and the brief still
+shows the notice line. Held out, the tuned word rule caught 22 of 31 safety
+steps (recall 0.710) at precision 0.647, against 30 of 31 (0.968) at 0.732 for
+Jev and 20 of 31 at 0.714 for the published list. The published list was not
+one of the choice rule's candidates; the tuned list was picked on 1 October,
+after the held out scores were known, in the rule's order: both have precision
+0.60 or higher, and the tuned list has the higher recall. The recorded demo
+replays build `da738a1559ced359`, and the fallback, added afterward, changes
+only what happens when a check fails; none of the demo's checks failed, so the
+demo is unaffected. No live run used the build with the backup, so it is shown
+working only by the offline tests.
 
 Every test is paired with a planted bug in `agent/tests/mutations.toml` that it
 must catch, and all 1,136 are caught (30 September 2026, on the code of build

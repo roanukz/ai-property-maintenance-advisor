@@ -9471,3 +9471,120 @@ search = '''  "recorded_on": "2026-09-30",'''
 replace = '''  "recorded_on": "2026-10-01",'''
 tests = ["agent/tests/test_build_demo.py::test_installed_demo_recorded_date_is_the_selection_day"]
 why = "the installed demo gives the day in the selection's recorded_on, the day README.md and index.html give"
+
+# ---------------------------------------------------------------------------
+# The word fallback for failed Jev calls (decision 68): safety.py, pipeline.py
+# and config.py (test_safety.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "word_fallback_off_in_pipeline"
+file = "agent/rules/pipeline.py"
+search = '''                                word_fallback=config.SAFETY_WORD_FALLBACK)'''
+replace = '''                                word_fallback=False)'''
+tests = ["agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice"]
+why = "run_rules never passes the fallback switch, so a failed check falls back to nothing"
+
+[[mutation]]
+id = "word_fallback_config_off"
+file = "agent/config.py"
+search = '''SAFETY_WORD_FALLBACK = True'''
+replace = '''SAFETY_WORD_FALLBACK = False'''
+tests = ["agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice"]
+why = "the shipped configuration has no word fallback"
+
+[[mutation]]
+id = "word_fallback_without_word"
+file = "agent/rules/safety.py"
+search = '''        elif word and key in failed:'''
+replace = '''        elif key in failed:'''
+tests = ["agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice"]
+why = "the fallback flags every failed step, not only the word rule's"
+
+[[mutation]]
+id = "word_fallback_on_answered_steps"
+file = "agent/rules/safety.py"
+search = '''        elif word and key in failed:'''
+replace = '''        elif word and fallback_on and (signals or {}).get("status") in FAILED_STATUSES:'''
+tests = [
+    "agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice",
+    "agent/tests/test_safety.py::test_word_fallback_never_for_not_recorded_skipped_disabled_or_answered",
+]
+why = "in a partial or failed check the fallback flags every word step, including steps Jev answered"
+
+[[mutation]]
+id = "word_fallback_named_word"
+file = "agent/rules/safety.py"
+search = '''            raised_by = WORD_FALLBACK'''
+replace = '''            raised_by = "word"'''
+tests = [
+    "agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice",
+    "agent/tests/test_safety.py::test_word_fallback_only_while_jev_ships_and_the_word_rule_does_not",
+]
+why = "provenance credits the word rule as a production layer, not the fallback"
+
+[[mutation]]
+id = "word_fallback_clears"
+file = "agent/rules/safety.py"
+search = '''        if raised_by is not None:
+            step["safety_flag"] = True'''
+replace = '''        if fallback_on and key in failed:
+            step["safety_flag"] = word
+        elif raised_by is not None:
+            step["safety_flag"] = True'''
+tests = [
+    "agent/tests/test_safety.py::test_raise_only_through_run_rules",
+    "agent/tests/test_safety.py::test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice",
+]
+why = "the fallback sets a failed step's flag to the word rule's answer, clearing the writer's flag"
+
+[[mutation]]
+id = "word_fallback_ignores_status"
+file = "agent/rules/safety.py"
+search = '''    if signals.get("status") not in FAILED_STATUSES:
+        return set()
+'''
+replace = ''''''
+tests = ["agent/tests/test_safety.py::test_word_fallback_never_for_not_recorded_skipped_disabled_or_answered"]
+why = "a check that ran, was not recorded, was skipped or was disabled falls back too"
+
+[[mutation]]
+id = "word_fallback_counts_not_recorded"
+file = "agent/rules/safety.py"
+search = '''        if error is not None and error != NOT_RECORDED and entry["step_sha256"] not in answered:'''
+replace = '''        if error is not None and entry["step_sha256"] not in answered:'''
+tests = ["agent/tests/test_safety.py::test_word_fallback_never_for_not_recorded_skipped_disabled_or_answered"]
+why = "a replay's missing answer counts as a failed call"
+
+[[mutation]]
+id = "word_fallback_without_threshold"
+file = "agent/rules/safety.py"
+search = '''    fallback_on = word_fallback and "jev" in active and jev_threshold is not None and "word" not in active'''
+replace = '''    fallback_on = word_fallback and "jev" in active and "word" not in active'''
+tests = ["agent/tests/test_safety.py::test_word_fallback_only_while_jev_ships_and_the_word_rule_does_not"]
+why = "Jev recorded with no threshold, so never raising, still gets a fallback"
+
+[[mutation]]
+id = "build_demo_word_fallback_unknown_layer"
+file = "agent/replay/build_demo.py"
+search = '''SAFETY_LAYER_NAMES = {"writer": "the writer", "word": "the word rule", "jev": "Jev",
+                      "word_fallback": "the word rule, for a failed Jev call"}'''
+replace = '''SAFETY_LAYER_NAMES = {"writer": "the writer", "word": "the word rule", "jev": "Jev"}'''
+tests = ["agent/tests/test_build_demo.py::test_safety_section_accepts_a_word_fallback_flag_on_a_failed_jev_call"]
+why = "a real demo build stops on a word fallback flag as an unknown layer"
+
+[[mutation]]
+id = "build_demo_word_fallback_answer_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''                and noul is None and s.get("jev_error") not in (None, "not_recorded")'''
+replace = '''                and s.get("jev_error") not in (None, "not_recorded")'''
+tests = ["agent/tests/test_build_demo.py::test_safety_section_rejects_a_word_fallback_flag_without_a_failed_jev_call[answered_with_an_error]"]
+why = "a word fallback flag on a step Jev answered passes the demo builder"
+
+[[mutation]]
+id = "build_demo_word_fallback_counts_not_recorded"
+file = "agent/replay/build_demo.py"
+search = '''                and noul is None and s.get("jev_error") not in (None, "not_recorded")'''
+replace = '''                and noul is None and s.get("jev_error") is not None'''
+tests = ["agent/tests/test_build_demo.py::test_safety_section_rejects_a_word_fallback_flag_without_a_failed_jev_call[not_recorded]"]
+why = "the demo builder takes a replay's missing answer as a failed Jev call"

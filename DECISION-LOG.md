@@ -1259,3 +1259,36 @@ and all were fixed.
 no keys, in normal and gate mode; all 1,136 planted bugs are caught.
 
 **Cost:** $0.
+
+---
+
+## A word rule backs up a failed Jev call, 1 October 2026
+
+With Jev alone shipped (decision 62), a failed Jev call left a step with only
+the writer's flag and the notice line. Roanuk chose to add a backup.
+
+**Decided:**
+- **68. The tuned word rule backs up any step whose Jev call failed.** It
+  applies only to steps whose signal carries an error, in a check whose status
+  is partial or failed; never to a step Jev answered, and never when the check
+  ran cleanly, was skipped, was turned off or had no recorded answers in
+  replay. It only raises a flag, and the notice line still shows. The run
+  record names the layer `word_fallback`. The switch is
+  `config.SAFETY_WORD_FALLBACK`.
+
+**Why the tuned list:** held out, it caught 22 of 31 safety steps at
+precision 0.647, against 20 of 31 at 0.714 for the published list. The
+published list was not one of the choice rule's candidates, so this pick was
+made on 1 October, after the held out scores were known, following the rule's
+order: both lists have precision of at least 0.60, and the tuned list has the
+higher recall. Either is weaker than Jev (30 of 31 at 0.732) on these items.
+
+**Worth recording:** no live run has used the build with the backup, and no
+recorded run has had a failed Jev call, so the backup is shown working only by
+the offline tests. The recorded demo replays build da738a1559ced359, from
+before the backup; the backup changes only what happens when a check fails,
+which none of the demo's checks did. The demo builder now names the layer if a
+future recording carries it. The replay goldens and the legacy render did not
+change.
+
+**Cost:** $0.

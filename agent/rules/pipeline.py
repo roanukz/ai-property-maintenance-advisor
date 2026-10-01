@@ -20,7 +20,9 @@
    snippet; a v1 derived replay reports "unverifiable" instead of failing.
 6. Safety flags raised (raise only, `safety.raise_flags`): the word rule
    and Jev's recorded probabilities, each only when config.SAFETY_LAYERS lets
-   it raise a flag; then safety steps first (rule 5).
+   it raise a flag, and the word rule for steps whose Jev call failed when
+   config.SAFETY_WORD_FALLBACK is on (decision 68); then safety steps first
+   (rule 5).
 7. Refusal and budget stop clearing (rule 6).
 8. happened_before must cite a loaded record of this appliance (rule 7).
 9. Registry dates: code writes the age statement (rule 8).
@@ -246,7 +248,8 @@ def run_rules(
                                   recorded_text_urls=frozenset(recorded_text_urls or ()))
     raised = safety.raise_flags(brief.get("try_first") or [], safety_signals,
                                 layers=config.SAFETY_LAYERS, words=config.SAFETY_WORDS,
-                                jev_threshold=config.JEV_THRESHOLD)
+                                jev_threshold=config.JEV_THRESHOLD,
+                                word_fallback=config.SAFETY_WORD_FALLBACK)
     safety.apply_safety_order(brief)
     clearing.clear_on_refusal(brief)
     if not brief.get("try_first"):

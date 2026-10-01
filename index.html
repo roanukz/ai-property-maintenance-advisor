@@ -77,7 +77,7 @@
           </div>
           <div class="fact">
             <span class="fact-value">$0.0451</span>
-            <span class="fact-label">The most any of the 11 live runs on build da738a1559ced359, the shipped build, cost, against a $0.15 cap per run</span>
+            <span class="fact-label">The most any of the 11 live runs on build da738a1559ced359, the build the live evaluation and demo ran on, cost, against a $0.15 cap per run</span>
           </div>
         </div>
       </div>
@@ -1131,7 +1131,8 @@
             under a revised instruction that spells out which steps count,
             flagged all 14 by itself; Jev flagged the same 14 and added two
             false flags on fan blade steps, so on these runs it caught nothing
-            the writer missed. The tuned word rule, which is not shipped, also
+            the writer missed. The tuned word rule, which now ships only as the
+            backup for a failed Jev call, also
             flagged all 14, with 2 false flags on other steps (14 of 16). There
             is no clean figure for the writer before the revised instruction, so
             no before and after comparison is reported. The safety step work
@@ -1146,12 +1147,24 @@
             not seen. The live check is small, 14 safety steps from two
             questions, mostly at a breaker, and the revised instruction alone
             caught all of them, so the held out half is the stronger evidence
-            for the check itself. With Jev alone shipped, a failed check falls
-            back to the writer's own flags and one line in the brief telling the
-            reader to treat any step at a breaker, a panel, a heater or a gas
-            valve as a safety step, not to the word rule; whether it should is
-            an open question. The recorded demo, re-recorded on the build with
-            the check, shows it at work: the writing model itself flagged all 5
+            for the check itself. With Jev alone shipped, the tuned word rule
+            now backs up any step whose Jev call fails: it can add a flag to
+            that step, never remove one, and the brief still carries the line
+            telling the reader to treat any step at a breaker, a panel, a heater
+            or a gas valve as a safety step. The backup is weaker than the check
+            it stands in for: held out, the tuned word rule caught 22 of 31
+            safety steps (recall 0.710) at precision 0.647, against 30 of 31
+            (0.968) at 0.732 for Jev. It was picked over the published list,
+            20 of 31 at 0.714, on 1 October, after the held out scores were
+            known. The published list was not one of the choice rule's
+            candidates, but the pick follows the rule's order: both lists have
+            precision 0.60 or higher, and the tuned list has the higher recall.
+            The recorded demo replays build da738a1559ced359, and the fallback,
+            added afterward, changes only what happens when a check fails; none
+            of the demo's checks failed, so the fallback raised no flag there.
+            No live run used the build with the backup, so it is shown working
+            only by the offline tests. The demo shows Jev's check at work: the
+            writing model itself flagged all 5
             steps that switch power at a breaker, and Jev scored each 0.95 or
             higher. Jev raised one flag the writer left off, on a step telling
             the reader to run the spa for a few minutes with the filter out to

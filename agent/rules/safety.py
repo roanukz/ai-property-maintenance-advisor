@@ -7,6 +7,12 @@ drops one. Jev's answers are matched to steps by the hash of the normalized
 step and detail, never by position (decision 56), so the upgrade pass, which
 revalidates the same draft, reuses them.
 
+The word fallback (decision 68): when Jev is a production layer and the word
+rule is not, the word rule backs up each step whose Jev call failed, in a
+check whose status is "partial" or "failed", and nothing else. A step Jev
+answered, and a check that ran, was not recorded, was skipped or was disabled,
+never gets a fallback flag. Like every layer it only raises.
+
 Safety flagged steps then move to the front with a stable sort, so the
 relative order within each group is the model's. The brief is reordered, never
 rejected: two recorded v1 briefs put a safety step last.
@@ -22,6 +28,12 @@ from agent.rules.step_text import step_key, word_rule
 
 # The code layers that may raise a flag; the writer's own flag always stands.
 LAYERS = ("word", "jev")
+# The provenance name of a flag the word rule raised for a failed Jev call (decision 68).
+WORD_FALLBACK = "word_fallback"
+# The check statuses in which a Jev call was attempted and failed (safety_check.NOTICE_STATUSES).
+FAILED_STATUSES = ("partial", "failed")
+# A replay's missing answer: not a failure (safety_check.NOT_RECORDED).
+NOT_RECORDED = "not_recorded"
 
 
 def safety_first(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -45,17 +57,40 @@ def jev_nouls(signals: dict[str, Any] | None) -> dict[str, float]:
     return out
 
 
+def jev_failed(signals: dict[str, Any] | None) -> set[str]:
+    """The step keys whose Jev call failed, in a check whose status is "partial" or "failed".
+
+    Empty for any other status. A step whose error is "not_recorded" did not
+    fail, and a step with an answer for its key is never counted.
+    """
+    signals = signals or {}
+    if signals.get("status") not in FAILED_STATUSES:
+        return set()
+    answered = jev_nouls(signals)
+    failed: set[str] = set()
+    for entry in signals.get("steps") or []:
+        if not isinstance(entry, dict) or not isinstance(entry.get("step_sha256"), str):
+            continue
+        error = entry.get("error")
+        if error is not None and error != NOT_RECORDED and entry["step_sha256"] not in answered:
+            failed.add(entry["step_sha256"])
+    return failed
+
+
 def raise_flags(steps: list[dict[str, Any]], signals: dict[str, Any] | None, *,
                 layers: Iterable[str], words: Iterable[str],
-                jev_threshold: float | None) -> list[dict[str, Any]]:
+                jev_threshold: float | None, word_fallback: bool = False) -> list[dict[str, Any]]:
     """Set `safety_flag` to True where a layer in `layers` fires (in place); never to False.
 
     Returns one provenance entry per step, in the order rule 5 will give the
     steps: the writer's flag, the word rule's answer, Jev's probability (None
     when no answer was recorded for the step), the final flag and the layer
-    that set it ("writer" first, then "word", then "jev"; None when unflagged).
-    The word rule and Jev are reported for every step whether or not their
-    layer may raise a flag, and Jev raises nothing while `jev_threshold` is None.
+    that set it ("writer" first, then "word", then "jev", then "word_fallback";
+    None when unflagged). The word rule and Jev are reported for every step
+    whether or not their layer may raise a flag, and Jev raises nothing while
+    `jev_threshold` is None. With `word_fallback`, while Jev is active with a
+    threshold and the word layer is not, the word rule raises a flag on a step
+    whose Jev call failed (`jev_failed`) and on no other step.
     """
     active = tuple(layers)
     unknown = [layer for layer in active if layer not in LAYERS]
@@ -63,6 +98,8 @@ def raise_flags(steps: list[dict[str, Any]], signals: dict[str, Any] | None, *,
         raise ValueError(f"unknown safety layer {unknown!r}; expected some of {LAYERS}")
     words = tuple(words)
     nouls = jev_nouls(signals)
+    fallback_on = word_fallback and "jev" in active and jev_threshold is not None and "word" not in active
+    failed = jev_failed(signals) if fallback_on else set()
     provenance: list[dict[str, Any]] = []
     for step in steps:
         writer = step.get("safety_flag") is True
@@ -76,6 +113,8 @@ def raise_flags(steps: list[dict[str, Any]], signals: dict[str, Any] | None, *,
             raised_by = "word"
         elif jev and "jev" in active:
             raised_by = "jev"
+        elif word and key in failed:
+            raised_by = WORD_FALLBACK
         else:
             raised_by = None
         if raised_by is not None:

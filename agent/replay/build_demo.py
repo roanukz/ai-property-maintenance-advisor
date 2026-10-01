@@ -626,7 +626,8 @@ def outcome_of(rf: RunFiles) -> dict[str, Any]:
 
 
 # How the page names the layer that raised a step's safety flag (the run record's raised_by).
-SAFETY_LAYER_NAMES = {"writer": "the writer", "word": "the word rule", "jev": "Jev"}
+SAFETY_LAYER_NAMES = {"writer": "the writer", "word": "the word rule", "jev": "Jev",
+                      "word_fallback": "the word rule, for a failed Jev call"}
 
 
 def safety_section(role: str, rf: RunFiles, rows: list[sqlite3.Row], brief_bytes: bytes | None,
@@ -693,6 +694,12 @@ def safety_section(role: str, rf: RunFiles, rows: list[sqlite3.Row], brief_bytes
                            f"threshold {threshold}")
         if raised_by == "word" and "word" not in config.SAFETY_LAYERS:
             notes.disagree(f"{where} is put down to the word rule, which this build does not ship")
+        if raised_by == "word_fallback" and not (
+                config.SAFETY_WORD_FALLBACK and jev_on and "word" not in config.SAFETY_LAYERS and notice
+                and noul is None and s.get("jev_error") not in (None, "not_recorded")
+                and s.get("word_rule") is True):
+            notes.disagree(f"{where} is put down to the word fallback, but its Jev call did not fail in a "
+                           "partial or failed check")
         shown.append({"step": s.get("step"), "flag": flag, "raised_by": raised_by, "writer_flag": writer,
                       "jev_probability": noul})
     answered = sum(1 for s in shown if s["jev_probability"] is not None)

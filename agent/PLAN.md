@@ -1882,6 +1882,51 @@ these numbers and link `briefs/v2/<run>.html` for the new runs, which the demo
 builder writes; `published_manifest.json` is regenerated after the demo is
 installed.
 
+### 10.13 The word fallback for failed Jev calls (decision 68, 1 October 2026)
+
+Roanuk chose to back up a failed Jev call with the word rule, which answers
+open questions 1 and 2 of 10.11. DECISION-LOG is the record; where this section
+and the log differ, the log wins.
+
+- **The switch.** `config.SAFETY_WORD_FALLBACK = True`. When Jev is a
+  production layer (in `SAFETY_LAYERS`, with `JEV_THRESHOLD` set) and the word
+  rule is not, `safety.raise_flags` lets the word rule with `SAFETY_WORDS`
+  raise a flag on each step whose Jev call failed: its signal carries an error
+  other than `not_recorded`, in a check whose status is `partial` or `failed`
+  (`safety.jev_failed`). It only raises, as every layer does, and the run
+  record names it `raised_by` `word_fallback`.
+- **Never.** A check that `ran`, was `not_recorded` (a replay with no recorded
+  answers is not a failure), was `skipped` or was `disabled` gets no fallback
+  flag, and neither does a step Jev answered. The notice line still shows
+  whenever a check is `partial` or `failed`.
+- **Which list.** The tuned list. Held out it had recall 22 of 31 at precision
+  0.647, against 20 of 31 at 0.714 for the published list, and, in the choice rule's
+  order applied after the held out scores (the published list was not one of
+  its candidates), recall ranks first among lists at precision 0.60 or more.
+- **What it leaves alone.** The recorded demo replays build
+  `da738a1559ced359`; the fallback came afterward, and none of the demo's
+  checks failed. The replay goldens and the legacy render are byte identical:
+  the replay cassettes hold no Jev answers, so their checks are
+  `not_recorded`. `safety.py`, `pipeline.py`, `safety_check.py` (its docstring) and `config.py` are runtime code,
+  so the tree's fingerprint now differs from `da738a1559ced359`.
+- **Tests** (`test_safety.py`). The raise only property now draws the fallback
+  switch and each failed step's error kind, with the fallback's own case
+  always run. Every failure kind test also runs as shipped and checks that the
+  fallback flags exactly the word rule's steps among the failed ones.
+  `test_word_fallback_never_for_not_recorded_skipped_disabled_or_answered` and
+  `test_word_fallback_only_while_jev_ships_and_the_word_rule_does_not` hold the
+  limits. Nine planted bugs, `word_fallback_*` in `mutations.toml`, are caught.
+- **The demo builder.** `build_demo.SAFETY_LAYER_NAMES` names `word_fallback`,
+  and a real build accepts a fallback flag only on a step whose Jev call failed
+  in a `partial` or `failed` check, with no answer, an error other than
+  `not_recorded` and a listed word; any other fallback flag is a note that
+  fails the build (`test_build_demo.py`, three planted bugs
+  `build_demo_word_fallback_*`).
+- **Not yet.** `src/demo.js` names only the writer, the word rule and Jev, so a
+  future recorded run with a fallback flag would show its raw layer name
+  `word_fallback`. It is a published file, left alone until the demo is next
+  installed.
+
 ---
 
 ## 11. Risks, unknowns, and contradictions with the PRD

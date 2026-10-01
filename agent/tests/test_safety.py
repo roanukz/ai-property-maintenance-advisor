@@ -15,7 +15,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
 from langgraph.runtime import Runtime
 
@@ -28,7 +28,8 @@ from agent.nodes.render import render
 from agent.nodes.validate import validate
 from agent.render.brief_html import SAFETY_NOTICE, render_brief
 from agent.rules.pipeline import run_rules
-from agent.rules.safety import LAYERS, raise_flags
+from agent.rules import safety as safety_rules
+from agent.rules.safety import LAYERS, WORD_FALLBACK, raise_flags
 from agent.rules.step_text import step_key, word_rule
 from agent.safety_judge import JudgeReply, SafetyCheckError, build_replay_judge
 from agent.state import RunContext, check_json_native
@@ -105,10 +106,14 @@ def rules(draft: dict[str, Any], signals: dict | None = None):
                      provenance=None, pass_kind="synthesize", safety_signals=signals)
 
 
-def signals_for(nouls: dict[tuple[str, str], float | None], status: str = "ran") -> dict[str, Any]:
+def signals_for(nouls: dict[tuple[str, str], float | None], status: str = "ran",
+                errors: dict[tuple[str, str], str] | None = None) -> dict[str, Any]:
+    """Signals with one entry per (step, detail); a None probability carries an error kind
+    ("timeout" unless `errors` names another)."""
+    errors = errors or {}
     return {"status": status, "reason": "test", "question_hash": QHASH, "model": config.JEV_MODEL,
             "steps": [{"step_sha256": step_key(s, d), "noul": n, "model": config.JEV_MODEL, "request_id": None,
-                       "input_tokens": None, "error": None if n is not None else "timeout"}
+                       "input_tokens": None, "error": None if n is not None else errors.get((s, d), "timeout")}
                       for (s, d), n in nouls.items()]}
 
 
@@ -155,33 +160,53 @@ _TEXTS = ["Turn off power", "Reset the breaker", "Clean the filter", "Check the 
 @settings(max_examples=60, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(
     specs=st.lists(st.tuples(st.sampled_from(_TEXTS), st.sampled_from(["", "at the breaker", "gently"]),
-                             st.booleans(), st.one_of(st.none(), st.floats(0, 1)), st.booleans()),
+                             st.booleans(), st.one_of(st.none(), st.floats(0, 1)), st.booleans(),
+                             st.sampled_from(["timeout", node.NOT_RECORDED])),
                    min_size=1, max_size=8),
     active=st.lists(st.sampled_from(LAYERS), unique=True).map(tuple),
     words=st.lists(st.sampled_from([*config.SAFETY_WORDS_PUBLISHED, "gently", "circuit"]), unique=True),
     threshold=st.one_of(st.none(), st.floats(0, 1)),
     status=st.sampled_from(node.STATUSES),
+    fallback=st.booleans(),
 )
-def test_raise_only_through_run_rules(specs, active, words, threshold, status) -> None:
-    """SC 1, raise only. No combination of layers, words, thresholds and
-    signals turns a true flag false, adds, drops or reorders steps beyond rule
-    5's stable sort, or raises a flag no active layer justifies.
+# The fallback's own case, always run: Jev alone ships, its calls failed, and a
+# writer flagged step with no listed word sits beside a word step.
+@example(specs=[("Drain the spa", "", True, None, True, "timeout"),
+                ("Reset the breaker", "", False, None, True, "timeout"),
+                ("Clean the filter", "", False, 0.1, True, "timeout")],
+         active=("jev",), words=["breaker"], threshold=0.5, status="partial", fallback=True)
+def test_raise_only_through_run_rules(specs, active, words, threshold, status, fallback) -> None:
+    """SC 1, raise only. No combination of layers, words, thresholds, signals
+    and the word fallback turns a true flag false, adds, drops or reorders
+    steps beyond rule 5's stable sort, or raises a flag no active layer (or
+    the fallback, on a step whose Jev call failed in a partial or failed
+    check) justifies.
 
-    Mutation: raise_flags_layer_clears (the word layer sets the flag to its
-    own answer, so a writer flag on a step with no listed word is cleared)."""
-    steps = [step(f"{i}. {text}", flag=writer, detail=detail) for i, (text, detail, writer, _, _) in enumerate(specs)]
-    nouls = {(s["step"], s["detail"]): noul for s, (_, _, _, noul, recorded) in zip(steps, specs) if recorded}
-    signals = signals_for(nouls, status) if nouls else None
+    Mutations: raise_flags_layer_clears (the word layer sets the flag to its
+    own answer, so a writer flag on a step with no listed word is cleared);
+    word_fallback_clears (the fallback sets a failed step's flag to the word
+    rule's answer, clearing the writer's flag)."""
+    steps = [step(f"{i}. {text}", flag=writer, detail=detail)
+             for i, (text, detail, writer, _, _, _) in enumerate(specs)]
+    nouls = {(s["step"], s["detail"]): noul for s, (_, _, _, noul, recorded, _) in zip(steps, specs) if recorded}
+    errors = {(s["step"], s["detail"]): error for s, (*_, error) in zip(steps, specs)}
+    signals = signals_for(nouls, status, errors) if nouls else None
     with mock.patch.object(config, "SAFETY_LAYERS", active), mock.patch.object(config, "SAFETY_WORDS", tuple(words)), \
-            mock.patch.object(config, "JEV_THRESHOLD", threshold):
+            mock.patch.object(config, "JEV_THRESHOLD", threshold), \
+            mock.patch.object(config, "SAFETY_WORD_FALLBACK", fallback):
         result = rules(ok_draft([dict(s) for s in steps]), signals)
     assert result.errors == []
     out = result.brief["try_first"]
+    fallback_on = fallback and "jev" in active and "word" not in active and threshold is not None \
+        and status in ("partial", "failed")
 
     def expected_flag(s: dict[str, Any]) -> bool:
-        noul = nouls.get((s["step"], s["detail"]))
+        where = (s["step"], s["detail"])
+        noul = nouls.get(where)
+        failed = where in nouls and noul is None and errors[where] != node.NOT_RECORDED
         return (s["safety_flag"] or ("word" in active and word_rule(s["step"], s["detail"], words))
-                or ("jev" in active and threshold is not None and noul is not None and noul >= threshold))
+                or ("jev" in active and threshold is not None and noul is not None and noul >= threshold)
+                or (fallback_on and failed and word_rule(s["step"], s["detail"], words)))
 
     final = [expected_flag(s) for s in steps]
     expected = [s for s, f in zip(steps, final) if f] + [s for s, f in zip(steps, final) if not f]
@@ -301,6 +326,7 @@ def test_the_judge_sees_only_appliance_step_and_detail(tmp_path, monkeypatch) ->
 WRITER_STEP = "Drain the spa before service"
 WORD_STEP = "Turn off power at the breaker"
 PLAIN_STEP = "Kill the circuit that feeds the spa"  # SYNTHETIC
+SECOND_WORD_STEP = "Unplug the heater before lifting its cover"  # SYNTHETIC; answered in the partial case
 
 
 def _failure_state() -> dict[str, Any]:
@@ -308,7 +334,7 @@ def _failure_state() -> dict[str, Any]:
             "identity": {"manufacturer": "Maker", "model": "Model 1"}, "search_trail": [], "sources": SOURCES,
             "history_hits": [], "observed_code": None, "validation_failures": 0,
             "draft": ok_draft([step(PLAIN_STEP, index=0), step(WORD_STEP, index=1),
-                               step(WRITER_STEP, flag=True, index=2)])}
+                               step(WRITER_STEP, flag=True, index=2), step(SECOND_WORD_STEP, index=0)])}
 
 
 def _through_render(state: dict[str, Any], tmp_path: Path) -> tuple[dict[str, Any], str]:
@@ -324,13 +350,21 @@ def _through_render(state: dict[str, Any], tmp_path: Path) -> tuple[dict[str, An
 @pytest.mark.parametrize("partial", [False, True])
 def test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_shows_the_notice(
         kind: str, partial: bool, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mutations: safety_failures_counted_as_not_recorded (a failed call reads
+    """Then, as shipped (Jev alone, the word fallback on, decision 68), the
+    word rule flags exactly its own steps among the failed ones and nothing
+    else: not a failed step with no listed word, not a step Jev answered.
+
+    Mutations: safety_failures_counted_as_not_recorded (a failed call reads
     as missing from a cassette, so no notice and no note); safety_notice_failed_only
-    (a partial failure shows no notice line)."""
+    (a partial failure shows no notice line); word_fallback_off_in_pipeline and
+    word_fallback_config_off (no fallback); word_fallback_without_word (every
+    failed step flagged); word_fallback_on_answered_steps (an answered word step
+    flagged); word_fallback_named_word (provenance says "word"); word_fallback_clears."""
     layers(monkeypatch, ("word", "jev"), 0.5)
-    script: dict[str, float | str] = {PLAIN_STEP: kind, WORD_STEP: kind, WRITER_STEP: kind}
+    script: dict[str, float | str] = {PLAIN_STEP: kind, WORD_STEP: kind, WRITER_STEP: kind, SECOND_WORD_STEP: kind}
     if partial:
         script[WRITER_STEP] = 0.2
+        script[SECOND_WORD_STEP] = 0.2
     judge = FakeJudge(script)
     use_judge(monkeypatch, judge)
     state = _failure_state()
@@ -339,16 +373,40 @@ def test_each_failure_kind_keeps_word_and_writer_flags_notes_the_record_and_show
     assert kind in signals["reason"]
     failed = [e for e in signals["steps"] if e["error"] is not None]
     assert {e["error"] for e in failed} == {kind} and all(e["noul"] is None for e in failed)
-    assert len(judge.calls) == 3
+    assert len(judge.calls) == 4
 
     final, html = _through_render({**state, "safety_signals": signals}, tmp_path)
-    assert flags(final["brief"]) == {WORD_STEP: True, WRITER_STEP: True, PLAIN_STEP: False}
+    assert flags(final["brief"]) == {WORD_STEP: True, WRITER_STEP: True, PLAIN_STEP: False, SECOND_WORD_STEP: True}
     assert html.count(SAFETY_NOTICE) == 1
     record = safety_record(final)
     assert record["status"] == signals["status"] and kind in record["reason"]
     by_step = {s["step"]: s for s in record["steps"]}
     assert by_step[PLAIN_STEP]["jev_error"] == kind and by_step[PLAIN_STEP]["jev_noul"] is None
     assert by_step[WORD_STEP]["raised_by"] == "word" and by_step[WRITER_STEP]["raised_by"] == "writer"
+    assert WORD_FALLBACK not in {s["raised_by"] for s in record["steps"]}  # the word rule ships here
+
+    # As shipped: Jev alone, with the word fallback.
+    assert config.SAFETY_WORD_FALLBACK is True
+    layers(monkeypatch, ("jev",), 0.5)
+    final, html = _through_render({**state, "safety_signals": signals}, tmp_path)
+    assert html.count(SAFETY_NOTICE) == 1
+    record = safety_record(final)
+    failed_keys = {e["step_sha256"] for e in failed}
+    word_failed = {s["step"] for s in record["steps"]
+                   if s["step_sha256"] in failed_keys and s["word_rule"] and not s["writer_flag"]}
+    assert word_failed == ({WORD_STEP} if partial else {WORD_STEP, SECOND_WORD_STEP})
+    assert {s["step"] for s in record["steps"] if s["raised_by"] == WORD_FALLBACK} == word_failed
+    assert flags(final["brief"]) == {WORD_STEP: True, WRITER_STEP: True, PLAIN_STEP: False,
+                                     SECOND_WORD_STEP: not partial}
+    by_step = {s["step"]: s for s in record["steps"]}
+    assert by_step[WRITER_STEP]["raised_by"] == "writer" and by_step[PLAIN_STEP]["raised_by"] is None
+    if partial:
+        assert by_step[SECOND_WORD_STEP]["jev_noul"] == 0.2 and by_step[SECOND_WORD_STEP]["raised_by"] is None
+
+    # With the fallback off, a failed check leaves the writer's flags alone.
+    monkeypatch.setattr(config, "SAFETY_WORD_FALLBACK", False)
+    final, _ = _through_render({**state, "safety_signals": signals}, tmp_path)
+    assert flags(final["brief"]) == {WORD_STEP: False, WRITER_STEP: True, PLAIN_STEP: False, SECOND_WORD_STEP: False}
 
 
 @pytest.mark.parametrize("status", node.STATUSES)
@@ -380,6 +438,66 @@ def test_not_recorded_is_not_a_failure(tmp_path: Path, monkeypatch) -> None:
     final, html = _through_render({**state, "safety_signals": signals}, tmp_path)
     assert SAFETY_NOTICE not in html
     assert safety_record(final)["status"] == "not_recorded"
+
+
+@pytest.mark.parametrize("status", ["ran", "not_recorded", "skipped", "disabled"])
+def test_word_fallback_never_for_not_recorded_skipped_disabled_or_answered(status: str, monkeypatch) -> None:
+    """As shipped (Jev alone, the word fallback on), a check that ran, was not
+    recorded, was skipped or was disabled gets no fallback flag, even on a word
+    step carrying an error; in a partial check, a word step Jev answered below
+    the threshold and a word step missing from the cassette get none either,
+    while a word step whose call failed does (decision 68).
+
+    Mutations: word_fallback_ignores_status (any status falls back);
+    word_fallback_counts_not_recorded (a replay's missing answer falls back);
+    word_fallback_on_answered_steps (an answered word step falls back)."""
+    layers(monkeypatch, ("jev",), 0.5)
+    monkeypatch.setattr(config, "SAFETY_WORD_FALLBACK", True)
+    assert safety_rules.FAILED_STATUSES == node.NOTICE_STATUSES and safety_rules.NOT_RECORDED == node.NOT_RECORDED
+    failed, answered, missing = WORD_STEP, SECOND_WORD_STEP, "Switch the breaker back on"  # SYNTHETIC
+    draft = ok_draft([step(failed), step(answered), step(missing), step(WRITER_STEP, flag=True)])
+    nouls = {(failed, ""): None, (answered, ""): 0.2, (missing, ""): None, (WRITER_STEP, ""): None}
+    errors = {(failed, ""): "timeout", (missing, ""): node.NOT_RECORDED, (WRITER_STEP, ""): "api_error"}
+    assert all(word_rule(text, "", config.SAFETY_WORDS) for text in (failed, answered, missing))
+    assert not word_rule(WRITER_STEP, "", config.SAFETY_WORDS)
+
+    result = rules(draft, signals_for(nouls, status, errors))
+    assert result.errors == []
+    assert flags(result.brief) == {failed: False, answered: False, missing: False, WRITER_STEP: True}
+    assert WORD_FALLBACK not in {p["raised_by"] for p in result.safety_provenance}
+
+    result = rules(draft, signals_for(nouls, "partial", errors))
+    assert flags(result.brief) == {failed: True, answered: False, missing: False, WRITER_STEP: True}
+    raised = {p["step_sha256"]: p["raised_by"] for p in result.safety_provenance}
+    assert raised == {step_key(failed, ""): WORD_FALLBACK, step_key(answered, ""): None,
+                      step_key(missing, ""): None, step_key(WRITER_STEP, ""): "writer"}
+
+
+def test_word_fallback_only_while_jev_ships_and_the_word_rule_does_not() -> None:
+    """The fallback stands in for Jev only when Jev may raise (active, with a
+    threshold) and the word rule is not a layer; it records "word_fallback".
+
+    Mutations: word_fallback_without_threshold (Jev recorded only, with no
+    threshold, still falls back); word_fallback_named_word."""
+    signals = signals_for({("Reset the breaker", ""): None, ("Kill the circuit", ""): None}, "failed")
+
+    def run(active: tuple[str, ...], threshold: float | None, fallback: bool) -> list[Any]:
+        steps = [step("Reset the breaker"), step("Kill the circuit")]
+        prov = raise_flags(steps, signals, layers=active, words=config.SAFETY_WORDS, jev_threshold=threshold,
+                           word_fallback=fallback)
+        return [(s["safety_flag"], p["raised_by"]) for s, p in zip(steps, prov)]
+
+    assert run(("jev",), 0.51, True) == [(True, "word_fallback"), (False, None)]
+    assert run(("jev",), 0.51, False) == [(False, None), (False, None)]
+    assert run(("jev",), None, True) == [(False, None), (False, None)]
+    assert run((), 0.51, True) == [(False, None), (False, None)]
+    assert run(("word", "jev"), 0.51, True) == [(True, "word"), (False, None)]
+    assert run(("word",), 0.51, True) == [(True, "word"), (False, None)]
+    steps = [step("Reset the breaker")]
+    prov = raise_flags(steps, signals, layers=("jev",), words=config.SAFETY_WORDS, jev_threshold=0.51,
+                       word_fallback=True)
+    assert prov == [{"step_sha256": step_key("Reset the breaker", ""), "writer_flag": False, "word_rule": True,
+                     "jev_noul": None, "final_flag": True, "raised_by": "word_fallback"}]
 
 
 @pytest.mark.parametrize("change,reason", [

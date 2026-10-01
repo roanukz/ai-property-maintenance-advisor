@@ -583,6 +583,51 @@ def test_installed_demo_shows_the_safety_check() -> None:
     assert "This page does not judge which steps are safety steps." in js
 
 
+def _fallback_run(status: str = "partial", **step: object) -> object:
+    """A run record whose one step to try first carries a word fallback flag: its Jev
+    call timed out in a partial check and the step has a listed word."""
+    from types import SimpleNamespace
+
+    entry = {"step": "Turn off the synthetic breaker", "writer_flag": False, "word_rule": True,
+             "jev_noul": None, "jev_error": "timeout", "final_flag": True, "raised_by": "word_fallback"}
+    entry.update(step)
+    run = {"brief": {"try_first": [{"step": entry["step"], "safety_flag": True}]},
+           "safety": {"status": status, "model": config.JEV_MODEL, "steps": [entry]}}
+    return SimpleNamespace(run=run, run_id="t-5a0000000000fa11")
+
+
+def test_safety_section_accepts_a_word_fallback_flag_on_a_failed_jev_call() -> None:
+    """On a real build (not stand-in), a flag the word rule raised for a Jev call that
+    failed in a partial check is a known layer and passes the record checks, and the
+    checker names its layer. Mutation build_demo_word_fallback_unknown_layer."""
+    notes = build_demo.Notes(stand_in=False)
+    shown = build_demo.safety_section("ac_new_symptom", _fallback_run(), [], None, notes)
+    assert notes.errors == [] and notes.warnings == []
+    assert shown is not None and [(x["flag"], x["raised_by"]) for x in shown["steps"]] == [(True, "word_fallback")]
+    assert "word_fallback" in build_demo.SAFETY_LAYER_NAMES
+
+
+@pytest.mark.parametrize("status, step", [
+    pytest.param("partial", {"jev_noul": 0.2, "jev_error": None}, id="answered"),
+    pytest.param("partial", {"jev_noul": 0.2}, id="answered_with_an_error"),
+    pytest.param("ran", {}, id="ran"),
+    pytest.param("partial", {"jev_error": "not_recorded"}, id="not_recorded"),
+    pytest.param("partial", {"jev_error": None}, id="no_error"),
+    pytest.param("partial", {"word_rule": False}, id="no_listed_word"),
+])
+def test_safety_section_rejects_a_word_fallback_flag_without_a_failed_jev_call(
+        status: str, step: dict) -> None:
+    """A flag put down to the word fallback on a step Jev answered, in a check that ran,
+    on a replay's missing answer, with no error, or on a step with no listed word is a
+    disagreement that fails a real build. Mutations build_demo_word_fallback_answer_unchecked
+    and build_demo_word_fallback_counts_not_recorded."""
+    notes = build_demo.Notes(stand_in=False)
+    rows = [{"node": "safety_check"}]
+    build_demo.safety_section("ac_new_symptom", _fallback_run(status, **step), rows, None, notes)
+    assert any("is put down to the word fallback, but its Jev call did not fail" in e for e in notes.errors), \
+        notes.errors
+
+
 def test_recorded_line_gives_the_selection_day_and_the_utc_day_when_they_differ(
         env: Env, capsys: pytest.CaptureFixture[str]) -> None:
     """The recorded line leads with the selection's recorded_on, the day the published
