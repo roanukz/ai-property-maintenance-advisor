@@ -1072,12 +1072,15 @@ def cmd_eval_score(args: argparse.Namespace) -> int:
         raise CliRefusal("--score only reads run records; leave out --live, --fix and --new-ledger.")
     from agent.live.eval_sc3b import load_records
 
+    records = load_records(args.which)
     firsts = None
     if args.which == "sc7b":
         from agent.live.eval_sc7b import external_first_lookups
+        from agent.live.evaluators import reported_records
 
-        firsts = external_first_lookups()
-    _, lines = eval_score(args.which, load_records(args.which), firsts, planned=True)
+        # Outside first lookups of the build whose repeats are reported (decision 35).
+        firsts = external_first_lookups(reported_records(records)["build_id"])
+    _, lines = eval_score(args.which, records, firsts, planned=True)
     for line in lines:
         print(line)
     return EXIT_OK

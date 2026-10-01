@@ -360,8 +360,23 @@ def test_live_recording_replays_grounding_from_local_page_text(live_env: Path, m
 # copies leave data out). It is read only here and not copied into the tests;
 # these tests skip on a checkout without it. The Phase 5 recording these tests
 # first used belonged to a build that was superseded, so it is no longer read.
+# Once the re-record on the Jev build files this run's build under
+# data/superseded/, its recording is read from there (the newest filing that
+# holds it); the cited pages stay in data/pages. After the re-record, point
+# PHASE5 at the new FLO first lookup's recording.
 PHASE5_DATA = Path(os.environ.get("ADVISOR_PHASE5_DATA_DIR") or config.REPO_ROOT / "data")
-PHASE5 = PHASE5_DATA / "recordings" / "live_t_267045726dd04118.json"
+PHASE5_NAME = "live_t_267045726dd04118.json"
+
+
+def _phase5_recording(data: Path) -> Path:
+    in_place = data / "recordings" / PHASE5_NAME
+    if in_place.is_file():
+        return in_place
+    filed = sorted(data.glob(f"superseded/*/recordings/{PHASE5_NAME}"))
+    return filed[-1] if filed else in_place
+
+
+PHASE5 = _phase5_recording(PHASE5_DATA)
 PHASE5_TEXTS = PHASE5.with_name(f"{PHASE5.stem}.texts.json")
 PHASE5_CITED = "https://thecoverguy.com/blogs/backyard-blast-blog/sundance-r-spas-error-codes-and-information"
 PHASE5_PAGE_SHA = "b926708a0f7ed0534707b1ed63e7730b1663e47f0252ef7713888758f15c4e9d"

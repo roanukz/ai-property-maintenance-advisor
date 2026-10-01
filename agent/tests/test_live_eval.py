@@ -26,7 +26,7 @@ import httpx2
 import pytest
 import typesafe_sdk
 
-from agent import cli, config
+from agent import build_info, cli, config
 from agent.graph import RETRY_NOT_AFFORDABLE
 from agent.replay.replay_model import ReplayChatModel
 
@@ -617,6 +617,117 @@ def test_sc7b_finds_the_phase5_first_lookup_from_its_run_record(
     for other in ("t-replaycopy", "t-laterlive", by_label["FLO repeat"]["run_id"],
                   by_label["vague symptom repeat"]["run_id"]):
         assert f"first lookup {other}" not in out
+
+
+def test_sc7b_first_lookup_is_on_the_current_build_and_never_another_suites_run(
+    live_env: Fakes, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Mutations: eval_first_lookup_any_build (a first lookup from another build is taken);
+    eval_first_lookup_counts_sc12b_runs (SC12b's live first lookups are taken as SC7b's
+    comparator); eval_first_lookup_counts_sc12a_replies (an SC12a batch's run ID is not skipped);
+    eval_first_lookup_counts_plates_runs (a plates batch's run is taken).
+
+    Live Optima 880 run records are planted under data/runs, each dated earlier than
+    the next: one from another build, one an SC12b run, one an SC12a run ID, one a
+    plates run, and last the current build's own first lookup, which must win.
+    """
+    assert _run(["eval", "sc7b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_OK
+    capsys.readouterr()
+    by_label = {r["label"]: r for r in _records("sc7b")}
+    runs = config.PAGES_DIR.parent / "runs"
+    logs = config.PAGES_DIR.parent / config.LOOKUPS_DIR.name
+    base = json.loads((runs / f"{by_label['vague symptom repeat']['run_id']}.json").read_text(encoding="utf-8"))
+    assert base["build_id"] == build_info.build_id()
+
+    def plant(run_id: str, generated_at: str, searches: int, **extra: Any) -> None:
+        (runs / f"{run_id}.json").write_text(
+            json.dumps(dict(base, run_id=run_id, mode="cheap", generated_at=generated_at, **extra)), encoding="utf-8")
+        (logs / f"{run_id}.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in _trail(*[("search", "ok")] * searches)) + "\n", encoding="utf-8")
+
+    def eval_record(suite: str, run_id: str) -> None:
+        (config.EVAL_DIR / f"{suite}-{run_id}.json").write_text(
+            json.dumps({"kind": "run", "suite": suite, "run_id": run_id, "started_at": "2026-08-01T00:00:00"}),
+            encoding="utf-8")
+
+    plant("t-otherbuild", "2026-08-01T00:00:00+00:00", 2, build_id="ffffffffffffffff")
+    plant("t-sc12bfirst", "2026-08-02T00:00:00+00:00", 6)
+    eval_record("sc12b", "t-sc12bfirst")
+    plant("t-sc12arun", "2026-08-03T00:00:00+00:00", 7)
+    replies = config.EVAL_DIR / "sc12a" / "replies"
+    replies.mkdir(parents=True)
+    (replies / "0123456789abcdef.jsonl").write_text(
+        json.dumps({"item_id": "x", "run_id": "t-sc12arun"}) + "\n", encoding="utf-8")
+    plant("t-platesrun", "2026-08-04T00:00:00+00:00", 8)
+    eval_record("plates", "t-platesrun")
+    plant("t-thisbuild", "2026-09-01T00:00:00+00:00", 4)
+    for label in ("FLO repeat", "vague symptom repeat"):
+        path = runs / f"{by_label[label]['run_id']}.json"
+        path.write_text(json.dumps(dict(json.loads(path.read_text(encoding="utf-8")),
+                                        generated_at="2000-01-01T00:00:00+00:00")), encoding="utf-8")
+
+    assert _run(["eval", "sc7b", "--score"], "", monkeypatch) == cli.EXIT_OK
+    out = capsys.readouterr().out
+    flo_line = next(line for line in out.splitlines() if line.lstrip().startswith("FLO repeat"))
+    assert "first lookup t-thisbuild used 4" in flo_line, flo_line
+    for other in ("t-otherbuild", "t-sc12bfirst", "t-sc12arun", "t-platesrun"):
+        assert f"first lookup {other}" not in out
+
+
+def test_sc7b_score_takes_outside_first_lookups_of_the_reported_build(
+    live_env: Fakes, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Mutation eval_score_outside_first_current_build: `advisor eval sc7b --score` takes the
+    current build's outside first lookup while the reported repeats are another build's.
+
+    The batch's records are rewritten to name an older build. Two live Optima 880 runs are
+    planted: that older build's first lookup, and an earlier one on the current build. The
+    repeats must be compared with their own build's.
+    """
+    assert _run(["eval", "sc7b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_OK
+    capsys.readouterr()
+    older = "0123456789abcdef"
+    for path in config.EVAL_DIR.glob("sc7b-*.json"):
+        path.write_text(json.dumps(dict(json.loads(path.read_text(encoding="utf-8")), build_id=older)),
+                        encoding="utf-8")
+    by_label = {r["label"]: r for r in _records("sc7b")}
+    runs = config.PAGES_DIR.parent / "runs"
+    logs = config.PAGES_DIR.parent / config.LOOKUPS_DIR.name
+    base = json.loads((runs / f"{by_label['vague symptom repeat']['run_id']}.json").read_text(encoding="utf-8"))
+
+    def plant(run_id: str, generated_at: str, searches: int, build: str) -> None:
+        (runs / f"{run_id}.json").write_text(json.dumps(dict(
+            base, run_id=run_id, mode="cheap", generated_at=generated_at, build_id=build)), encoding="utf-8")
+        (logs / f"{run_id}.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in _trail(*[("search", "ok")] * searches)) + "\n", encoding="utf-8")
+
+    plant("t-currentfirst", "2026-09-01T00:00:00+00:00", 4, build_info.build_id())
+    plant("t-reportedfirst", "2026-09-02T00:00:00+00:00", 3, older)
+
+    assert _run(["eval", "sc7b", "--score"], "", monkeypatch) == cli.EXIT_OK
+    out = capsys.readouterr().out
+    flo_line = next(line for line in out.splitlines() if line.lstrip().startswith("FLO repeat"))
+    assert "first lookup t-reportedfirst used 3" in flo_line, flo_line
+    assert "first lookup t-currentfirst" not in out
+
+
+def test_sc7b_takes_the_batch_first_lookup_of_the_reported_build_only() -> None:
+    """Mutation eval_first_counts_superseded_build: a superseded build's batch first lookup, the
+    earliest, is taken as the reported build's, so a rerun's repeat is compared with a first
+    lookup from another build and its own first lookup is scored as a repeat (decision 35)."""
+    key = "xr164ttr6036"
+    old_first = _sc7b_rec("f-old", "Trane XR16 first lookup", "first", key, searches=7,
+                          started="2026-09-18T00:00:00", build="build-old")
+    old_repeat = _sc7b_rec("r-old", "Trane repeat", "repeat", key, searches=2,
+                           started="2026-09-18T00:01:00", build="build-old")
+    new_first = _sc7b_rec("f-new", "Trane XR16 first lookup", "first", key, searches=5,
+                          started="2026-09-30T00:00:00", fix="re-recorded on the new build")
+    new_repeat = _sc7b_rec("r-new", "Trane repeat", "repeat", key, searches=1,
+                           started="2026-09-30T00:01:00", fix="re-recorded on the new build")
+    score = sc7b([old_first, old_repeat, new_first, new_repeat])
+    rows = {row["run_id"]: row for row in score["rows"]}
+    assert list(rows) == ["r-new"]
+    assert rows["r-new"]["first_lookup_run_id"] == "f-new" and rows["r-new"]["first_lookup_searches"] == 5
 
 
 def test_eval_score_reads_records_and_spends_nothing(live_env: Fakes, monkeypatch: pytest.MonkeyPatch,

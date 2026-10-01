@@ -344,13 +344,15 @@ def test_installed_page_text_has_no_em_or_en_dash() -> None:
     assert hits == []
 
 
-def test_advisor_build_id_matches_build_info() -> None:
-    """Mutation build_demo_fingerprint_drifts: the builder's copy of the build
-    fingerprint stops hashing the way agent/build_info.py does."""
-    assert build_demo.advisor_build_id(frozenset()) == build_info.build_id()
+def test_current_build_is_build_info_build_id() -> None:
+    """Mutation build_demo_fingerprint_drifts: the builder's current build stops being
+    build_info.build_id(), the fingerprint run records carry, so the guard would refuse
+    every new run. The demo tooling it names is what build_info leaves out."""
+    assert build_demo.current_build_id() == build_info.build_id()
+    assert build_demo.DEMO_TOOLING == {"replay/build_demo.py", "replay/check_demo.py", "replay/demo_selection.json"}
     for rel in build_demo.DEMO_TOOLING:
         assert (ROOT / "agent" / rel).is_file(), rel
-    assert build_demo.advisor_build_id() != build_info.build_id()
+        assert build_info.is_excluded(rel), rel
 
 
 # ---------------------------------------------------------------------------

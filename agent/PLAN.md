@@ -1697,7 +1697,11 @@ changes, and `test_published_files_unchanged` holds the new hashes.
   without the three demo tooling files (`build_demo.DEMO_TOOLING`), which were
   added after the rerun. The advisor code in this commit is therefore build
   `839b1854a0aaf25e`; `build_info.build_id()` over the whole of `agent/`
-  reports a different value because it counts the demo tooling.
+  reports a different value because it counts the demo tooling. (Since 30
+  September `build_info.build_id()` itself leaves out the demo tooling and
+  `agent/safety_eval/`, listed in `build_info.EXCLUDED`, and the builder calls
+  it; the fingerprint's definition changed, so builds from before then do not
+  match it.)
 - `agent/tests/test_teardown.py` holds the teardown's front matter format and
   the no dash rule for `index.html` and `tool.html`.
 - The zero API call invariant (C10) is unchanged and still tested.

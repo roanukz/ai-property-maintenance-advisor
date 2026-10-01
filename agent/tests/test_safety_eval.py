@@ -1171,6 +1171,23 @@ def _used_credits(credits: int) -> None:
                      (credits,))
 
 
+def test_sc12b_refuses_when_an_input_recording_is_missing(live_env: Fakes, monkeypatch: pytest.MonkeyPatch,
+                                                          capsys: pytest.CaptureFixture[str]) -> None:
+    """A recorded input filed away under data/superseded/ (as the re-record on the Jev build
+    files run t-267045726dd04118) refuses the paid batch with the missing path named, before
+    any key or ledger is read, instead of crashing.
+
+    Mutation: sc12b_missing_input_crashes (the missing recording raises FileNotFoundError)."""
+    _sc12b_ready(monkeypatch)
+    (config.RECORDINGS_DIR / "live_t_5678.json").unlink()
+    config.LEDGER_PATH.unlink()
+    assert _sc12b(monkeypatch, "proceed\n") == cli.EXIT_REFUSED
+    err = capsys.readouterr().err
+    assert f"the recording of t-5678, SC12b's input, is not at {config.RECORDINGS_DIR / 'live_t_5678.json'}" in err
+    assert "Nothing was spent" in err
+    assert not config.LEDGER_PATH.exists() and live_env.models == []
+
+
 def test_sc12b_refuses_a_config_the_choice_rule_did_not_pick(live_env: Fakes, monkeypatch: pytest.MonkeyPatch,
                                                               capsys: pytest.CaptureFixture[str]) -> None:
     """Default config (the word layer, Jev enabled, no threshold) is not what the held out choice

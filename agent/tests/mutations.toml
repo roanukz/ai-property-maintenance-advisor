@@ -7471,10 +7471,10 @@ why = "the page makes no network request; the builder's scan must see every kind
 [[mutation]]
 id = "build_demo_fingerprint_drifts"
 file = "agent/replay/build_demo.py"
-search = '''        digest.update(rel.encode("utf-8") + b"\0")'''
-replace = '''        digest.update(rel.encode("utf-8"))'''
-tests = ["agent/tests/test_build_demo.py::test_advisor_build_id_matches_build_info"]
-why = "the guard's current build must be build_info's fingerprint, less only the demo tooling"
+search = '''    return build_info.build_id()'''
+replace = '''    return build_info.fingerprint(config.REPO_ROOT / "agent" / "nodes")'''
+tests = ["agent/tests/test_build_demo.py::test_current_build_is_build_info_build_id"]
+why = "the guard's current build must be build_info.build_id(), the fingerprint run records carry"
 
 [[mutation]]
 id = "installed_demo_off_origin_image"
@@ -9197,3 +9197,141 @@ search = '''            "jev": (f"Jev at {config.JEV_THRESHOLD:.2f} {shipped_tag
 replace = '''            "jev": (f"Jev at config.JEV_THRESHOLD {shipped_tag('jev')}" if config.JEV_THRESHOLD is not None'''
 tests = ["agent/tests/test_safety_eval.py::test_sc12b_score_reads_like_sc12a"]
 why = "the SC12b printout names the Python constant instead of the threshold Jev was scored at"
+
+# ---------------------------------------------------------------------------
+# The build fingerprint leaves out the demo tooling and agent/safety_eval/
+# (agent/build_info.py, test_build_info.py), and SC7b's first lookups come
+# from the current build only, never from another suite's runs (test_live_eval.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "build_info_counts_safety_eval"
+file = "agent/build_info.py"
+search = '''    "safety_eval/",
+})'''
+replace = '''})'''
+tests = ["agent/tests/test_build_info.py::test_a_change_under_safety_eval_leaves_the_build_unchanged"]
+why = "importing readers' labels or editing the scorer does not change what the advisor does"
+
+[[mutation]]
+id = "build_info_counts_demo_tooling"
+file = "agent/build_info.py"
+search = '''    "replay/check_demo.py",
+'''
+replace = ''''''
+tests = ["agent/tests/test_build_info.py::test_a_change_to_the_demo_tooling_leaves_the_build_unchanged"]
+why = "installing the demo tooling must not make the runs it shows look like another build"
+
+[[mutation]]
+id = "build_info_excludes_too_much"
+file = "agent/build_info.py"
+search = '''    return any(rel.startswith(entry) if entry.endswith("/") else rel == entry for entry in excluded)'''
+replace = '''    return any(rel.startswith(entry.rstrip("/")) for entry in excluded)'''
+tests = ["agent/tests/test_build_info.py::test_a_change_to_a_runtime_file_changes_the_build"]
+why = "only the listed files and folders are left out; a runtime file beside them still counts"
+
+[[mutation]]
+id = "build_info_ignores_contents"
+file = "agent/build_info.py"
+search = '''        digest.update(path.read_bytes() + b"\0")'''
+replace = ''''''
+tests = ["agent/tests/test_build_info.py::test_a_change_to_a_runtime_file_changes_the_build"]
+why = "decision 35: an edit to the advisor's code is a new build"
+
+[[mutation]]
+id = "build_info_counts_tests"
+file = "agent/build_info.py"
+search = '''        if not path.is_file() or path.is_relative_to(tests) or "__pycache__" in path.parts:'''
+replace = '''        if not path.is_file() or "__pycache__" in path.parts:'''
+tests = ["agent/tests/test_build_info.py::test_tests_and_other_file_types_leave_the_build_unchanged"]
+why = "the tests are not the advisor; adding one is not a new build"
+
+[[mutation]]
+id = "build_info_build_id_hashes_elsewhere"
+file = "agent/build_info.py"
+search = '''    return fingerprint(Path(config.REPO_ROOT) / "agent")'''
+replace = '''    return fingerprint(Path(config.REPO_ROOT) / "agent" / "nodes")'''
+tests = ["agent/tests/test_build_info.py::test_build_id_is_the_fingerprint_of_the_repo_agent_folder"]
+why = "the build run records carry is the fingerprint of the whole advisor package"
+
+[[mutation]]
+id = "eval_first_lookup_any_build"
+file = "agent/live/eval_sc7b.py"
+search = '''        if str(record.get("build_id")) != build:
+            continue'''
+replace = '''        if False:
+            continue'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_first_lookup_is_on_the_current_build_and_never_another_suites_run"]
+why = "decision 35: a repeat is compared only with a first lookup from its own build"
+
+[[mutation]]
+id = "eval_first_lookup_counts_sc12b_runs"
+file = "agent/live/eval_sc7b.py"
+search = '''    ids = {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE, PLATES_SUITE, SC12B_SUITE)'''
+replace = '''    ids = {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE, PLATES_SUITE)'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_first_lookup_is_on_the_current_build_and_never_another_suites_run"]
+why = "SC12b's live first lookups belong to SC12b and are never SC7b's comparator"
+
+[[mutation]]
+id = "eval_first_lookup_counts_sc12a_replies"
+file = "agent/live/eval_sc7b.py"
+search = '''                ids.add(str(reply["run_id"]))'''
+replace = '''                pass'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_first_lookup_is_on_the_current_build_and_never_another_suites_run"]
+why = "an SC12a batch is an eval run, never an outside first lookup"
+
+[[mutation]]
+id = "eval_first_lookup_counts_plates_runs"
+file = "agent/live/eval_sc7b.py"
+search = '''    ids = {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE, PLATES_SUITE, SC12B_SUITE)'''
+replace = '''    ids = {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE, SC12B_SUITE)'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_first_lookup_is_on_the_current_build_and_never_another_suites_run"]
+why = "a plates batch's run is an eval run, never an outside first lookup"
+
+[[mutation]]
+id = "build_info_excludes_jev"
+file = "agent/build_info.py"
+search = '''    "replay/demo_selection.json",
+'''
+replace = '''    "replay/demo_selection.json",
+    "safety_judge.py",
+'''
+tests = ["agent/tests/test_build_info.py::test_excluded_is_exactly_the_demo_tooling_and_safety_eval",
+         "agent/tests/test_build_info.py::test_a_change_to_a_runtime_file_changes_the_build"]
+why = "decision 35: the Jev safety check is part of the advisor, so an edit to it is a new build"
+
+[[mutation]]
+id = "eval_sc7b_imports_safety_eval"
+file = "agent/live/eval_sc7b.py"
+search = '''    replies = config.EVAL_DIR / config.SC12A_REPLIES_SUBDIR
+'''
+replace = '''    from agent.safety_eval import harness
+
+    replies = harness.replies_dir()
+'''
+tests = ["agent/tests/test_build_info.py::test_the_sc7b_first_lookup_filter_imports_nothing_the_build_leaves_out"]
+why = "the SC7b comparator filter must not depend on code the build fingerprint leaves out"
+
+[[mutation]]
+id = "eval_score_outside_first_current_build"
+file = "agent/cli.py"
+search = '''        firsts = external_first_lookups(reported_records(records)["build_id"])'''
+replace = '''        firsts = external_first_lookups()'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_score_takes_outside_first_lookups_of_the_reported_build"]
+why = "decision 35: reported repeats are compared with a first lookup of their own build"
+
+[[mutation]]
+id = "eval_first_counts_superseded_build"
+file = "agent/live/evaluators.py"
+search = '''    firsts = _first_counts([*first_lookups, *(r for r in reported if r.get("role") == "first")])'''
+replace = '''    firsts = _first_counts([*first_lookups, *(r for r in records if r.get("role") == "first")])'''
+tests = ["agent/tests/test_live_eval.py::test_sc7b_takes_the_batch_first_lookup_of_the_reported_build_only"]
+why = "decision 35: a superseded build's batch first lookup is never the reported build's"
+
+[[mutation]]
+id = "sc12b_missing_input_crashes"
+file = "agent/live/sc12b.py"
+search = '''        if not recording.is_file():'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_safety_eval.py::test_sc12b_refuses_when_an_input_recording_is_missing"]
+why = "a recorded input filed under data/superseded/ refuses SC12b with the path named, never a crash"

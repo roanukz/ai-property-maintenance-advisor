@@ -243,10 +243,11 @@ Checks, each a build failure:
   both exist they must agree), that build equals `selection.build_id` and the current build, and it is not a
   superseded build (listed in an eval summary, filed under `data/superseded/`, or known to the builder).
   Otherwise the builder refuses and prints why; `--stand-in` builds anyway and stamps the label.
-* The current build is `agent/build_info.py`'s fingerprint of `agent/` computed without the demo tooling
-  (`replay/build_demo.py`, `replay/check_demo.py`, `replay/demo_selection.json`), so installing or editing the
-  tooling does not make the runs look like another build. A test holds the builder's copy of the fingerprint to
-  `build_info.build_id()`.
+* The current build is `build_info.build_id()`, the fingerprint every run record carries. It leaves out the
+  demo tooling (`replay/build_demo.py`, `replay/check_demo.py`, `replay/demo_selection.json`) and the safety
+  evaluation under `safety_eval/` (`build_info.EXCLUDED`), so installing or editing the tooling, or importing
+  readers' labels, does not make the runs look like another build. The builder calls `build_info.build_id()`
+  itself, so there is one definition of a build.
 * A rerun build names no superseded build or run anywhere in its output.
 * Each also_count run must have asked the same question (symptom and unit) as the main `no_such_model` run.
 * Every memory fact shown must have been stored by the selected `hot_tub_code_first` run or by another run on

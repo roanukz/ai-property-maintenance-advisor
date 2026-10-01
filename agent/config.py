@@ -466,3 +466,8 @@ SC12_STOP_USD = 1.50
 # SC12b: this many live first lookups with the input of each recorded run.
 SC12B_RUNS_PER_INPUT = 5
 SC12B_INPUT_RUNS = ("t-267045726dd04118", "t-a6cc7b63e63b41d0")
+# Where an SC12a batch writes its Jev replies, relative to EVAL_DIR. The
+# harness (safety_eval/harness.replies_dir) and the SC7b first lookup filter
+# (live/eval_sc7b.py, which skips the run IDs those replies name) both read it
+# here, so the filter imports nothing the build fingerprint leaves out.
+SC12A_REPLIES_SUBDIR = Path("sc12a") / "replies"

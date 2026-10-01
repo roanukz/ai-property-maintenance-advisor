@@ -27,7 +27,8 @@ Rules this file keeps:
   snippets, the research model's narration, local paths, ledger notes and
   eval scaffolding never reach the output.
 * It refuses to build unless every selected and also_count run names the
-  current build in its own records (the run record's build_id, written by
+  current build (build_info.build_id(), which leaves out this tooling and
+  agent/safety_eval/) in its own records (the run record's build_id, written by
   agent/build_info.py, or else its eval record's build_id; when both exist they
   must agree), unless --stand-in is passed, which
   stamps "STAND-IN DATA FROM A SUPERSEDED BUILD, DO NOT PUBLISH" on the page
@@ -62,7 +63,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
-from agent import config
+from agent import build_info, config
 from agent.replay import privacy_diff
 
 BUILDER_VERSION = "build_demo.py 3"
@@ -694,41 +695,17 @@ def selected_roles(sel: dict[str, Any]) -> tuple[str, ...]:
     return ROLES + tuple(r for r in OPTIONAL_ROLES if (sel.get("roles") or {}).get(r))
 
 
-# Files under agent/ that build this page and never run inside the advisor. They
-# are left out of the advisor's build fingerprint here, so installing or editing
-# the demo tooling does not make the runs it shows look like another build.
-DEMO_TOOLING = frozenset({
-    "replay/build_demo.py",
-    "replay/check_demo.py",
-    "replay/demo_selection.json",
-})
-
-
-def advisor_build_id(exclude: frozenset[str] | set[str] = DEMO_TOOLING) -> str:
-    """agent/build_info.py's fingerprint of agent/ (tests left out), computed the same
-    way, with the files in `exclude` (paths relative to agent/) also left out.
-
-    With an empty `exclude` it equals build_info.build_id(); a test holds them together.
-    """
-    digest = hashlib.sha256()
-    root = Path(config.REPO_ROOT) / "agent"
-    tests = root / "tests"
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.is_relative_to(tests) or "__pycache__" in path.parts:
-            continue
-        if path.suffix not in (".py", ".sql", ".json", ".toml"):
-            continue
-        rel = path.relative_to(root).as_posix()
-        if rel in exclude:
-            continue
-        digest.update(rel.encode("utf-8") + b"\0")
-        digest.update(path.read_bytes() + b"\0")
-    return digest.hexdigest()[:16]
+# The demo tooling: files under agent/ that build this page and never run inside
+# the advisor. agent/build_info.py leaves them out of the build fingerprint
+# (build_info.EXCLUDED), so installing or editing them does not make the runs
+# they show look like another build.
+DEMO_TOOLING = frozenset(p for p in build_info.EXCLUDED if p.startswith("replay/"))
 
 
 def current_build_id() -> str:
-    """The build the advisor's own code is on now, without the demo tooling."""
-    return advisor_build_id()
+    """The build the advisor's own code is on now: build_info.build_id(), the same
+    fingerprint every run record carries, so there is one definition of a build."""
+    return build_info.build_id()
 
 
 def superseded_builds(data_dir: Path) -> set[str]:

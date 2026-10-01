@@ -34,6 +34,7 @@ PLATE_CLEAR = config.REPO_ROOT / "demo-assets" / "plate-clear.jpg"  # read only;
 OPTIMA = {"manufacturer": "Sundance Spas", "model": "Optima 880"}  # v1 fixtures' confirmed identity
 TRANE = {"manufacturer": "Trane", "model": "XR16 (4TTR6036)"}  # v1 case B3's typed identity
 TRANE_REPEAT_SYMPTOM = "outdoor unit runs but the fan does not spin"  # decision 34
+SC12B_SUITE = "sc12b"  # agent/safety_eval/sc12b.SUITE, named here so nothing under safety_eval/ is imported
 
 
 def sc7b_specs() -> list[RunSpec]:
@@ -88,28 +89,54 @@ def _thread_identity(thread_id: str) -> dict[str, Any]:
 
 
 def _eval_run_ids() -> set[str]:
-    """Every run an `advisor eval` batch made (any suite): none of them is an outside first lookup."""
+    """Every run an `advisor eval` batch made (any suite): none of them is an outside first lookup.
+
+    The run records of SC3b, SC7b, plates and SC12b (config.EVAL_DIR/<suite>-<run>.json),
+    and the run ID of every SC12a reply (config.EVAL_DIR/config.SC12A_REPLIES_SUBDIR).
+    SC12b's ten live first lookups are SC12b's, so they are never SC7b's comparator.
+    Nothing from agent/safety_eval/ is imported: the build fingerprint leaves that
+    folder out, so the filter names the SC12b suite and the replies folder itself.
+    """
+    from agent.live.eval_plates import SUITE as PLATES_SUITE
     from agent.live.eval_sc3b import SUITE as SC3B_SUITE
     from agent.live.eval_sc3b import load_records
 
-    return {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE) for r in load_records(suite)}
+    ids = {str(r.get("run_id")) for suite in (SC3B_SUITE, SUITE, PLATES_SUITE, SC12B_SUITE)
+           for r in load_records(suite)}
+    replies = config.EVAL_DIR / config.SC12A_REPLIES_SUBDIR
+    for path in sorted(replies.glob("*.jsonl")) if replies.is_dir() else []:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                reply = json.loads(line) if line.strip() else {}
+            except ValueError:
+                continue
+            if isinstance(reply, dict) and reply.get("run_id"):
+                ids.add(str(reply["run_id"]))
+    return ids
 
 
-def find_first_lookups(keys: set[str]) -> list[dict[str, Any]]:
-    """Live first lookups for these model keys that no eval batch ran.
+def find_first_lookups(keys: set[str], build: str | None = None) -> list[dict[str, Any]]:
+    """Live first lookups for these model keys that no eval batch ran, on `build`.
 
-    Reads the persisted run records under data/runs/ (live modes only), the
-    identity from the checkpointer and the trail from the lookup log. Runs
-    that an eval batch made are skipped (a repeat is never its own first
-    lookup), and the earliest remaining run per model key wins, ties broken
-    by run ID, so the Phase 5 run stays the first lookup however many
+    `build` is the build whose repeats are scored: `advisor eval sc7b --score`
+    passes the reported build, and None means the current build
+    (build_info.build_id()), the one a new batch runs on. Reads the persisted
+    run records under data/runs/ (live modes only), the identity from the
+    checkpointer and the trail from the lookup log. Only runs whose record
+    names that build count, so a repeat is never compared with a first lookup
+    from another build (decision 35). Runs that an eval batch made are skipped
+    (a repeat is never its own first lookup, and SC12b's first lookups are not
+    SC7b's), and the earliest remaining run per model key wins, ties broken by
+    run ID, so the build's first lookup stays the first lookup however many
     batches follow it. Records with role "first" in config.EVAL_DIR come in
     through the batch's own records instead.
     """
+    from agent.build_info import build_id
     from agent.nodes.persist import RUNS_DIRNAME
 
     runs = config.PAGES_DIR.parent / RUNS_DIRNAME
     skip = _eval_run_ids()
+    build = build or build_id()
     found: dict[str, dict[str, Any]] = {}
     for path in sorted(runs.glob("*.json")) if runs.is_dir() else []:
         try:
@@ -119,6 +146,8 @@ def find_first_lookups(keys: set[str]) -> list[dict[str, Any]]:
         if record.get("mode") not in config.LIVE_MODES:
             continue
         if str(record.get("run_id")) in skip:
+            continue
+        if str(record.get("build_id")) != build:
             continue
         identity = _thread_identity(str(record.get("thread_id") or record.get("run_id")))
         key = model_key(identity.get("model"))
@@ -148,7 +177,8 @@ def first_lookup_lines(firsts: list[dict[str, Any]]) -> list[str]:
     for key in sorted(_repeat_keys_without_batch_first()):
         first = by_key.get(key)
         if first is None:
-            lines.append(f"first lookup for {key}: none found; the Phase 5 run is its first lookup, and "
+            lines.append(f"first lookup for {key}: none found on this build; the FLO first lookup "
+                         "(advisor ask --live on plate-clear.jpg) must run on this build first, and "
                          "without it the repeat will likely take the research route")
         else:
             lines.append(f"first lookup for {key}: run {first['run_id']} (route "
@@ -157,9 +187,10 @@ def first_lookup_lines(firsts: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
-def external_first_lookups() -> list[dict[str, Any]]:
-    """First lookups run outside this command for the repeats that need one (the Phase 5 FLO run)."""
-    return find_first_lookups(_repeat_keys_without_batch_first())
+def external_first_lookups(build: str | None = None) -> list[dict[str, Any]]:
+    """First lookups run outside this command, on `build` (None: the current build), for the
+    repeats that need one (the FLO first lookup)."""
+    return find_first_lookups(_repeat_keys_without_batch_first(), build)
 
 
 def cmd_eval_sc7b(args: argparse.Namespace, environ: Mapping[str, str], *,
@@ -168,6 +199,7 @@ def cmd_eval_sc7b(args: argparse.Namespace, environ: Mapping[str, str], *,
     cache: dict[str, list[dict[str, Any]]] = {}
 
     def firsts() -> list[dict[str, Any]]:
+        # The current build's: the batch runs on it, so its runs are the reported ones.
         if "firsts" not in cache:
             cache["firsts"] = external_first_lookups()
         return cache["firsts"]

@@ -327,12 +327,14 @@ def score_sc7b(records: Sequence[Record], first_lookups: Sequence[Record] = (),
     `first_lookups` are first lookups run elsewhere (the Phase 5 FLO run).
     `planned_repeats` (label and model_key of each repeat eval_sc7b plans)
     makes a planned repeat with no finished run a miss; None skips that check.
-    First lookups of superseded builds still count when picking the
-    earliest: their edges stay in the graph.
+    Only first lookups of the reported build count (decision 35): the batch's
+    own come from the reported records, and the outside ones the callers pass
+    are found on that same build (eval_sc7b.find_first_lookups), so a repeat
+    is never compared with a first lookup from a superseded build.
     """
     split = reported_records(records)
     reported = split["reported"]
-    firsts = _first_counts([*first_lookups, *(r for r in records if r.get("role") == "first")])
+    firsts = _first_counts([*first_lookups, *(r for r in reported if r.get("role") == "first")])
     chosen = {f["run_id"] for f in firsts.values()}
     limit = config.SC7B_REPEAT_SEARCH_MAX
     problems = list(split["problems"])

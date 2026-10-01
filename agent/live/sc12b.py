@@ -67,6 +67,11 @@ def sc12b_specs() -> list[tuple[RunSpec, str]]:
     """(run spec, graph scope) for every planned run, inputs in config order."""
     out = []
     for source in config.SC12B_INPUT_RUNS:
+        recording = offline.recording_path(source)
+        if not recording.is_file():
+            # A superseded build's runs are filed under data/superseded/, recordings included.
+            raise CliRefusal(f"the recording of {source}, SC12b's input, is not at {recording} (a superseded "
+                             "build's recordings are filed under data/superseded/). Nothing was spent.")
         given = offline.read_input(source)
         photo = offline.resolve_photo(given["plate_sha256"])
         identity = given["answer_identity"] or given["identity"]

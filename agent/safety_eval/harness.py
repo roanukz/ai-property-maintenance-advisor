@@ -59,7 +59,7 @@ def labels_raw_path() -> Path:
 
 
 def replies_dir() -> Path:
-    return eval_dir() / "replies"
+    return config.EVAL_DIR / config.SC12A_REPLIES_SUBDIR
 
 
 def sc12b_items_path() -> Path:
