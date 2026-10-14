@@ -249,6 +249,13 @@ NODE_BY_MAX_TOKENS = {
     config.MAX_TOKENS["synthesize_cheap"]: "synthesize",
 }
 USAGE = {"input_tokens": 1_000, "output_tokens": 100}
+
+
+def input_tokens_costing(usd: float) -> int:
+    """Input tokens a Claude Haiku 5.5 call bills `usd` for, on the long prompt card (decision 69)."""
+    tokens = round(usd * 1_000_000 / config.LONG_PROMPT_PRICES_PER_MTOK[config.HAIKU]["input"])
+    assert tokens > config.LONG_PROMPT_ABOVE_TOKENS
+    return tokens
 REFUSAL_DRAFT = {
     "status": "no_reliable_answer", "matched_identity": None, "warranty_caution": None, "happened_before": None,
     "try_first": [], "candidates": [], "warranty": None,
@@ -435,7 +442,11 @@ def test_eval_preflight_counts_match_the_plan(live_env: Fakes, monkeypatch: pyte
     assert "at most 24 on first passes, ceiling 30 with retries" in out
     assert "per run cap: 0.1500 USD and 10 Tavily credits" in out
     assert "build spend so far: 0.0000 USD of 5.0000 USD; remaining 5.0000 USD" in out
-    assert _typical(out) == pytest.approx(0.24, abs=0.005)  # PLAN section 9: 3 x 0.08
+    # PLAN section 9: 3 x 0.08 on Claude Haiku 4.5. Claude Haiku 5.5 bills a tenth of that card, input
+    # and output alike, and its tokenizer makes 1.3 times the tokens (decision 69).
+    tenth = config.PRICES_PER_MTOK[config.HAIKU]["input"] / config.REPLAY_PRICES["input"]
+    assert tenth == config.PRICES_PER_MTOK[config.HAIKU]["output"] / config.REPLAY_PRICES["output"] == 0.1
+    assert _typical(out) == pytest.approx(0.24 * tenth * config.TYPICAL_TOKENS_FACTOR[config.HAIKU], abs=0.001)
     assert out.count("expected route research: typical") == 3
 
     out = _preflight("sc7b", monkeypatch, capsys)
@@ -444,7 +455,8 @@ def test_eval_preflight_counts_match_the_plan(live_env: Fakes, monkeypatch: pyte
     assert "at most 14 on first passes, ceiling 40 with retries" in out
     assert "at most 17 on first passes if a run falls from its expected route" in out
     assert "first lookup for optima880: none found" in out
-    assert _typical(out) == pytest.approx(0.20, abs=0.01)  # PLAN section 9: 0.03 + 0.05 + 0.08 + 0.04
+    # PLAN section 9: 0.03 + 0.05 + 0.08 + 0.04 on Claude Haiku 4.5, scaled as sc3b's above.
+    assert _typical(out) == pytest.approx(0.20 * tenth * config.TYPICAL_TOKENS_FACTOR[config.HAIKU], abs=0.002)
     planned = [line.split(". ", 1)[1].split(" (", 1)[0] for line in out.splitlines() if re.match(r"  \d\. ", line)]
     assert planned == ["FLO repeat", "vague symptom repeat", "Trane XR16 first lookup", "Trane repeat"]
     assert "expected route graph" in out and out.count("expected route top_up") == 2
@@ -504,7 +516,8 @@ def test_eval_refuses_missing_key_ledger_budget_and_retired_model(
     ledger = Ledger(config.LEDGER_PATH)
     hold = ledger.reserve("old", mode="cheap", node="synthesize", model=config.HAIKU,
                           input_tokens_est=10, max_tokens=10)
-    ledger.charge(hold, {"input_tokens": 4_600_000, "output_tokens": 0})
+    ledger.charge(hold, {"input_tokens": input_tokens_costing(4.60), "output_tokens": 0})
+    assert ledger.build_total() == pytest.approx(4.60)
     assert _run(["eval", "sc3b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_REFUSED
     assert "below 3 runs" in capsys.readouterr().err
 
@@ -927,10 +940,11 @@ def test_batch_cut_short_leaves_a_record_for_every_planned_run(
 
     ledger = Ledger(config.LEDGER_PATH)
     hold = ledger.reserve("old", mode="cheap", node="synthesize", model=config.HAIKU, input_tokens_est=10, max_tokens=10)
-    ledger.charge(hold, {"input_tokens": 4_540_000, "output_tokens": 0})  # 0.46 left: three runs at the cap fit
+    ledger.charge(hold, {"input_tokens": input_tokens_costing(4.54), "output_tokens": 0})  # 0.46 left: three runs fit
     # The first run's synthesize reply bills 0.40 (charged in full, above its reservation).
     monkeypatch.setitem(SCRIPTS, "synthesize", [{"structured": REFUSAL_DRAFT,
-                                                 "usage": {"input_tokens": 400_000, "output_tokens": 100}}])
+                                                 "usage": {"input_tokens": input_tokens_costing(0.40),
+                                                           "output_tokens": 100}}])
     assert _run(["eval", "sc3b", "--live"], "proceed\n", monkeypatch) == cli.EXIT_REFUSED
     out = capsys.readouterr().out
     records = _records("sc3b")
@@ -977,12 +991,14 @@ def test_plate_runs_read_each_plate_and_stop_at_the_pause(
     assert _run(["eval", "plates", "--live"], "no\n", monkeypatch) == cli.EXIT_REFUSED
     out = capsys.readouterr().out
     model = config.MODEL_FOR["cheap"]["read_plate"]
-    typical = price_usage(config.PRICES_PER_MTOK[model], {"input_tokens": config.READ_PLATE_TOKENS_TYPICAL["input"],
-                                                         "output_tokens": config.READ_PLATE_TOKENS_TYPICAL["output"]})
+    # The typical counts as the model's tokenizer makes them (decision 69), on the card they select.
+    typical = price_usage(model, {
+        "input_tokens": config.typical_tokens(model, config.READ_PLATE_TOKENS_TYPICAL["input"]),
+        "output_tokens": config.typical_tokens(model, config.READ_PLATE_TOKENS_TYPICAL["output"])})
     worst = 0.0
     for name in ("plate-clear.jpg", "plate-blurry.jpg"):
         _, est = plate_messages(str(config.REPO_ROOT / "demo-assets" / name))
-        worst += price_usage(config.PRICES_PER_MTOK[model], {
+        worst += price_usage(model, {
             "input_tokens": estimate_input_tokens(est, model=model, images=1),
             "output_tokens": max_tokens_for("read_plate", "cheap")})
     assert "planned runs: 2" in out and "read_plate only, then the pause" in out

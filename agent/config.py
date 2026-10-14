@@ -4,11 +4,18 @@ This is the only file in agent/ (outside agent/tests/) allowed to hold a model
 ID or a dollar figure; test_config.py enforces that. Values were verified on
 17 September 2026 against the Anthropic models overview and pricing pages, the
 Tavily credits and pricing pages, and the installed packages (PLAN.md sections
-3.1 and 4). Anything marked "proposed" awaits Roanuk's review.
+3.1 and 4). The Claude Haiku 5.5 values (decision 69) were taken on 13 October
+2026 from Anthropic's models overview and migration guide as installed on this
+machine, and from the installed langchain-anthropic 1.7.2. Its retirement date
+(HAIKU_RETIREMENT_EARLIEST) was checked on Anthropic's model deprecations page,
+and its rate cards, cache multipliers and tool use system prompt tokens
+(TOOL_PROMPT_TOKENS) on Anthropic's pricing page, both live on 13 October 2026.
+Anything marked "proposed" awaits Roanuk's review.
 """
 
 from __future__ import annotations
 
+import math
 import os
 from pathlib import Path
 
@@ -16,11 +23,22 @@ from pathlib import Path
 # Models
 # ---------------------------------------------------------------------------
 
-HAIKU = "claude-haiku-4-5-20251001"  # alias claude-haiku-4-5; retirement not sooner than 2026-10-15
+# Claude Haiku 5.5 (decision 69, amending decision 14): a fixed ID with no date
+# suffix and no separate alias. Adaptive thinking is on by default; effort sets
+# how much it thinks. Anthropic's models overview, checked 13 October 2026, says
+# every current model takes text and image input; the capabilities check
+# (agent/live/capabilities.py) still verifies the plate photo on this model live
+# before plate reading relies on it.
+HAIKU = "claude-haiku-5-5"
 SONNET = "claude-sonnet-5"
 OPUS_BASELINE = "claude-opus-5"  # v1 baseline only; v2 never calls it
 
-HAIKU_RETIREMENT_EARLIEST = "2026-10-15"
+# The earliest retirement date for Claude Haiku 5.5. Anthropic's model
+# deprecations page, checked 13 October 2026, lists claude-haiku-5-5 as Active,
+# retirement not sooner than 7 October 2027 (claude-haiku-4-5-20251001: not
+# sooner than 15 October 2026). preflight.haiku_refusal refuses every live
+# Haiku mode on or after it.
+HAIKU_RETIREMENT_EARLIEST = "2027-10-07"
 
 # Jev, TypeSafe's System One model, asked one Noul per try_first step by the
 # safety_check node (decisions 53 to 57). Pinned to the documented versioned
@@ -34,7 +52,10 @@ MODES = ("replay", "cheap", "full")
 LIVE_MODES = ("cheap", "full")
 
 # Which model each paid step uses, per mode. Replay uses the cheap row for
-# naming and prices every call at REPLAY_PRICES.
+# naming, prices every call at REPLAY_PRICES and gives each node its
+# REPLAY_MAX_TOKENS, the settings the cassettes were recorded under; a Claude
+# Haiku 5.5 recording that names its live mode replays under that mode's row,
+# prices, budgets and cap instead (ledger.price_basis).
 MODEL_FOR = {
     "replay": {"read_plate": HAIKU, "classifier": HAIKU, "research": HAIKU, "synthesize": HAIKU},
     "cheap": {"read_plate": HAIKU, "classifier": HAIKU, "research": HAIKU, "synthesize": HAIKU},
@@ -46,13 +67,24 @@ MODEL_FOR = {
 # ---------------------------------------------------------------------------
 
 PRICES_PER_MTOK = {
-    HAIKU: {"input": 1.00, "output": 5.00},
+    # Claude Haiku 5.5 has two rate cards, chosen by the prompt's length: this
+    # one up to LONG_PROMPT_ABOVE_TOKENS, LONG_PROMPT_PRICES_PER_MTOK above.
+    HAIKU: {"input": 0.10, "output": 0.50},
     SONNET: {"input": 2.00, "output": 10.00},
     OPUS_BASELINE: {"input": 5.00, "output": 25.00},
     # TypeSafe prices input only; the API still reports output_tokens, priced at 0.
     JEV_MODEL: {"input": 0.042, "output": 0.0},
 }
-# Cache pricing as multiples of the base input price.
+# A call whose prompt (input plus cache reads and writes) is longer than this
+# many tokens is billed, input and output, on the model's long prompt card.
+LONG_PROMPT_ABOVE_TOKENS = 100_000
+LONG_PROMPT_PRICES_PER_MTOK = {
+    HAIKU: {"input": 0.50, "output": 2.50},
+}
+# Cache pricing as multiples of the selected card's input price. Checked for
+# Claude Haiku 5.5 on Anthropic's pricing page on 13 October 2026: cache hits
+# 0.01, 5 minute writes 0.125 and 1 hour writes 0.20 per million tokens on the
+# short prompt card, and 0.05, 0.625 and 1 on the long one.
 CACHE_READ_MULTIPLIER = 0.10
 CACHE_WRITE_5M_MULTIPLIER = 1.25
 CACHE_WRITE_1H_MULTIPLIER = 2.00
@@ -60,22 +92,41 @@ CACHE_WRITE_1H_MULTIPLIER = 2.00
 # v1 baseline only (Anthropic server web search); v2 searches with Tavily.
 ANTHROPIC_WEB_SEARCH_USD_PER_SEARCH = 0.01
 
-# Replay rows are priced at Haiku rates so the ledger logic runs, and they never
-# count toward the build total.
-REPLAY_PRICES = PRICES_PER_MTOK[HAIKU]
+# Replay rows are priced so the ledger logic runs, and they never count toward
+# the build total. The cassettes were recorded on Claude Haiku 4.5 (decision
+# 69), so replay keeps that model's one card, frozen here: replay costs, the
+# demo and every recorded number stay as recorded. Nothing live reads it, and
+# neither does the replay of a recording that names its live mode
+# (ledger.price_basis), which is charged at that mode's cards.
+REPLAY_PRICES = {"input": 1.00, "output": 5.00}
 
 # ---------------------------------------------------------------------------
 # Token budgets and request settings
 # ---------------------------------------------------------------------------
 
-# ChatAnthropic defaults max_tokens to the model maximum (64,000 on Haiku),
-# which would reserve $0.32 of output against a $0.15 cap, so every call sets it.
+# ChatAnthropic defaults max_tokens to the model maximum (128,000 on Haiku
+# 5.5), so every call sets it. Thinking counts toward max_tokens on Claude Haiku
+# 5.5, so each Haiku budget leaves room for it above the reply: the classifier's
+# one word answer needed 64 on Haiku 4.5. A run's worst case reservation at
+# these budgets stays under the cheap run cap (test_haiku55_config.py,
+# test_a_cheap_runs_worst_case_reservation_fits_the_run_and_build_caps, shows
+# the arithmetic). Each stays distinct from the other nodes of its mode, since
+# the live recorder names a call's node by its max_tokens.
 MAX_TOKENS = {
+    "read_plate": 2_048,
+    "classifier": 1_024,
+    "research": 4_096,
+    "synthesize_cheap": 16_000,
+    "synthesize_full": 16_000,  # includes adaptive thinking on Sonnet 5
+}
+# Replay's budgets: the ones the cassettes were recorded under on Claude Haiku
+# 4.5, frozen with REPLAY_PRICES and REPLAY_ESTIMATE_MARGIN so replay
+# reservations, and every replay result that depends on them, stay as recorded.
+REPLAY_MAX_TOKENS = {
     "read_plate": 512,
     "classifier": 64,
     "research": 1_024,
     "synthesize_cheap": 6_000,
-    "synthesize_full": 16_000,  # includes adaptive thinking on Sonnet 5
 }
 
 TIMEOUT_BASE_S = 30
@@ -89,12 +140,23 @@ def model_timeout_s(max_tokens: int) -> float:
 
 
 # Tool use system prompt Anthropic adds to every tool bearing call (the higher
-# of the any/tool figures on the pricing page).
-TOOL_PROMPT_TOKENS = {HAIKU: 588, SONNET: 474}
+# of the any/tool figures on the pricing page). Claude Haiku 5.5: 406 for
+# tool_choice any or tool (286 for auto or none), from Anthropic's pricing page
+# checked 13 October 2026; it replaces the 765 placeholder (Haiku 4.5's 588
+# times the tokenizer factor).
+TOOL_PROMPT_TOKENS = {HAIKU: 406, SONNET: 474}
 
-# count_tokens_approximately uses about 4 characters per token; Sonnet 5's
-# newer tokenizer makes about 30% more tokens for the same text.
-ESTIMATE_MARGIN = {HAIKU: 1.25, SONNET: 1.25 * 1.3}
+# count_tokens_approximately uses about 4 characters per token; the newer
+# tokenizer of Sonnet 5 and Claude Haiku 5.5 makes about 30% more tokens for
+# the same text.
+NEW_TOKENIZER_FACTOR = 1.3
+ESTIMATE_MARGIN = {HAIKU: 1.25 * NEW_TOKENIZER_FACTOR, SONNET: 1.25 * NEW_TOKENIZER_FACTOR}
+# Replay's estimate settings: Claude Haiku 4.5's margin and tool prompt tokens,
+# the ones the cassettes were recorded under, frozen with REPLAY_PRICES and
+# REPLAY_MAX_TOKENS, so replay reservations and the replay retry threshold
+# (decision 23) stay as recorded.
+REPLAY_ESTIMATE_MARGIN = 1.25
+REPLAY_TOOL_PROMPT_TOKENS = 588
 IMAGE_TOKENS_ESTIMATE = 1_600
 
 # Retries happen in our code or in ModelRetryMiddleware so the ledger sees
@@ -102,12 +164,29 @@ IMAGE_TOKENS_ESTIMATE = 1_600
 CLIENT_MAX_RETRIES = 0
 MODEL_RETRY_MAX = 1
 
-FULL_SYNTH_EFFORT = "medium"  # never sent to Haiku
+FULL_SYNTH_EFFORT = "medium"  # Sonnet 5 synthesize in full mode
 
-# Never sent to any model: Sonnet 5 returns 400 on non default sampling
-# parameters, and Haiku 4.5 does not support effort.
+# Effort per node on Claude Haiku 5.5 (decision 69), sent as output_config.effort
+# (reasoning_effort in ChatAnthropic). Effort is the lever for how much it
+# thinks, and Anthropic's guide recommends lowering it over turning thinking off.
+# low where the reply is short and the task simple: one structured read of a
+# plate, and a three way verdict. high for the research loop: at medium, the
+# model's default, the first live batch (13 October 2026, build
+# ad11e6e15a55d30a) stopped researching early, with 2 to 4 searches and often
+# no fetch, and 4 of 10 SC12b first lookups ended with no reliable answer
+# where Claude Haiku 4.5 answered 10 of 10 (decision 89; the guide lists high
+# for longer agent tasks and strict instruction following). medium, the
+# default, for the cheap brief, the same level full mode gives Sonnet.
+HAIKU_EFFORT = {"read_plate": "low", "classifier": "low", "research": "high", "synthesize": "medium"}
+
+# Never sent to any model: Sonnet 5 and Claude Haiku 5.5 return 400 on non
+# default sampling parameters.
 NEVER_SEND_PARAMS = ("temperature", "top_p", "top_k")
-NEVER_SEND_TO_HAIKU = ("effort", "reasoning_effort", "thinking")
+# Never sent to Claude Haiku 5.5: a thinking setting (a budget_tokens budget
+# returns 400; adaptive thinking is already the default, and effort above sets
+# it), and a fallbacks parameter (there is no server side fallback for this
+# model; a declined call ends the run, decision 69).
+NEVER_SEND_TO_HAIKU = ("thinking", "budget_tokens", "fallbacks")
 
 # ---------------------------------------------------------------------------
 # Tavily
@@ -190,6 +269,18 @@ RESEARCH_TOKENS_PER_SEARCH = 2_150
 RESEARCH_OUTPUT_TOKENS = 250
 SYNTH_EXCERPT_TOKENS_TYPICAL = 10_000
 SYNTH_OUTPUT_TOKENS_TYPICAL = 3_000
+# The typical token counts above and READ_PLATE_TOKENS_TYPICAL,
+# CLASSIFIER_TOKENS_TYPICAL and SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL were counted
+# with the older tokenizer (v1's calls and Haiku 4.5), and the replay cassettes
+# are scaled to them, so they stay as counted. A live estimate on a model with
+# a factor here scales them with typical_tokens. Thinking tokens are not in
+# them; the live batch measures them.
+TYPICAL_TOKENS_FACTOR = {HAIKU: NEW_TOKENIZER_FACTOR}
+
+
+def typical_tokens(model: str, tokens: float) -> int:
+    """A typical token count, counted with the older tokenizer, as this model counts it."""
+    return math.ceil(tokens * TYPICAL_TOKENS_FACTOR.get(model, 1.0))
 
 # ---------------------------------------------------------------------------
 # Evidence spans (section 8.11)
@@ -273,6 +364,9 @@ BRIEFS_OUT_DIR = DATA_DIR / "briefs"
 PROPERTY_OUT_DIR = DATA_DIR / "property"
 EVAL_DIR = DATA_DIR / "eval"
 STAGING_DIR = DATA_DIR / "staging"  # cassettes wait here for the privacy diff
+# Product recall checks (agent/product_recalls.py, SC15): one file per check per
+# appliance, each CPSC response with its retrieved date; never overwritten.
+RECALLS_DIR = DATA_DIR / "recalls"
 DEFAULT_SEED_PATH = SEED_DIR / "registry_seed.json"
 
 # sqlite busy timeouts. The ledger waits longer: a refused write there would
@@ -361,14 +455,26 @@ ENV_FILE = REPO_ROOT / ".env"
 
 # `advisor check-schema --live`: one minimal synthesize call that confirms the
 # API accepts the BriefDraft schema. The reply is a no_reliable_answer draft
-# with every list empty (about 150 tokens); 512 leaves room for a longer
-# why_insufficient line.
+# with every list empty (about 150 tokens); 512 left room for a longer
+# why_insufficient line on Haiku 4.5, and 4,096 adds room for adaptive
+# thinking, which counts toward max_tokens.
 SCHEMA_CHECK_NODE = "schema_check"
-SCHEMA_CHECK_MAX_TOKENS = 512
+SCHEMA_CHECK_MAX_TOKENS = 4_096
 SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL = 150
 # Live runs leave a cassette candidate here (PLAN 8.10). Nothing here is
 # tracked until the privacy diff is approved.
 RECORDINGS_DIR = DATA_DIR / "recordings"
+
+# The capabilities check (agent/live/capabilities.py, decision 69), the first
+# live step on Claude Haiku 5.5: one small call per Haiku node at that node's
+# exact settings. Its result goes to EVAL_DIR / CAPABILITIES_FILE, the path
+# taken when it is read (so a test's eval folder is followed), in a folder of
+# its own so nothing that reads the eval run records meets it, and a live plate
+# read refuses once it records the plate photo as refused. The photo is v1 case
+# E1's demo plate, read only.
+CAPABILITIES_NODE = "capabilities_check"
+CAPABILITIES_FILE = Path("capabilities") / "capabilities.json"
+CAPABILITIES_PHOTO = REPO_ROOT / "demo-assets" / "plate-clear.jpg"
 
 # ---------------------------------------------------------------------------
 # Review fixes (Phase 5 live path, before any paid call)

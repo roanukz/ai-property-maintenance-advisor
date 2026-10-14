@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from agent import config
-from agent.replay.cassettes import CASSETTE_VERSION, cassette_from_dict, registry_urls
+from agent.replay.cassettes import CASSETTE_VERSION, cassette_from_dict, registry_urls, response_usage
 from agent.replay.privacy_diff import (
     CASSETTES_SUBDIR,
     COPY_LOG_SUBDIR,
@@ -643,13 +643,12 @@ def build_case(spec: CaseSpec, lookups: dict[str, dict], demo_dir: Path = DEMO_A
 
 
 def pass_cost_usd(cassette: dict) -> float:
-    """What one replay pass costs at REPLAY_PRICES, from the scripted usage."""
+    """What one replay pass costs at REPLAY_PRICES, from the scripted usage (a recorded decline's too)."""
     from agent.ledger import price_usage
 
     loaded = cassette_from_dict(cassette)
-    usages = [r["usage"] for r in loaded.responses_for("read_plate")]
-    usages += [r["message"]["usage"] for r in loaded.responses_for("research")]
-    usages += [r["usage"] for r in loaded.responses_for("synthesize")]
+    usages = [response_usage(r) for node in ("read_plate", "research", "synthesize")
+              for r in loaded.responses_for(node)]
     return sum(price_usage(config.REPLAY_PRICES, u) for u in usages)
 
 

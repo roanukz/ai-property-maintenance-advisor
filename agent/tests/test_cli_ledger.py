@@ -132,9 +132,11 @@ def test_run_report_shows_tokens_estimate_and_r4(ledger_path: Path, tmp_path: Pa
     out = capsys.readouterr().out
     assert "  read_plate: 2800, 0, 0, 95" in out
     assert "  research: 40000, 0, 0, 1500" in out and "  synthesize: 13000, 0, 0, 3000" in out
-    # The estimate: section 9's typical cheap run with a photo, from config values.
+    # The estimate: section 9's typical cheap run with a photo, from config values, each count
+    # as Claude Haiku 5.5's tokenizer makes it (config.typical_tokens; decision 69).
     haiku = config.PRICES_PER_MTOK[config.HAIKU]
-    price = lambda i, o: (i * haiku["input"] + o * haiku["output"]) / 1_000_000  # noqa: E731
+    price = lambda i, o: (config.typical_tokens(config.HAIKU, i) * haiku["input"]  # noqa: E731
+                          + config.typical_tokens(config.HAIKU, o) * haiku["output"]) / 1_000_000
     searches = config.RESEARCH_LIMITS["main"]["search"]
     research = price(sum(config.RESEARCH_CALL_BASE_TOKENS + k * config.RESEARCH_TOKENS_PER_SEARCH
                          for k in range(searches + 1)), (searches + 1) * config.RESEARCH_OUTPUT_TOKENS)

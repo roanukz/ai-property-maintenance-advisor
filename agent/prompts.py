@@ -84,7 +84,7 @@ SYNTHESIS_SYSTEM = """You produce a service brief for a piece of residential equ
 
 7. Never state or imply a diagnosis. You list documented candidates only, each with "why_shown" explaining why it surfaced (which documented symptom or code it matches). The footer of the rendered brief tells the reader to confirm any code on the unit's own display before ordering parts.
 
-8. Warranty: Do not compute the unit's age; it is supplied from the property records or the manufacture date. If this equipment category commonly voids warranty for commercial or short-term rental use, say so as a caution, citing a provided source if you found one, and instruct the owner to verify against their own warranty document. Never assert that anything is or is not covered.
+8. Warranty: Do not compute the unit's age; it is supplied from the property records or the manufacture date. If this equipment category commonly voids warranty for commercial or short-term rental use, say so as a caution, citing a provided source if you found one, and instruct the owner to verify against their own warranty document. Never assert that anything is or is not covered. Code writes every warranty date and whether any coverage is active, so never write a date in a warranty caution or verify item.
 
 9. If service records for this appliance are listed below, compare them to the current symptom. Fill "happened_before" with whether one matches, a one line summary, and that record's record_id. If no records are listed, set "happened_before" to null.
 
@@ -310,3 +310,37 @@ SAFETY_STEP_NOUL = {
         ),
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle lookups for the replacement sweep (SC14, decision 72; new in v2).
+# They ask only whether a model is discontinued and which models succeed it.
+# agent/lifecycle.py fills the {fields} with str.format.
+# ---------------------------------------------------------------------------
+
+LIFECYCLE_RESEARCH_PROMPT = """You find out whether one model of residential equipment at a short-term rental property has been discontinued, and which models replace it.
+
+Use the search and fetch tools to find pages about this exact manufacturer and model: discontinuation or end of life notices, replacement or successor model announcements, and notices that its parts are discontinued. Prefer official manufacturer pages, then dealer/retailer/repair-service pages, then community forums. Do not look for troubleshooting, error codes or maintenance."""
+
+LIFECYCLE_RESEARCH_USER = """Manufacturer: {manufacturer}
+Model: {model}
+
+Find whether this model is discontinued and which models succeed it. Search first."""
+
+LIFECYCLE_EXTRACT_SYSTEM = """You record what the numbered sources below say about whether one model of residential equipment is discontinued and which models replace it.
+
+1. Use only the numbered sources provided below.
+2. Add an entry to "upgrade_options" only when a source says this model is discontinued, superseded or replaced and names the model that replaces it (reason "discontinued"), or says a part for this model is discontinued and names a replacement model (reason "parts_unavailable").
+3. "successor_model" is the replacing model exactly as the source prints it, and "evidence" is one sentence copied exactly from the source excerpts shown that contains the successor model as printed; do not reword, join or shorten across a gap. "source_index" is that source's number.
+4. If no source names a successor, return an empty "upgrade_options" list. Never guess a successor and never state that a model is not discontinued.
+5. Propose a tier for each source you cite in "source_tiers": "manufacturer" for the maker's own page, "dealer" for a dealer, retailer or repair service page, "forum" for community content. Never inflate a tier."""
+
+LIFECYCLE_EXTRACT_USER = """Manufacturer: {manufacturer}
+Model: {model}
+
+Numbered sources (verbatim excerpts):
+{sources}
+
+Record the discontinuation and successor findings now. Answer using the provided schema."""
+
+LIFECYCLE_NO_SOURCES = "No sources were retrieved."

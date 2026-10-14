@@ -4,7 +4,18 @@ While a live ask or resume runs, `capturing` attaches a callback handler to
 every model call in the process (a langchain_core configure hook on a context
 variable, so the graph and nodes are the ones replay uses, unchanged). For
 each call it appends the node, the reply text, the tool calls and the usage
-to `<recordings>/<run_id>.capture.jsonl`. It never stores the request, so the
+to `<recordings>/<run_id>.capture.jsonl`, and for a Claude Haiku 5.5 reply
+(decision 69) the model it names, its stop reason and, when the API returned
+a list of blocks, that list in the cassette's shape: text and tool_use blocks
+as they came, each thinking block as a marker without its text or signature
+(agent/replay/cassettes.py says why). A declined call (agent.declined) never
+reaches a reply handler: it is captured from the error, as stop_reason
+"refusal", its category and its billed usage, never anything the model wrote
+with it. A call's node is named by its max_tokens, which config keeps
+distinct per mode, and checked against whether the call carried tools (only
+research does); a call that fails either test, or whose budget two nodes
+share, is "unknown" and left out of the cassette with a note, never filed
+under another node. It never stores the request, so the
 photo bytes, prompts and headers are never read, and each line is redacted
 of the loaded key values before it is written. The same block hands every
 live Jev judge a capture list (agent/safety_judge.capture_into), and each
@@ -18,7 +29,9 @@ that capture, the run's lookup log and its page files:
 - provenance.derived_from is "recorded live <date> run <run_id>";
 - input: the symptom, and the plate by sha256 only, or the typed identity;
 - read_plate, classifier, research.script and synthesize: the recorded
-  replies and usage, in call order;
+  replies and usage, in call order, a reply's content blocks and thinking
+  markers when it had them, and a declined call as a recorded decline;
+- recorded: the live mode and the model each node's replies named;
 - safety_check (only when Jev was asked): the recorded answers, in call order;
 - research.tool_results: each Tavily call from the lookup log, success or
   failure, in the cassette shapes (a result, "error", "string", "raise");
@@ -57,6 +70,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.tracers.context import register_configure_hook
 
 from agent import config
+from agent.declined import REFUSAL_STOP_REASON, ModelDeclined
 from agent.live.env import redact, redact_value
 from agent.models import NODES, max_tokens_for
 from agent.replay import privacy_diff
@@ -64,6 +78,9 @@ from agent.replay.cassettes import (
     CASSETTE_VERSION,
     IDENTITY_FIELDS,
     SAFETY_CHECK_KEYS,
+    TEXT_BLOCK,
+    THINKING_MARKERS,
+    TOOL_USE_BLOCK,
     CassetteError,
     is_example_url,
     load_cassette,
@@ -80,6 +97,11 @@ NOT_SENT_STATUSES = ("run_cap", "build_cap", "run_credit_cap", "build_credit_cap
 KEY_HIT_KINDS = (*privacy_diff.KEY_PREFIXES, "auth header name")
 REDACTED_MATCH = "[redacted]"
 VERDICT_WITHHELD = "WITHHELD: a key pattern or auth header was found; no cassette was written"
+UNKNOWN_NODE = "unknown"
+# The node whose calls carry tools; every other node makes one structured call.
+TOOL_NODE = "research"
+# A capture event's key for a declined call.
+DECLINED_KEY = "declined"
 
 _CAPTURE: ContextVar[BaseCallbackHandler | None] = ContextVar("advisor_live_capture", default=None)
 _HOOK_LOCK = threading.Lock()
@@ -104,6 +126,33 @@ def _text(content: Any) -> str:
             if isinstance(block, dict) and block.get("type") == "text"
         )
     return ""
+
+
+def _blocks(content: Any) -> tuple[list[dict[str, Any]] | None, list[str]]:
+    """(a reply's content blocks in the cassette's shape, block types left out), or (None, []) for one string.
+
+    Text and tool_use blocks keep what replay needs; a thinking or redacted
+    thinking block becomes its marker, never its text, signature or data. A
+    block of any other type is left out and named, so the build can note it.
+    """
+    if not isinstance(content, list):
+        return None, []
+    out: list[dict[str, Any]] = []
+    dropped: list[str] = []
+    for block in content:
+        kind = block.get("type") if isinstance(block, dict) else ("text" if isinstance(block, str) else None)
+        if isinstance(block, str):
+            out.append({"type": TEXT_BLOCK, "text": block})
+        elif kind == TEXT_BLOCK:
+            out.append({"type": TEXT_BLOCK, "text": str(block.get("text") or "")})
+        elif kind == TOOL_USE_BLOCK:
+            out.append({"type": TOOL_USE_BLOCK, "id": str(block.get("id") or ""), "name": str(block.get("name") or ""),
+                        "input": dict(block.get("input") or {})})
+        elif kind in THINKING_MARKERS:
+            out.append(dict(THINKING_MARKERS[kind]))
+        else:
+            dropped.append(str(kind))
+    return out, dropped
 
 
 def _usage(usage: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -132,8 +181,9 @@ class CaptureHandler(BaseCallbackHandler):
     def __init__(self, path: Path, mode: str, secrets: Sequence[str] = ()) -> None:
         super().__init__()
         self.path = Path(path)
+        self.mode = mode
         self.secrets = list(secrets)
-        self.node_by_max_tokens = {max_tokens_for(node, mode): node for node in NODES}
+        self.node_by_max_tokens = node_by_max_tokens(mode)
         self._nodes: dict[str, str] = {}
         self._lock = threading.Lock()
 
@@ -147,17 +197,57 @@ class CaptureHandler(BaseCallbackHandler):
     def on_chat_model_start(self, serialized: Any, messages: Any, *, run_id: Any, **kwargs: Any) -> None:
         params = kwargs.get("invocation_params") or {}
         max_tokens = params.get("max_tokens") or (kwargs.get("metadata") or {}).get("ls_max_tokens")
-        self._nodes[str(run_id)] = self.node_by_max_tokens.get(max_tokens, "unknown")
+        self._nodes[str(run_id)] = call_node(self.node_by_max_tokens, max_tokens, has_tools=bool(params.get("tools")))
 
     def on_llm_end(self, response: Any, *, run_id: Any, **kwargs: Any) -> None:
-        node = self._nodes.pop(str(run_id), "unknown")
+        node = self._nodes.pop(str(run_id), UNKNOWN_NODE)
         message = getattr(response.generations[0][0], "message", None)
         if message is None:
             return
+        meta = {**(response.llm_output or {}), **(getattr(message, "response_metadata", None) or {})}
         calls = [{"name": c["name"], "args": dict(c.get("args") or {}), "id": c.get("id")}
                  for c in getattr(message, "tool_calls", None) or []]
-        self.append({"event": "model", "node": node, "content": _text(message.content),
-                     "tool_calls": calls, "usage": _usage(getattr(message, "usage_metadata", None))})
+        record: dict[str, Any] = {"event": "model", "node": node, "content": _text(message.content),
+                                  "tool_calls": calls, "usage": _usage(getattr(message, "usage_metadata", None)),
+                                  "model": _model_name(meta), "stop_reason": meta.get("stop_reason")}
+        blocks, dropped = _blocks(message.content)
+        if blocks is not None:
+            record["blocks"] = blocks
+        if dropped:
+            record["dropped_blocks"] = dropped
+        self.append(record)
+
+    def on_llm_error(self, error: BaseException, *, run_id: Any, **kwargs: Any) -> None:
+        """A declined call is a billed reply: captured with its category and usage, nothing it wrote."""
+        node = self._nodes.pop(str(run_id), UNKNOWN_NODE)
+        if not isinstance(error, ModelDeclined):
+            return
+        details = {"type": REFUSAL_STOP_REASON, "category": error.category} if error.category else None
+        self.append({"event": "model", "node": node, "content": "", "tool_calls": [],
+                     "usage": _usage(getattr(error.ai_message, "usage_metadata", None)), "model": error.model,
+                     "stop_reason": REFUSAL_STOP_REASON,
+                     DECLINED_KEY: {"stop_reason": REFUSAL_STOP_REASON, "stop_details": details}})
+
+
+def node_by_max_tokens(mode: str) -> dict[int, str]:
+    """Each node's max_tokens in this mode, naming its node; a budget two nodes share names none."""
+    budgets: dict[int, list[str]] = {}
+    for node in NODES:
+        budgets.setdefault(max_tokens_for(node, mode), []).append(node)
+    return {budget: nodes[0] if len(nodes) == 1 else UNKNOWN_NODE for budget, nodes in budgets.items()}
+
+
+def call_node(by_budget: Mapping[int, str], max_tokens: Any, *, has_tools: bool) -> str:
+    """The node a call belongs to: named by its budget, and only research carries tools."""
+    node = by_budget.get(max_tokens, UNKNOWN_NODE)
+    if node != UNKNOWN_NODE and has_tools != (node == TOOL_NODE):
+        return UNKNOWN_NODE
+    return node
+
+
+def _model_name(meta: Mapping[str, Any]) -> str | None:
+    name = meta.get("model_name") or meta.get("model")
+    return name if isinstance(name, str) and name else None
 
 
 class SafetyCapture(list):
@@ -186,7 +276,7 @@ def capturing(run_id: str, mode: str, segment: str, secrets: Sequence[str] = ())
     """Record every model reply made in this block to the run's capture file."""
     _register_hook()
     handler = CaptureHandler(capture_path(run_id), mode, secrets)
-    handler.append({"event": "segment", "segment": segment})
+    handler.append({"event": "segment", "segment": segment, "mode": mode})
     token = _CAPTURE.set(handler)
     try:
         with capture_into(SafetyCapture(handler)):
@@ -281,7 +371,7 @@ def in_call_order(lookups: Sequence[Mapping[str, Any]],
     used: set[int] = set()
     ordered: list[tuple[int, Mapping[str, Any]]] = []
     for response in script:
-        for call in response["message"]["tool_calls"]:
+        for call in (response.get("message") or {}).get("tool_calls") or []:
             arg = call.get("args", {}).get("query" if call["name"] == "search" else "url")
             for i, (line, entry) in enumerate(numbered):
                 if i not in used and entry.get("tool") == call["name"] and str(entry.get("query") or "") == str(arg):
@@ -341,7 +431,7 @@ def blocked_calls(script: Sequence[Mapping[str, Any]], results: Sequence[Mapping
     limits = config.RESEARCH_LIMITS.get(limits_key or "", {})
     out: dict[str, int] = {}
     for tool in ("search", "fetch"):
-        scripted = sum(1 for response in script for call in response["message"]["tool_calls"]
+        scripted = sum(1 for response in script for call in (response.get("message") or {}).get("tool_calls") or []
                        if call["name"] == tool)
         sent = sum(1 for r in results if r["tool"] == tool)
         if scripted > sent and tool in limits and sent == limits[tool]:
@@ -370,13 +460,13 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
 
     plate = by_node.get("read_plate", [])
     photo = state.get("photo") or None
-    research_script = [
-        {"message": {"content": str(e.get("content") or ""),
-                     "tool_calls": [{"name": c["name"], "args": c["args"], **({"id": c["id"]} if c.get("id") else {})}
-                                    for c in e.get("tool_calls") or []],
-                     "usage": _usage(e.get("usage"))}}
-        for e in by_node.get("research", [])
-    ]
+    research_script = [_message_response(e) for e in by_node.get("research", [])]
+    for event in models:
+        if event.get("dropped_blocks"):
+            build.notes.append(f"a {event.get('node')} reply held block type(s) {event['dropped_blocks']}, "
+                               "left out of the cassette")
+        if event.get("stop_reason") == "max_tokens":
+            build.notes.append(f"a {event.get('node')} reply stopped at its max_tokens")
     trail = list(state.get("search_trail") or [])
     results = tool_results(lookups, pages_dir, build, research_script)
     research_section: dict[str, Any] = {"script": research_script, "tool_results": results}
@@ -400,15 +490,13 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
             "symptom": str(state.get("symptom") or ""),
             "plate_sha256": photo.get("sha256") if isinstance(photo, Mapping) else None,
         },
-        "read_plate": ({"extraction": _structured(str(plate[0].get("content") or "")),
-                        "usage": _usage(plate[0].get("usage"))} if plate else None),
-        "classifier": [{"structured": _structured(str(e.get("content") or "")), "usage": _usage(e.get("usage"))}
-                       for e in by_node.get("classifier", [])],
+        "read_plate": _structured_entry(plate[0], "extraction") if plate else None,
+        "classifier": [_structured_entry(e, "structured") for e in by_node.get("classifier", [])],
         "resume": ({"identity": _identity(state.get("identity")), "observed_code": state.get("observed_code")}
                    if resumed else None),
         "research": research_section,
-        "synthesize": [{"attempt": i + 1, "draft": _structured(str(e.get("content") or "")),
-                        "usage": _usage(e.get("usage"))} for i, e in enumerate(by_node.get("synthesize", []))],
+        "synthesize": [{"attempt": i + 1, **_structured_entry(e, "draft")}
+                       for i, e in enumerate(by_node.get("synthesize", []))],
         "page_texts": {},
         "caps": None,
         "expect": {
@@ -421,6 +509,11 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
             "fetches": sum(1 for e in trail if e.get("tool") == "fetch" and e.get("status") != "blocked"),
         },
     }
+    recorded = recorded_models(capture, by_node, build)
+    if recorded is not None:
+        build.cassette["recorded"] = recorded
+        build.cassette["provenance"]["copied_fields"].append("recorded")
+        build.origins.append(("recorded", f"{capture_path(run_id).name}: the mode and each reply's model name"))
     safety = [e for e in capture if e.get("event") == SAFETY_EVENT]
     if safety:
         build.cassette["safety_check"] = [{key: e.get(key) for key in SAFETY_CHECK_KEYS} for e in safety]
@@ -437,7 +530,7 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
     for node, prefix, key in (("classifier", "classifier", ""), ("research", "research.script", ".message"),
                               ("synthesize", "synthesize", "")):
         for i, event in enumerate(by_node.get(node, [])):
-            build.origins.append((f"{prefix}[{i}]{key}",
+            build.origins.append((f"{prefix}[{i}]{'' if DECLINED_KEY in event else key}",
                                   f"{capture_name} line {index[id(event)] + 1} ({node} reply {i + 1})"))
     build.origins += [
         ("input.symptom", "the run's state: symptom (typed by the owner)"),
@@ -449,6 +542,70 @@ def build_cassette(run_id: str, state: Mapping[str, Any], *, capture: Sequence[M
         ("expect.route", "the run's state: route"),
     ]
     return build
+
+
+def _refusal(event: Mapping[str, Any]) -> dict[str, Any]:
+    """A captured decline as the cassette's recorded decline: stop_reason, category, usage."""
+    declined = event[DECLINED_KEY]
+    return {"stop_reason": declined["stop_reason"], "stop_details": declined.get("stop_details"),
+            "usage": _usage(event.get("usage"))}
+
+
+def _message_response(event: Mapping[str, Any]) -> dict[str, Any]:
+    """One research turn as a script response: its blocks (or text), tool calls and usage, or its decline."""
+    if DECLINED_KEY in event:
+        return _refusal(event)
+    blocks = event.get("blocks")
+    return {"message": {
+        "content": [dict(b) for b in blocks] if isinstance(blocks, list) else str(event.get("content") or ""),
+        "tool_calls": [{"name": c["name"], "args": c["args"], **({"id": c["id"]} if c.get("id") else {})}
+                       for c in event.get("tool_calls") or []],
+        "usage": _usage(event.get("usage")),
+    }}
+
+
+def _structured_entry(event: Mapping[str, Any], key: str) -> dict[str, Any]:
+    """One structured reply under `key` with its usage and thinking markers, or its decline."""
+    if DECLINED_KEY in event:
+        return _refusal(event)
+    out = {key: _structured(str(event.get("content") or "")), "usage": _usage(event.get("usage"))}
+    markers = [dict(b) for b in event.get("blocks") or [] if b.get("type") in THINKING_MARKERS]
+    if markers:
+        out["thinking"] = markers
+    return out
+
+
+def recorded_models(capture: Sequence[Mapping[str, Any]], by_node: Mapping[str, Sequence[Mapping[str, Any]]],
+                    build: _Build) -> dict[str, Any] | None:
+    """{"mode", "models"} from the capture, or None when it names no model (a Haiku 4.5 era capture).
+
+    A reply model name with no row in config.PRICES_PER_MTOK (a dated
+    snapshot, say) is left out with a note, so replay prices that node as
+    config.MODEL_FOR names it in the recorded mode; a cassette naming an
+    unpriced model would not load (cassettes._check_recorded) and could not
+    be priced.
+    """
+    modes = {e.get("mode") for e in capture if e.get("event") == "segment" and e.get("mode")}
+    models: dict[str, str] = {}
+    named = False
+    for node in NODES:
+        names = sorted({str(e["model"]) for e in by_node.get(node, []) if e.get("model")})
+        named = named or bool(names)
+        unpriced = [n for n in names if n not in config.PRICES_PER_MTOK]
+        if unpriced:
+            build.notes.append(f"{node} replies name model(s) with no price in config.PRICES_PER_MTOK "
+                               f"({', '.join(unpriced)}); left out of recorded.models, so replay prices {node} "
+                               "as config.MODEL_FOR names it")
+        names = [n for n in names if n in config.PRICES_PER_MTOK]
+        if len(names) > 1:
+            build.notes.append(f"{node} replies name more than one model ({', '.join(names)}); the first is kept")
+        if names:
+            models[node] = names[0]
+    if not named or len(modes) != 1:
+        if named:
+            build.notes.append(f"the capture names {len(modes)} modes; the cassette records no models")
+        return None
+    return {"mode": modes.pop(), "models": models}
 
 
 def _source_of(path: str, origins: Sequence[tuple[str, str]]) -> str | None:
@@ -539,11 +696,56 @@ def _write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def replay_budget_notes(cassette: Mapping[str, Any]) -> list[str]:
+    """Where a replay of this recording would pass a budget (decision 69).
+
+    Replay charges a recording that names its live mode ("recorded") at the
+    card of the model each node's replies named, under that mode's run cap
+    (ledger.price_basis), so its calls cost what they cost live. A cassette
+    without it is charged on the card the Haiku 4.5 cassettes were recorded
+    under (config.REPLAY_PRICES), ten times Claude Haiku 5.5's, under the
+    replay run cap. Either way the research budget applies. A recording whose
+    usage costs more than either at the card replay charges may not replay to
+    the live run's state: replay refuses any call whose reservation would pass
+    the cap, so it can stop where the live run went on (a last call that
+    passes the cap is still served). The figure is a floor, since replay also
+    holds each call's reservation before it is sent.
+    """
+    from agent.ledger import Ledger, price_usage
+
+    recorded = cassette.get("recorded") or {}
+    basis = recorded.get("mode") if recorded.get("mode") in config.LIVE_MODES else "replay"
+    caps = cassette.get("caps") or {}
+    run_cap = Ledger.run_cap(basis, caps.get("run_cap_usd"))
+    research_cap = float(caps.get("research_budget_usd", config.RESEARCH_BUDGET_USD))
+
+    def cost(node: str, entries: Sequence[Mapping[str, Any]]) -> float:
+        named = (recorded.get("models") or {}).get(node)
+        card = (config.REPLAY_PRICES if basis == "replay"
+                else named if named in config.PRICES_PER_MTOK else config.MODEL_FOR[basis][node])
+        return sum(price_usage(card, (e.get("message") or e).get("usage") or {}) for e in entries)
+
+    priced = "at replay prices" if basis == "replay" else f"at the recorded models' {basis} mode prices"
+    research = cost("research", (cassette.get("research") or {}).get("script") or [])
+    total = research + cost("read_plate", [cassette["read_plate"]] if cassette.get("read_plate") else []) \
+        + cost("classifier", cassette.get("classifier") or []) + cost("synthesize", cassette.get("synthesize") or [])
+    notes = []
+    if total > run_cap:
+        notes.append(f"{priced} this recording's model calls cost {total:.4f} USD, over the replay run cap "
+                     f"of {run_cap:.4f} USD: a replay refuses any call reserved past it, so it can stop where the "
+                     "live run went on")
+    if research > research_cap:
+        notes.append(f"{priced} its research turns cost {research:.4f} USD, over the research budget of "
+                     f"{research_cap:.4f} USD: a replay can end research where the live run went on")
+    return notes
+
+
 def write_candidate(run_id: str, state: Mapping[str, Any], *, lookup_log: Path, pages_dir: Path,
                     recorded_on: str, secrets: Sequence[str] = ()) -> RecordingResult:
     """Build, redact, scan and write the cassette candidate for a finished live run."""
     build = build_cassette(run_id, state, capture=_read_jsonl(capture_path(run_id)),
                            lookups=_read_jsonl(lookup_log), pages_dir=pages_dir, recorded_on=recorded_on)
+    build.notes += replay_budget_notes(build.cassette)
     cassette = _strip_urls(redact_value(build.cassette, secrets))
     denylist = _denylist()
     # The run ID is random hex, not private; a run of 5 digits in it is not a ZIP code.

@@ -6,6 +6,12 @@ state, runtime) -> dict | None` may jump only when decorated with
 handler) -> ModelResponse | AIMessage | ExtendedModelResponse` cannot jump at all
 (a Command goto there raises NotImplementedError), so SpendCap ends research by
 raising BudgetExceeded("research_budget"), which the research node catches.
+
+Neither middleware edits a message already sent: they read the transcript and
+add nothing to it, so the loop stays append only, as Claude Haiku 5.5 needs
+for the thinking blocks each reply carries back (decision 69; the agent sends
+them unmodified). A declined reply (agent.declined.ModelDeclined) is charged
+its usage here and travels up to the research node, never retried.
 """
 
 from __future__ import annotations
@@ -20,7 +26,8 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.runtime import Runtime
 
 from agent import config
-from agent.ledger import BudgetExceeded, Ledger, estimate_input_tokens, price_usage
+from agent.declined import ModelDeclined
+from agent.ledger import BudgetExceeded, Ledger, basis_model, estimate_input_tokens, price_basis, price_usage
 from agent.redaction import scrub_exception
 from agent.state import RunContext
 
@@ -34,6 +41,7 @@ BLOCKED_MARKER = "Tool call limit exceeded"
 # A call that timed out or lost its connection may still have been billed
 # (PLAN 8.9), so it is charged at its reservation.
 SENT_FAILURES: tuple[type[BaseException], ...] = (ModelTimeoutError, ModelConnectionError, TimeoutError)
+DECLINED_NO_USAGE_NOTE = "a declined reply with no usage, charged at reservation"
 
 
 def _now() -> str:
@@ -117,18 +125,21 @@ class SpendCap(AgentMiddleware[AgentState, Any]):
         self.research_budget_reached = False
 
     def _reservation_usd(self, model: str, input_tokens: int, max_tokens: int) -> float:
-        prices = config.REPLAY_PRICES if self.ctx.mode == "replay" else config.PRICES_PER_MTOK[model]
+        # Given the model, price_usage picks its card for this prompt length.
+        basis = price_basis(self.ctx.mode, self.ctx.cassette)
+        prices = config.REPLAY_PRICES if basis == "replay" else model
         return price_usage(prices, {"input_tokens": input_tokens, "output_tokens": max_tokens})
 
     def wrap_model_call(
         self, request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
         ctx = self.ctx
-        model = str(getattr(request.model, "model", None) or config.MODEL_FOR[ctx.mode][NODE])
+        basis = price_basis(ctx.mode, ctx.cassette)  # a recording's live mode in replay, else the run's
+        model = str(getattr(request.model, "model", None) or basis_model(basis, NODE, ctx.cassette))
         max_tokens = int(request.model_settings.get("max_tokens") or getattr(request.model, "max_tokens", 0)
                          or config.MAX_TOKENS[NODE])
         messages = ([request.system_message] if request.system_message else []) + list(request.messages)
-        estimate = estimate_input_tokens(messages, model=model, tools=request.tools or None)
+        estimate = estimate_input_tokens(messages, model=model, tools=request.tools or None, mode=basis)
         ledger = Ledger(ctx.ledger_path)
         ids = {"mode": ctx.mode, "node": NODE}
         if self.spent_usd + self._reservation_usd(model, estimate, max_tokens) > self.research_budget_usd:
@@ -139,13 +150,18 @@ class SpendCap(AgentMiddleware[AgentState, Any]):
                 f"research spent {self.spent_usd:.6f}; the next call would pass {self.research_budget_usd:.6f}",
             )
         hold = ledger.reserve(ctx.run_id, model=model, input_tokens_est=estimate, max_tokens=max_tokens,
-                              run_cap_usd=(ctx.caps or {}).get("run_cap_usd"), **ids)
+                              run_cap_usd=(ctx.caps or {}).get("run_cap_usd"), price_mode=basis, **ids)
         self.calls += 1
         try:
             response = handler(request)
         except BaseException as exc:
             if isinstance(exc, SENT_FAILURES):
                 self.spent_usd += ledger.charge_timeout(hold)
+            elif isinstance(exc, ModelDeclined):
+                # A decline is a billed reply: charged its usage, never released.
+                usage = exc.ai_message.usage_metadata
+                self.spent_usd += (ledger.charge(hold, dict(usage)) if usage
+                                   else ledger.charge_estimated(hold, DECLINED_NO_USAGE_NOTE))
             else:
                 ledger.release(hold)
             # The error travels up through the agent to the graph, which keeps

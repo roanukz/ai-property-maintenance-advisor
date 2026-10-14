@@ -37,6 +37,9 @@ def _money_values() -> set[float]:
     values: set[float] = set()
     for prices in config.PRICES_PER_MTOK.values():
         values.update(prices.values())
+    # Claude Haiku 5.5's long prompt card (decision 69).
+    for prices in config.LONG_PROMPT_PRICES_PER_MTOK.values():
+        values.update(prices.values())
     values.update(config.REPLAY_PRICES.values())
     values.update(config.RUN_CAP_USD.values())
     values.update(

@@ -25,7 +25,9 @@
    (rule 5).
 7. Refusal and budget stop clearing (rule 6).
 8. happened_before must cite a loaded record of this appliance (rule 7).
-9. Registry dates: code writes the age statement (rule 8).
+9. Registry dates: code writes the age statement (rule 8) and the warranty
+   coverage line, each component's end date and status as of the run date
+   (SC13, `agent/rules/coverage.py`).
 10. Upgrade and maintenance evidence (rule 9, `agent/rules/upgrades.py` and
     `agent/rules/maintenance.py`): an entry is dropped unless its index
     resolves and its evidence quote verifies verbatim in the cited page with
@@ -35,7 +37,10 @@
 11. Prices (rule 10, `agent/rules/prices.py`, decision 28): an unquoted
     currency amount drops an upgrade or maintenance entry and fails
     validation in a v1 field.
-12. Prune uncited sources and renumber every index (rule 11), then an ok
+12. Model written warranty dates (rule 13, `agent/rules/warranty_dates.py`):
+    a date in a warranty caution or verify item fails validation, on every
+    status, since code writes every warranty date.
+13. Prune uncited sources and renumber every index (rule 11), then an ok
     brief must still cite at least one source.
 """
 
@@ -52,6 +57,7 @@ from agent.rules import citations, clearing, grounding, observed_code as observe
 from agent.rules import maintenance as maintenance_rule
 from agent.rules import prices as prices_rule
 from agent.rules import upgrades as upgrades_rule
+from agent.rules import warranty_dates as warranty_dates_rule
 from agent.rules.v1_parity import ParityError, validate_brief_v1
 from agent.schemas import HTTP_URL, Brief, BriefDraft, draft_to_brief_dict
 
@@ -195,6 +201,7 @@ def run_rules(
     maintenance_log: list[dict] | None = None,
     recorded_text_urls: set[str] | None = None,
     safety_signals: dict | None = None,
+    warranty_coverage: list[dict] | None = None,
 ) -> RulesResult:
     """Run every v2 rule over one model draft.
 
@@ -207,7 +214,10 @@ def run_rules(
     registry maintenance rows (`Registry.maintenance_log`), from which rule 9
     writes due dates; `recorded_text_urls` names the URLs whose page text a
     replayed recording says was saved (rule 4); `safety_signals` is the
-    safety_check node's record of Jev's answers, read and never called.
+    safety_check node's record of Jev's answers, read and never called;
+    `warranty_coverage` is the appliance's registry coverage rows
+    (`Registry.warranty_coverage`); `today` is the run's one UTC date, which
+    the age statement and every coverage status use.
     `pass_kind` is "synthesize", or "upgrade" for the pass
     after upgrade_check added graph derived options to the draft: the same
     rules run on both, so a graph option is checked like a model option and
@@ -256,12 +266,14 @@ def run_rules(
         raised = []
     citations.check_happened_before(brief, history_hits, (registry or {}).get("id"))
     citations.apply_registry_dates(brief, registry=registry,
-                                   manufacture_date=identity.get("manufacture_date"), today=today)
+                                   manufacture_date=identity.get("manufacture_date"), today=today,
+                                   coverage=warranty_coverage)
     dropped: list[dict[str, Any]] = []
     errors += check_upgrade_and_maintenance_evidence(brief, page_texts=page_texts,
                                                      maintenance_log=maintenance_log,
                                                      appliance_id=(registry or {}).get("id"), report=dropped)
     errors += check_prices(brief, page_texts=page_texts, report=dropped)
+    errors += warranty_dates_rule.check_warranty_dates(brief)
     grounding_status = grounding.summarize(
         [grounding.GroundingResult(e["status"], e["reason"]) for e in grounding_report],
         mode=mode, provenance=provenance) if grounding_checked else grounding.NOT_CHECKED

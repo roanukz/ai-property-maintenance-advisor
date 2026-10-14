@@ -25,6 +25,12 @@ every check passes. A missing denylist is a failure, not a skip.
    carries the run record's safety section with one row per step, every flagged
    row names the layer that raised it, a failed check carries the brief's notice
    line (and the brief file has it), and src/demo.js draws the safety step.
+9. A refusal reads as one: every case that ended with no reliable answer has a
+   takeaway that says so and claims no answer, every side by side table with such
+   a case says how each run ended and carries the builder's note, and src/demo.js
+   draws every field builder version 5 adds when the fixtures use it (the route
+   lead, the side by side note and outcome row, the warranty coverage rows and the
+   quote note).
 """
 
 from __future__ import annotations
@@ -138,6 +144,9 @@ def check(site: Path, denylist: list[str] | None = None) -> list[str]:
     # 8. the safety check, from the run record, wherever a brief has steps to try first
     problems += safety_problems(site, demo, demo_js)
 
+    # 9. a refusal reads as one, and the script draws what the builder wrote for it
+    problems += refusal_problems(demo, demo_js)
+
     # 7. no superseded build or run named anywhere in a rerun build
     if demo.get("data_status") == "rerun":
         forbidden = set(build_demo.KNOWN_SUPERSEDED_BUILDS)
@@ -178,6 +187,58 @@ def safety_problems(site: Path, demo: dict, demo_js: str) -> list[str]:
         for needle in ("function stepSafety", "stepSafety(c), stepBrief(c)", "Jev raised a flag the writer left off"):
             if needle not in demo_js:
                 problems.append(f"safety: src/demo.js does not draw the safety check ({needle!r} missing)")
+    return problems
+
+
+# Words a refusal's takeaway must never contain: each claims the run answered.
+REFUSAL_CLAIMS = ("answered", "confirmed cause", "documented possibilit", "returned a brief with")
+
+# Builder version 5 fields, and the text in src/demo.js that draws each one. A
+# fixtures file that uses a field with a script that does not draw it would show the
+# page's own wording where the builder said it would not fit.
+DRAWN_BY = (
+    ("route lead", lambda c: bool((c.get("route") or {}).get("lead")), "if (r.lead)"),
+    ("side by side note", lambda c: bool((c.get("compare_with") or {}).get("note")), "if (cw.note)"),
+    ("side by side outcome row", lambda c: any(col.get("outcome_text") == "No reliable answer"
+                                               for col in (c.get("compare_with") or {}).get("columns") or []),
+     '["How it ended", "outcome_text", String]'),
+    ("warranty coverage", lambda c: bool((c.get("records") or {}).get("coverage")), "var cov = r.coverage;"),
+    ("quote note", lambda c: any(f.get("brief_quote_relation") == "within" and f.get("brief_quote_drops_code_label") is False
+                                 for f in (c.get("memory") or {}).get("facts") or []),
+     "f.brief_quote_drops_code_label === false"),
+)
+
+
+def refusal_problems(demo: dict, demo_js: str) -> list[str]:
+    """Check 9: a case that ended with no reliable answer is shown as exactly that."""
+    problems: list[str] = []
+    cases = demo.get("cases") or []
+    by_id = {c.get("id"): c for c in cases}
+
+    def refused(c: dict | None) -> bool:
+        return ((c or {}).get("outcome") or {}).get("status") == "no_reliable_answer"
+
+    for case in cases:
+        if refused(case):
+            text = (case.get("takeaway") or "").lower()
+            if "no reliable answer" not in text:
+                problems.append(f"refusal: case {case.get('id')} ended with no reliable answer but its takeaway "
+                                "does not say so")
+            problems += [f"refusal: case {case.get('id')}'s takeaway says {claim!r}, but the run gave no answer"
+                         for claim in REFUSAL_CLAIMS if claim in text]
+        cw = case.get("compare_with") or {}
+        pair = [by_id.get(col.get("case_id")) for col in cw.get("columns") or []]
+        if any(refused(c) for c in pair):
+            if not cw.get("note"):
+                problems.append(f"refusal: case {case.get('id')}'s side by side table has a run with no reliable "
+                                "answer but no note saying how each run ended")
+            for col, c in zip(cw.get("columns") or [], pair):
+                if refused(c) and col.get("outcome_text") != "No reliable answer":
+                    problems.append(f"refusal: case {case.get('id')}'s side by side table does not say case "
+                                    f"{col.get('case_id')} ended with no reliable answer")
+    for name, used, needle in DRAWN_BY:
+        if any(used(c) for c in cases) and needle not in demo_js:
+            problems.append(f"drawing: the fixtures use the {name}, but src/demo.js does not draw it ({needle!r} missing)")
     return problems
 
 

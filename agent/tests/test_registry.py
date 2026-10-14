@@ -24,14 +24,18 @@ def _all_rows(reg: Registry) -> list[dict]:
     for appliance in reg.list_appliances():
         rows += reg.service_history(appliance["id"])
         rows += reg.maintenance_log(appliance["id"])
+        rows += reg.warranty_coverage(appliance["id"])
     return rows
 
 
-def test_seed_loads_two_properties_six_appliances_all_synthetic(registry: Registry) -> None:
+def test_seed_loads_two_properties_seven_appliances_all_synthetic(registry: Registry) -> None:
     # Mutation: load_seed skips the last appliance, or the synthetic column is
-    # stored as 0 (or not converted to True), turns this red.
+    # stored as 0 (or not converted to True), turns this red; so do
+    # registry_seed_drops_softener and registry_list_appliances_capped (SC13
+    # added the seventh, the synthetic water softener) and
+    # registry_warranty_synthetic_zero (a coverage row stored as not synthetic).
     assert len(registry.list_properties()) == 2
-    assert len(registry.list_appliances()) == 6
+    assert len(registry.list_appliances()) == 7
     labels = {p["label"] for p in registry.list_properties()}
     assert labels == {"Synthetic property A", "Synthetic property B"}
     rows = _all_rows(registry)
@@ -151,7 +155,7 @@ def test_lookups_survive_reseed(registry: Registry) -> None:
     registry.record_lookup("run-1", appliance_id=OPTIMA, status="ok")
     registry.load_seed()
     assert len(registry.lookups(appliance_id=OPTIMA)) == 1
-    assert len(registry.list_appliances()) == 6
+    assert len(registry.list_appliances()) == 7
 
 
 def test_record_lookup_rejects_unknown_appliance(registry: Registry) -> None:
@@ -182,7 +186,7 @@ def test_concurrent_reads_from_threads(registry: Registry) -> None:
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(read, range(64)))
-    assert results == [(6, 1)] * 64
+    assert results == [(7, 1)] * 64
     with sqlite3.connect(registry.path) as conn:
         assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
 
@@ -196,3 +200,55 @@ def test_concurrent_lookup_writes_from_threads(registry: Registry) -> None:
     with ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(write, range(40)))
     assert len(registry.lookups(appliance_id=OPTIMA)) == 40
+
+
+# ---------------------------------------------------------------------------
+# Warranty coverage rows (SC13)
+# ---------------------------------------------------------------------------
+
+
+def test_optima_terms_load_as_three_coverage_rows_in_months(registry: Registry) -> None:
+    # Mutation: registry_term_stored_in_years (5 stored for 5 years).
+    rows = registry.warranty_coverage(OPTIMA)
+    assert [(r["record_id"], r["component"], r["term_months"], r["start_event"]) for r in rows] == [
+        ("warranty:warr-optima-equipment", "equipment", 24, "install"),
+        ("warranty:warr-optima-labor", "labor", 12, "install"),
+        ("warranty:warr-optima-shell", "shell", 60, "install"),
+    ]
+    optima = registry.get_appliance(OPTIMA)
+    for row in rows:
+        assert row["source_text"] in optima["warranty_terms"] and row["synthetic"] is True
+    assert registry.warranty_coverage("appl-xr16") == []
+
+
+def test_schema_checks_warranty_coverage_rows(registry: Registry) -> None:
+    # Mutations: registry_warranty_record_id_check_dropped,
+    # registry_warranty_term_check_dropped and
+    # registry_warranty_start_event_check_dropped (each CHECK removed).
+    good = ("w-x", "warranty:w-x", OPTIMA, "shell", 12, "install", "synthetic", 1)
+    bad_rows = [("w-y", "warranty:w-other", *good[2:]), ("w-z", "warranty:w-z", OPTIMA, "shell", 0, *good[5:]),
+                ("w-q", "warranty:w-q", OPTIMA, "shell", 12, "delivery", *good[6:])]
+    sql = ("INSERT INTO warranty_coverage (id, record_id, appliance_id, component, term_months, start_event,"
+           " source_text, synthetic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    for bad in bad_rows:
+        with sqlite3.connect(registry.path) as conn, pytest.raises(sqlite3.IntegrityError):
+            conn.execute(sql, bad)
+    with sqlite3.connect(registry.path) as conn:
+        conn.execute(sql, good)
+
+
+def test_seed_coverage_rows_must_be_synthetic_and_may_be_absent(tmp_path: Path) -> None:
+    # Mutations: registry_warranty_not_checked_synthetic (the coverage list is
+    # left out of the synthetic check), registry_warranty_list_required (a seed
+    # written before SC13, with no coverage list, no longer loads).
+    data = json.loads(DEFAULT_SEED_PATH.read_text(encoding="utf-8"))
+    data["warranty_coverage"][0]["synthetic"] = False
+    bad = tmp_path / "bad_seed.json"
+    bad.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(SeedError, match="warranty_coverage"):
+        Registry(tmp_path / "bad.sqlite").load_seed(bad)
+    del data["warranty_coverage"]
+    old = tmp_path / "old_seed.json"
+    old.write_text(json.dumps(data), encoding="utf-8")
+    counts = Registry(tmp_path / "old.sqlite").load_seed(old)
+    assert counts["warranty_coverage"] == 0 and counts["appliances"] == 7

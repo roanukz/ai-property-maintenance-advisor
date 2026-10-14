@@ -5,7 +5,22 @@ returns carries a boolean ``synthetic`` so callers can label what they show.
 
 Citation ids (see registry_schema.sql): ``appliance:<id>`` for install date,
 purchase date and warranty terms (decision 29), ``service:<id>`` for
-``happened_before`` (SC8), ``maintenance:<id>`` for maintenance entries.
+``happened_before`` (SC8), ``maintenance:<id>`` for maintenance entries,
+``warranty:<id>`` for one component's warranty coverage (SC13).
+
+An appliance's ``model_number`` is its exact model number when the record
+holds one apart from the model name (the Trane unit's model on record is
+"XR16 4TTR6036", product line and model number together; its model number is
+"4TTR6036"), else null. The product recall check compares it exactly. A
+registry file made before the column existed gains it when opened
+(``MIGRATIONS``), with every row, lookups included, kept.
+
+A file made from an older seed keeps its old rows until the seed is loaded
+again: the column is null and newer seed rows are missing. ``seed_drift``
+names each difference that matters before a live step (a seed appliance or
+warranty coverage row missing, or a model number that differs), reading the
+file without changing it, so a live command can refuse until the seed is
+reloaded with ``open_registry``.
 
 Each operation opens and closes its own connection, so one ``Registry`` can be
 shared across threads. WAL lets readers run while a writer commits.
@@ -28,8 +43,17 @@ SCHEMA_PATH = Path(__file__).with_name("registry_schema.sql")
 APPLIANCE_PREFIX = "appliance:"
 SERVICE_PREFIX = "service:"
 MAINTENANCE_PREFIX = "maintenance:"
+WARRANTY_PREFIX = "warranty:"
 
 _BOOL_COLUMNS = ("synthetic", "pending_owner_choice")
+
+# Columns added after a table's first schema: (table, column, declaration).
+# CREATE TABLE IF NOT EXISTS leaves an existing table as it is, so a registry
+# file made before a column existed gains it here when it is opened, with
+# every row kept (the new column is null until the seed sets it).
+MIGRATIONS = (
+    ("appliances", "model_number", "TEXT"),
+)
 
 
 class SeedError(ValueError):
@@ -48,6 +72,10 @@ def maintenance_record_id(entry_id: str) -> str:
     return MAINTENANCE_PREFIX + entry_id
 
 
+def warranty_record_id(coverage_id: str) -> str:
+    return WARRANTY_PREFIX + coverage_id
+
+
 def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     out = dict(row)
     for key in _BOOL_COLUMNS:
@@ -60,6 +88,67 @@ def _normalize(text: str) -> str:
     return " ".join(text.split()).lower()
 
 
+def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add each MIGRATIONS column a table lacks; rows are kept, the new column is null.
+
+    Two processes opening an old file at once may both try; the loser's
+    "duplicate column" error is ignored once the column is there.
+    """
+    for table, column, declaration in MIGRATIONS:
+        if column in _columns(conn, table):
+            continue
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
+        except sqlite3.OperationalError:
+            if column not in _columns(conn, table):
+                raise
+
+
+def seed_drift(path: Path | str = REGISTRY_PATH, seed_path: Path | str | None = None) -> list[str]:
+    """How the registry file at ``path`` differs from the seed, read only; empty when it matches.
+
+    Reports seed appliance ids the file lacks, appliances whose model_number
+    differs from the seed's (a file made before the column counts as null),
+    and seed warranty_coverage ids the file lacks. A missing file reports
+    nothing, since the first run loads the seed into it. The file is opened
+    read only, so no migration runs.
+    """
+    target = Path(path)
+    if not target.exists():
+        return []
+    data = json.loads(Path(seed_path or DEFAULT_SEED_PATH).read_text(encoding="utf-8"))
+    conn = sqlite3.connect(f"{target.resolve().as_uri()}?mode=ro", uri=True,
+                           timeout=REGISTRY_BUSY_TIMEOUT_MS / 1000)
+    try:
+        tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        numbered = "appliances" in tables and "model_number" in _columns(conn, "appliances")
+        query = "SELECT id, model_number FROM appliances" if numbered else "SELECT id, NULL FROM appliances"
+        held = dict(conn.execute(query).fetchall()) if "appliances" in tables else {}
+        coverage = ({row[0] for row in conn.execute("SELECT id FROM warranty_coverage")}
+                    if "warranty_coverage" in tables else set())
+    finally:
+        conn.close()
+    problems = []
+    missing = [a["id"] for a in data.get("appliances") or [] if a["id"] not in held]
+    if missing:
+        problems.append(f"seed appliances missing from the registry: {', '.join(missing)}")
+    def shown(value: Any) -> str:
+        return "none" if value is None else f'"{value}"'
+
+    differ = [f"{a['id']} (registry {shown(held[a['id']])}, seed {shown(a.get('model_number'))})"
+              for a in data.get("appliances") or [] if a["id"] in held and held[a["id"]] != a.get("model_number")]
+    if differ:
+        problems.append(f"model numbers that differ from the seed: {', '.join(differ)}")
+    rows = [r["id"] for r in data.get("warranty_coverage") or [] if r["id"] not in coverage]
+    if rows:
+        problems.append(f"seed warranty coverage rows missing from the registry: {', '.join(rows)}")
+    return problems
+
+
 class Registry:
     """A registry database at ``path``, created with the schema if missing."""
 
@@ -69,6 +158,7 @@ class Registry:
         with self._connect() as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+            _migrate(conn)
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -86,6 +176,10 @@ class Registry:
         finally:
             conn.close()
 
+    def seed_drift(self, seed_path: Path | str | None = None) -> list[str]:
+        """How this registry differs from the seed (module ``seed_drift``); empty when it matches."""
+        return seed_drift(self.path, seed_path)
+
     def _all(self, sql: str, params: tuple = ()) -> list[dict[str, Any]]:
         with self._connect() as conn:
             return [_row_to_dict(r) for r in conn.execute(sql, params).fetchall()]
@@ -97,11 +191,14 @@ class Registry:
 
         Rejects the whole file if any row is not ``synthetic: true``. Upsert
         rather than replace, so lookups that reference appliances survive a
-        reload.
+        reload. The warranty_coverage list (SC13) may be left out of a seed
+        written before it existed, and then loads no rows. An appliance's
+        model_number may be left out too, and is then stored as null.
         """
         seed_path = Path(path) if path is not None else DEFAULT_SEED_PATH
         data = json.loads(seed_path.read_text(encoding="utf-8"))
-        tables = ("properties", "appliances", "service_records", "maintenance_log")
+        data.setdefault("warranty_coverage", [])
+        tables = ("properties", "appliances", "service_records", "maintenance_log", "warranty_coverage")
         for table in tables:
             rows = data.get(table)
             if not isinstance(rows, list):
@@ -123,8 +220,8 @@ class Registry:
                     INSERT INTO appliances (id, record_id, property_id, category,
                         manufacturer, model, serial, purchase_date, install_date,
                         warranty_terms, warranty_source, status, notes,
-                        pending_owner_choice, synthetic)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                        pending_owner_choice, synthetic, model_number)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         property_id=excluded.property_id, category=excluded.category,
                         manufacturer=excluded.manufacturer, model=excluded.model,
@@ -134,7 +231,7 @@ class Registry:
                         warranty_source=excluded.warranty_source,
                         status=excluded.status, notes=excluded.notes,
                         pending_owner_choice=excluded.pending_owner_choice,
-                        synthetic=1
+                        synthetic=1, model_number=excluded.model_number
                     """,
                     (
                         row["id"],
@@ -151,6 +248,7 @@ class Registry:
                         row.get("status", "active"),
                         row.get("notes"),
                         int(bool(row.get("pending_owner_choice", False))),
+                        row.get("model_number"),
                     ),
                 )
             for row in data["service_records"]:
@@ -192,6 +290,27 @@ class Registry:
                         row["task"],
                         row["done_on"],
                         maintenance_record_id(row["id"]),
+                    ),
+                )
+            for row in data["warranty_coverage"]:
+                conn.execute(
+                    """
+                    INSERT INTO warranty_coverage (id, record_id, appliance_id, component,
+                        term_months, start_event, source_text, synthetic)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                    ON CONFLICT(id) DO UPDATE SET
+                        appliance_id=excluded.appliance_id, component=excluded.component,
+                        term_months=excluded.term_months, start_event=excluded.start_event,
+                        source_text=excluded.source_text, synthetic=1
+                    """,
+                    (
+                        row["id"],
+                        warranty_record_id(row["id"]),
+                        row["appliance_id"],
+                        row["component"],
+                        row["term_months"],
+                        row["start_event"],
+                        row["source_text"],
                     ),
                 )
         return {table: len(data[table]) for table in tables}
@@ -248,6 +367,12 @@ class Registry:
         return self._all(
             "SELECT * FROM maintenance_log WHERE appliance_id = ? ORDER BY done_on DESC, id",
             (appliance_id,),
+        )
+
+    def warranty_coverage(self, appliance_id: str) -> list[dict[str, Any]]:
+        """Warranty coverage rows for one appliance, in id order, each with its record_id."""
+        return self._all(
+            "SELECT * FROM warranty_coverage WHERE appliance_id = ? ORDER BY id", (appliance_id,)
         )
 
     # --------------------------------------------------------------- lookups

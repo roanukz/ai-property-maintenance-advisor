@@ -65,14 +65,17 @@ def test_replay_mode_never_constructs_live_clients(tmp_path, monkeypatch):
 
 def test_replay_max_tokens_match_config(tmp_path):
     # Mutation: give replay synthesize the full budget, or a fixed default.
+    # Mutation haiku55_replay_takes_live_budgets: replay reads config.MAX_TOKENS,
+    # the Claude Haiku 5.5 budgets, not the ones the cassettes were recorded under.
     run = ctx("replay", tmp_path, FakeCassette())
     got = {node: models.make_model(node, run).max_tokens for node in models.NODES}
     assert got == {
-        "read_plate": config.MAX_TOKENS["read_plate"],
-        "classifier": config.MAX_TOKENS["classifier"],
-        "research": config.MAX_TOKENS["research"],
-        "synthesize": config.MAX_TOKENS["synthesize_cheap"],
+        "read_plate": config.REPLAY_MAX_TOKENS["read_plate"],
+        "classifier": config.REPLAY_MAX_TOKENS["classifier"],
+        "research": config.REPLAY_MAX_TOKENS["research"],
+        "synthesize": config.REPLAY_MAX_TOKENS["synthesize_cheap"],
     }
+    assert got == {"read_plate": 512, "classifier": 64, "research": 1_024, "synthesize": 6_000}
 
 
 def test_replay_without_cassette_fails(tmp_path):
@@ -105,8 +108,11 @@ def test_live_model_settings(mode, node, tmp_path, monkeypatch):
     for param in config.NEVER_SEND_PARAMS:
         assert param not in payload
     if expected_model == config.HAIKU:
-        assert m.reasoning_effort is None and m.thinking is None
-        assert "thinking" not in payload and "output_config" not in payload
+        # Claude Haiku 5.5: the node's effort, and no thinking setting (adaptive is its default).
+        assert m.reasoning_effort == config.HAIKU_EFFORT[node] and m.thinking is None
+        assert payload["output_config"] == {"effort": config.HAIKU_EFFORT[node]}
+        for param in config.NEVER_SEND_TO_HAIKU:
+            assert param not in json.dumps(payload)
     else:
         assert m.reasoning_effort == config.FULL_SYNTH_EFFORT
         assert payload["output_config"]["effort"] == config.FULL_SYNTH_EFFORT

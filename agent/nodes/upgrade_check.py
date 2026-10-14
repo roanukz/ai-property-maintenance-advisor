@@ -11,8 +11,10 @@ upgrade_check:
    successor as the edge prints it; a PART_DISCONTINUED edge gives reason
    "parts_unavailable" for each successor the model has a SUPERSEDED_BY edge
    to, but only when the part edge's own evidence sentence names that
-   successor, since rule 9 needs the successor inside the quote. The quote is
-   the edge's verified evidence sentence and the summary is code written;
+   successor, since rule 9 needs the successor inside the quote
+   (`agent.sweep.names_successor`, the test the replacement sweep shares).
+   The quote is the edge's verified evidence sentence and the summary is
+   code written;
 3. skips a candidate the validated brief already carries (same successor,
    normalized, and same reason), so a successor the model cited is not
    listed twice;
@@ -52,8 +54,8 @@ from langgraph.types import Command
 
 from agent.kg import KnowledgeGraph, model_key, norm_model
 from agent.nodes.graph_lookup import _identity_key, _json_native, graph_sources, open_knowledge_graph
-from agent.rules.evidence import normalize_for_span
 from agent.state import AdvisorState, RunContext, latency_entry
+from agent.sweep import names_successor
 
 NODE = "upgrade_check"
 DISCONTINUED = "discontinued"
@@ -109,9 +111,8 @@ def collect_candidates(kg: KnowledgeGraph, identity: dict[str, Any] | None) -> l
                            "summary": _summary(DISCONTINUED, model, successor), "evidence": edge["evidence"]}))
     successors = [e["successor_model"] for e in supers if isinstance(e.get("successor_model"), str)]
     for edge in parts:
-        quote = normalize_for_span(edge.get("evidence") or "")
         for successor, succ_edge in zip(successors, supers, strict=True):
-            if normalize_for_span(successor) not in quote:
+            if not names_successor(edge.get("evidence"), successor):
                 continue
             out.append((edge, {"successor_manufacturer": succ_edge.get("successor_manufacturer") or "",
                                "successor_model": successor, "reason": PARTS_UNAVAILABLE,

@@ -9,7 +9,14 @@
   appliance loaded in this run, else `happened_before` becomes null.
 - Rule 8 (decision 29): code writes `warranty.age_statement` from the registry
   install or purchase date, else the manufacture date, citing the registry
-  `record_id`; warranty terms are quoted from the registry only.
+  `record_id`; warranty terms are quoted from the registry only. In the
+  same place code writes the coverage line (SC13, `agent/rules/coverage.py`):
+  `warranty.coverage`, one entry per `warranty_coverage` row of this
+  appliance with its end date and status as of the run date,
+  `warranty.coverage_statement` and `warranty.coverage_as_of`. These are code
+  facts, so they stay wherever the warranty block stays: on an answer and on
+  the model's own refusal (decision 9 keeps the warranty block). A forced
+  refusal and a budget stop carry no warranty block, so they show neither.
 - Rule 11: uncited sources are pruned and every index renumbered, last.
 """
 
@@ -95,7 +102,13 @@ _MONTH_FIRST = re.compile(r"^\s*(\d{1,2})[-/](?:(\d{1,2})[-/])?(\d{4})\s*$")
 
 def parse_partial_date(text: str | None) -> tuple[int, int | None, int | None] | None:
     """Year, optional month and optional day from "2019", "2019-06", "2019-06-03",
-    "06/2019" or "06/03/2019" (month first)."""
+    "06/2019" or "06/03/2019" (month first).
+
+    A full date must exist on the calendar: "2019-02-30", "2023-02-29" and
+    "2021-13-01" are not dates and give None, so no age or end date is
+    computed from them. Year 0 is on no calendar either, so "0000" and
+    "0000-06" give None as "0000-06-10" does.
+    """
     if not text:
         return None
     m = _DATE.match(text)
@@ -109,10 +122,17 @@ def parse_partial_date(text: str | None) -> tuple[int, int | None, int | None] |
             return None
         year, month = int(m.group(3)), int(m.group(1))
         day = int(m.group(2)) if m.group(2) else None
+    if year < date.min.year:  # year 0 is on no calendar, with or without a month and day
+        return None
     if month is not None and not 1 <= month <= 12:
         return None
     if day is not None and (month is None or not 1 <= day <= 31):
         return None
+    if day is not None:
+        try:
+            date(year, month, day)  # type: ignore[arg-type]
+        except ValueError:  # 30 February, 31 April, 29 February outside a leap year
+            return None
     return year, month, day
 
 
@@ -133,8 +153,14 @@ def age_in_years(start: tuple[int, int | None, int | None], today: date) -> int 
 
 def age_statement(*, registry: dict[str, Any] | None, manufacture_date: str | None,
                   today: date) -> tuple[str, str | None]:
-    """The code written age statement and the registry record it cites, if any."""
+    """The code written age statement and the registry record it cites, if any.
+
+    A registry date that is recorded but is not a date (such as 2019-02-30)
+    gives no age; when nothing else gives one, the statement says it could
+    not be read rather than that no date is recorded.
+    """
     registry = registry or {}
+    unreadable: tuple[str, str] | None = None
     for field, label in (("install_date", "Installed"), ("purchase_date", "Purchased")):
         value = registry.get(field)
         parsed = parse_partial_date(value)
@@ -143,6 +169,8 @@ def age_statement(*, registry: dict[str, Any] | None, manufacture_date: str | No
             if age is not None:
                 return (f"{label} {value} per property record {registry.get('record_id')}; "
                         f"about {age} years old as of {today.isoformat()}.", registry.get("record_id"))
+        elif unreadable is None and isinstance(value, str) and value.strip():
+            unreadable = (label, value)
     parsed = parse_partial_date(manufacture_date)
     if parsed is not None and age_in_years(parsed, today) is not None:
         return (f"Manufactured {manufacture_date} per the data plate; about "
@@ -150,20 +178,31 @@ def age_statement(*, registry: dict[str, Any] | None, manufacture_date: str | No
     if manufacture_date:
         return (f'The manufacture date "{manufacture_date}" could not be read as a date, '
                 "so the unit's age is unknown.", None)
+    if unreadable is not None:
+        event = "install" if unreadable[0] == "Installed" else "purchase"
+        return (f'The {event} date "{unreadable[1]}" in property record {registry.get("record_id")} could not '
+                "be read as a date, so the unit's age is unknown.", registry.get("record_id"))
     return "No install, purchase or manufacture date is recorded, so the unit's age is unknown.", None
 
 
 def apply_registry_dates(brief: dict[str, Any], *, registry: dict[str, Any] | None,
-                         manufacture_date: str | None, today: date) -> None:
-    """Rule 8: code owns the age statement and the quoted terms (in place).
+                         manufacture_date: str | None, today: date,
+                         coverage: list[dict[str, Any]] | None = None) -> None:
+    """Rule 8: code owns the age statement, the quoted terms and the coverage line (in place).
 
-    A warranty block is created on an ok brief when the registry has a date or
-    terms to show, so G3's purchase date reaches the brief even when the model
-    left the block out.
+    A warranty block is created on an ok brief when the registry has a date,
+    terms or coverage rows to show, so G3's purchase date reaches the brief
+    even when the model left the block out. `coverage` is the appliance's
+    `warranty_coverage` rows; a row of another appliance is ignored.
     """
+    from agent.rules import coverage as coverage_rule  # coverage imports this module
+
     warranty = brief.get("warranty")
     registry = registry or {}
-    has_registry_facts = any(registry.get(k) for k in ("install_date", "purchase_date", "warranty_terms"))
+    rows = [row for row in coverage or []
+            if registry.get("id") is None or row.get("appliance_id") in (None, registry.get("id"))]
+    has_registry_facts = bool(rows) or any(registry.get(k) for k in ("install_date", "purchase_date",
+                                                                     "warranty_terms"))
     if not isinstance(warranty, dict):
         if not (has_registry_facts and brief.get("status") == "ok"):
             return
@@ -174,3 +213,7 @@ def apply_registry_dates(brief: dict[str, Any], *, registry: dict[str, Any] | No
     warranty["age_statement"] = statement
     warranty["terms"] = terms
     warranty["record_id"] = record_id or (registry.get("record_id") if terms else None)
+    computed = coverage_rule.coverage_rows(rows, registry, today)
+    warranty["coverage"] = computed
+    warranty["coverage_statement"] = coverage_rule.coverage_statement(computed, today, terms_on_file=bool(terms))
+    warranty["coverage_as_of"] = today.isoformat()

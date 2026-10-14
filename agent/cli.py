@@ -183,6 +183,25 @@ def build_parser() -> argparse.ArgumentParser:
     show = prop_sub.add_parser("show", help="write the static property page")
     show.add_argument("property_id", metavar="ID")
     show.add_argument("--html", metavar="PATH")
+    sweep = prop_sub.add_parser(
+        "sweep", help="plan a replacement: show the graph's verified discontinuation facts and write the page")
+    which = sweep.add_mutually_exclusive_group(required=True)
+    which.add_argument("property_id", metavar="ID", nargs="?")
+    which.add_argument("--all", action="store_true", help="every property in the registry")
+    sweep.add_argument("--research", action="store_true",
+                       help="first look up discontinuation and successors for units with no lifecycle facts")
+    sweep.add_argument("--cassette", metavar="PATH", action="append",
+                       help="--research in replay: a lifecycle cassette, matched to its unit (repeatable)")
+    sweep.add_argument("--live", action="store_true", help="--research only: a live lookup (cheap mode)")
+    sweep.add_argument("--new-ledger", action="store_true",
+                       help="--research --live only: create the spend ledger if it is missing")
+    recalls = prop_sub.add_parser(
+        "recalls", help="product recall check against CPSC: show each appliance's latest stored check")
+    which = recalls.add_mutually_exclusive_group(required=True)
+    which.add_argument("property_id", metavar="ID", nargs="?")
+    which.add_argument("--all", action="store_true", help="every property in the registry")
+    recalls.add_argument("--live", action="store_true",
+                         help="query CPSC now (free, no key), after the planned requests and a typed proceed")
 
     graph = sub.add_parser("graph", help="knowledge graph")
     graph_sub = graph.add_subparsers(dest="graph_command", required=True)
@@ -217,6 +236,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     schema.add_argument("--live", action="store_true")
     schema.add_argument(
+        "--new-ledger", action="store_true",
+        help="create the spend ledger if it is missing (it is never recreated silently)",
+    )
+
+    caps = sub.add_parser(
+        "check-capabilities",
+        help="LIVE: one small call per Claude Haiku 5.5 node at its exact settings, plate photo first (decision 69)",
+    )
+    caps.add_argument("--live", action="store_true")
+    caps.add_argument(
         "--new-ledger", action="store_true",
         help="create the spend ledger if it is missing (it is never recreated silently)",
     )
@@ -276,7 +305,7 @@ def refuse_missing_keys(need: Sequence[str], environ: Mapping[str, str] = os.env
 
 
 def open_live_ledger(mode: str, *, new_ledger: bool, need: Sequence[str], need_usd: float | None = None,
-                     environ: Mapping[str, str] = os.environ) -> Ledger:
+                     need_credits: int | None = None, environ: Mapping[str, str] = os.environ) -> Ledger:
     """The ledger a live run spends against, checked before the run starts.
 
     Refuses full mode without its decision 18 approval before anything is
@@ -284,6 +313,9 @@ def open_live_ledger(mode: str, *, new_ledger: bool, need: Sequence[str], need_u
     ledger file; then refuses when the ledger file is missing or holds no ledger,
     unless --new-ledger was passed (decision 52), and when the remaining
     build budget or credits cannot cover one run of this mode (section 8.9).
+    A caller that names its worst case in dollars (need_usd) needs no credits
+    unless it names them too (need_credits): plate runs make no search, and
+    the sweep's lookups name theirs.
     """
     refuse_unapproved_full(mode)
     refuse_missing_keys(need, environ)
@@ -298,7 +330,8 @@ def open_live_ledger(mode: str, *, new_ledger: bool, need: Sequence[str], need_u
             "pass --new-ledger only if no live run has happened yet."
         ) from None
     try:
-        ledger.assert_can_start_live_run(mode, need_usd=need_usd, need_credits=None if need_usd is None else 0)
+        credits = need_credits if need_credits is not None else (None if need_usd is None else 0)
+        ledger.assert_can_start_live_run(mode, need_usd=need_usd, need_credits=credits)
     except BudgetExceeded as exc:
         raise CliRefusal(f"the build budget cannot cover a {mode} run: {exc}") from None
     return ledger
@@ -317,6 +350,14 @@ def cmd_run(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
                 "--new-ledger is refused with a live resume: the thread's ask segment already made paid "
                 "calls, and a new ledger would forget them (SC11 and the build cap, decision 52)."
             )
+        if args.command == "ask" and args.photo:
+            # Decision 69: once the capabilities check records the plate photo refused, a photo
+            # ask is refused before the preflight and before any ledger is opened.
+            from agent.live.preflight import plate_refusal
+
+            refusal = plate_refusal(mode)
+            if refusal:
+                raise CliRefusal(refusal)
         ledger = open_live_ledger(mode, new_ledger=args.new_ledger, need=config.LIVE_KEY_NAMES,
                                   environ=environ)
         return run_live(args, mode, ledger)
@@ -349,6 +390,23 @@ def _load_cassette(path: Path):
         raise CliRefusal(f"cannot read the cassette: {exc}") from None
 
 
+def refuse_registry_drift() -> None:
+    """Refuse a live step while config.REGISTRY_PATH differs from the seed (registry.seed_drift).
+
+    A registry file made from an older seed keeps null model numbers and
+    lacks newer rows until the seed is loaded again, so a live run would
+    compare, store and show what the seed no longer says. Nothing is changed.
+    """
+    from agent.registry import seed_drift
+
+    problems = seed_drift(config.REGISTRY_PATH)
+    if problems:
+        raise CliRefusal(f"the registry at {config.REGISTRY_PATH} differs from the seed: {'; '.join(problems)}. "
+                         "Reload the seed first with agent.registry.open_registry(config.REGISTRY_PATH), which "
+                         "upserts every seed row and keeps every lookup, then run this again. Nothing was sent "
+                         "or spent.")
+
+
 def ensure_registry() -> None:
     """Load the synthetic seed into config.REGISTRY_PATH the first time a run needs it (PLAN 8.12)."""
     if config.REGISTRY_PATH.exists():
@@ -363,7 +421,8 @@ def run_context(run_id: str, mode: str, cassette, *, secrets: list[str] | tuple[
 
     Replay reads and grows config.REPLAY_GRAPH_PATH, never config.GRAPH_PATH
     (decision 37). A live run passes its key values as `secrets`, so the paid
-    call sites redact them from every error (agent/redaction.py).
+    call sites redact them from every error (agent/redaction.py). The run's
+    one UTC date (SC13) is pinned here from _today().
     """
     from agent.state import RunContext
 
@@ -379,6 +438,7 @@ def run_context(run_id: str, mode: str, cassette, *, secrets: list[str] | tuple[
         cassette=cassette,
         caps=cassette.caps if cassette is not None else None,
         secrets=list(secrets),
+        run_date=_today(),
     )
 
 
@@ -563,7 +623,9 @@ class LiveSession:
 
     Built only after the mode, ledger and build budget checks passed. It
     refuses full mode without its decision 18 approval, a missing key and a
-    Haiku mode on or after config.HAIKU_RETIREMENT_EARLIEST, prints the
+    Haiku mode on or after config.HAIKU_RETIREMENT_EARLIEST and, for a
+    command whose runs read the registry (`uses_registry`), a registry that
+    differs from the seed (refuse_registry_drift), prints the
     preflight and reads the typed "proceed", puts the keys in the environment
     for this command only, redacts them from everything printed and gives
     them to the run context for redaction at the source, scrubs the files a
@@ -572,11 +634,13 @@ class LiveSession:
     """
 
     def __init__(self, command: str, mode: str, ledger: Ledger, *, need: tuple[str, ...],
-                 environ: MutableMapping[str, str] = os.environ) -> None:
+                 environ: MutableMapping[str, str] = os.environ, uses_registry: bool = False) -> None:
         from agent.live import env as live_env
         from agent.live.preflight import haiku_refusal
 
         refuse_unapproved_full(mode)
+        if uses_registry:  # a command whose runs read the registry refuses a stale one
+            refuse_registry_drift()
         try:
             report, additions = live_env.load_live_keys(environ, config.ENV_FILE, need=need,
                                                         tracing=TRACING_OPTED_IN)
@@ -606,11 +670,15 @@ class LiveSession:
         stack.enter_context(live_env.redacted_output(self.secrets))
         return stack
 
-    def confirm(self, plans: list) -> None:
-        """Print the preflight and continue only on exactly "proceed" (PRD Part A rule 1)."""
+    def confirm(self, plans: list, extra: Sequence[str] = ()) -> None:
+        """Print the preflight and continue only on exactly "proceed" (PRD Part A rule 1).
+
+        `extra` lines go just before the typed prompt.
+        """
         from agent.live.preflight import ask_to_proceed, preflight_lines
 
         lines = preflight_lines(self.command, self.mode, plans, self.ledger)
+        lines[-1:-1] = list(extra)
         keys = ", ".join(f"{name} from the {source}" if source == "environment" else f"{name} from .env"
                          for name, source in self.sources.items())
         lines.insert(1, f"keys: {keys} (values are never shown)")
@@ -739,7 +807,7 @@ def _live_failure(command: str, exc: BaseException) -> int:
 
 def run_live(args: argparse.Namespace, mode: str, ledger: Ledger) -> int:
     """A live ask or resume: key and date checks, then the same run as replay with no cassette."""
-    session = LiveSession(args.command, mode, ledger, need=config.LIVE_KEY_NAMES)
+    session = LiveSession(args.command, mode, ledger, need=config.LIVE_KEY_NAMES, uses_registry=True)
     with session.active():
         try:
             if args.command == "ask":
@@ -790,6 +858,36 @@ def cmd_check_schema(args: argparse.Namespace, environ: Mapping[str, str]) -> in
     return EXIT_SCHEMA_REJECTED if result.status == schema_check.REJECTED else EXIT_LIVE_ERROR
 
 
+def cmd_check_capabilities(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
+    """`advisor check-capabilities --live`: the first live step on Claude Haiku 5.5 (decision 69).
+
+    agent/live/capabilities.py prints the planned calls and their cost and
+    waits for a typed "proceed"; nothing is sent without it. Its record turns
+    plate reading off when the photo is refused.
+    """
+    import uuid
+
+    mode = resolve_mode(environ, live=args.live)
+    if mode not in config.LIVE_MODES:
+        raise CliRefusal(
+            f"check-capabilities makes paid calls: set {config.ENV_MODE} to one of "
+            f"{', '.join(config.LIVE_MODES)} and pass --live."
+        )
+    ledger = open_live_ledger(mode, new_ledger=args.new_ledger, need=(ANTHROPIC_KEY_NAME,), environ=environ)
+    session = LiveSession("check-capabilities", mode, ledger, need=(ANTHROPIC_KEY_NAME,))
+    from agent.live import capabilities
+
+    with session.active():
+        try:
+            result = capabilities.check(ledger, mode, stdin=sys.stdin, stdout=sys.stdout,
+                                        run_id=f"capabilities-{uuid.uuid4().hex[:12]}")
+        except Exception as exc:
+            return _live_failure("check-capabilities", exc)
+    if result is None:
+        return EXIT_REFUSED
+    return EXIT_OK if result.passed else EXIT_LIVE_ERROR
+
+
 def property_graph_path(environ: Mapping[str, str]) -> Path:
     """The graph a property page reads: the replay graph in replay, the runtime graph otherwise.
 
@@ -837,9 +935,11 @@ def maintenance_due_by_appliance(registry, appliance_ids: list[str], *, replay: 
 
 
 def cmd_property_show(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
-    """Write the static property page, labeled synthetic (PLAN 8.13, decision 51)."""
-    from datetime import UTC, datetime
+    """Write the static property page, labeled synthetic (PLAN 8.13, decision 51).
 
+    The page's one date, which every warranty status on it uses, is pinned
+    once here from _today() (UTC).
+    """
     html = resolve_html_path(args.html, kind="property", ident=args.property_id)
     graph_path = property_graph_path(environ)
     ensure_registry()
@@ -856,13 +956,263 @@ def cmd_property_show(args: argparse.Namespace, environ: Mapping[str, str]) -> i
     due = maintenance_due_by_appliance(registry, appliance_ids, replay=graph_path == config.REPLAY_GRAPH_PATH)
     page = render_property_page(
         args.property_id, registry, graph=graph, maintenance_due=due,
-        generated_at=datetime.now(UTC).date().isoformat(),
+        generated_at=_today().isoformat(), recalls_dir=config.RECALLS_DIR,
     )
     html.parent.mkdir(parents=True, exist_ok=True)
     html.write_text(page, encoding="utf-8")
     print(f"advisor property show: {args.property_id}, {len(appliance_ids)} appliances, graph {graph_path}")
     print(f"html: {html}")
     return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
+# advisor property sweep (SC14, decision 72): the offline "Plan a replacement"
+# sweep in agent/sweep.py, and with --research the lifecycle lookups in
+# agent/lifecycle.py, which load only when asked for.
+# ---------------------------------------------------------------------------
+
+SWEEP_OFFLINE_NOTE = ("the sweep spent nothing: it read the graph and the registry only (no model or search "
+                      "call, no ledger)")
+SWEEP_PAGES_NOTE = "writing the pages spent nothing; the lookups' spend is listed above"
+SWEEP_FLAGS_REFUSAL = ("--live, --cassette and --new-ledger go with --research only; the sweep itself is "
+                       "offline and spends nothing.")
+
+
+def sweep_targets(registry, args: argparse.Namespace) -> list[str]:
+    """The property IDs a sweep covers: every one with --all, else the one named (refused when unknown)."""
+    known = [p["id"] for p in registry.list_properties()]
+    if args.all:
+        return known
+    if args.property_id in known:
+        return [args.property_id]
+    raise CliRefusal(f"unknown property {args.property_id!r}; the registry holds {', '.join(known) or 'none'}.")
+
+
+def cmd_property_sweep(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
+    """Print each unit's verified replacement facts and write or refresh its property page.
+
+    Offline unless --research: it reads the graph property show reads and
+    the registry, and opens no ledger. The pages' one date is pinned once
+    here from _today() (UTC), before any lookup.
+    """
+    if not args.research and (args.live or args.cassette or args.new_ledger):
+        raise CliRefusal(SWEEP_FLAGS_REFUSAL)
+    graph_path = property_graph_path(environ)
+    ensure_registry()
+    from agent.registry import Registry
+
+    registry = Registry(config.REGISTRY_PATH)
+    targets = sweep_targets(registry, args)
+    as_of = _today()
+    if args.research:
+        code = sweep_research(args, environ, registry, targets, graph_path)
+        if code != EXIT_OK:
+            return code
+    write_sweep_pages(registry, targets, graph_path, as_of, researched=args.research)
+    return EXIT_OK
+
+
+def write_sweep_pages(registry, targets: Sequence[str], graph_path: Path, as_of, *, researched: bool) -> None:
+    """The offline sweep: print every unit's facts and write each property's page.
+
+    After --research the lookups may have spent, so the closing line says
+    only that writing the pages spent nothing.
+    """
+    from agent import sweep
+    from agent.kg import KnowledgeGraph
+    from agent.render.property_page import render_property_page
+
+    graph = KnowledgeGraph.load(graph_path, registry=config.REGISTRY_PATH)
+    for property_id in targets:
+        appliances = registry.list_appliances(property_id)
+        html = resolve_html_path(None, kind="property", ident=property_id)
+        due = maintenance_due_by_appliance(registry, [a["id"] for a in appliances],
+                                           replay=graph_path == config.REPLAY_GRAPH_PATH)
+        page = render_property_page(property_id, registry, graph=graph, maintenance_due=due,
+                                    generated_at=as_of.isoformat(), recalls_dir=config.RECALLS_DIR)
+        print(f"advisor property sweep: {property_id}, {len(appliances)} appliances, graph {graph_path}, "
+              f"as of {as_of.isoformat()} (UTC)")
+        for row in sweep.sweep_rows(graph, appliances, as_of):
+            for line in sweep.row_lines(row):
+                print(line)
+        html.parent.mkdir(parents=True, exist_ok=True)
+        html.write_text(page, encoding="utf-8")
+        print(f"html: {html}")
+    print(SWEEP_PAGES_NOTE if researched else SWEEP_OFFLINE_NOTE)
+
+
+def sweep_research(args: argparse.Namespace, environ: Mapping[str, str], registry, targets: Sequence[str],
+                   graph_path: Path) -> int:
+    """--research: refuse invented units, plan, then one bounded lookup per eligible unit.
+
+    Replay reads one cassette per unit (--cassette, matched by maker and
+    model); a unit with none is skipped. A live sweep opens the ledger, prints
+    the preflight for the planned lookups and continues only on a typed
+    "proceed" (LiveSession), so nothing is called or saved without it. Each
+    live lookup's replies are captured, and its recording candidate is written
+    after it, as a live ask's is.
+
+    All the lookups share one run cap for the whole sweep (lifecycle.SweepBudget):
+    each runs under what is left of it, and one whose worst case it cannot
+    cover is not started and saves nothing. A replay sweep is priced and capped
+    as its cassettes were recorded (lifecycle.sweep_price_mode).
+    """
+    mode = resolve_mode(environ, live=args.live)
+    if mode != "replay" and args.cassette:
+        raise CliRefusal("--cassette is accepted only in replay mode, not with --live.")
+    from types import SimpleNamespace
+
+    from agent import lifecycle
+    from agent.kg import KnowledgeGraph
+    from agent.replay.cassettes import lookup_recording_state
+
+    kg = KnowledgeGraph.load(graph_path, registry=config.REGISTRY_PATH)
+    appliances = [a for property_id in targets for a in registry.list_appliances(property_id)]
+    decisions = lifecycle.eligibility(kg, appliances)
+    print(f"advisor property sweep --research: lifecycle lookups (discontinuation and successors only), mode {mode}")
+    for decision in decisions:
+        print(lifecycle.decision_line(decision))
+    eligible = [d["appliance"] for d in decisions if d["decision"] == lifecycle.ELIGIBLE]
+    if not eligible:
+        print("no unit needs a lifecycle lookup; nothing was called")
+        return EXIT_OK
+    if mode == "replay":
+        cassettes = [_load_cassette(Path(p).expanduser()) for p in args.cassette or []]
+        try:  # priced as the cassettes were recorded (ledger.price_basis)
+            price_mode = lifecycle.sweep_price_mode(mode, [c for c in (lifecycle.cassette_for(a, cassettes)
+                                                                        for a in eligible) if c is not None])
+        except ValueError as exc:
+            raise CliRefusal(str(exc)) from None
+        plan = lifecycle.sweep_plan(price_mode, eligible)
+        budget = lifecycle.SweepBudget(mode, price_mode)  # one run cap for the whole sweep
+        for line in lifecycle.plan_lines(plan, len(eligible), price_mode):
+            print(line)
+        for appliance in eligible:
+            cassette = lifecycle.cassette_for(appliance, cassettes)
+            if cassette is None:
+                print(f"  {lifecycle.unit_label(appliance)}: no cassette for this unit in replay; nothing looked up")
+                continue
+            if not budget.covers_next():  # replay: not started, nothing saved
+                for line in lifecycle.result_lines(lifecycle.cap_reached_result(appliance, budget)):
+                    print(line)
+                continue
+            ctx = run_context(lifecycle.new_run_id(), mode, cassette)
+            ctx.caps = budget.caps_for(ctx.caps)
+            result = lifecycle.lookup(appliance, ctx)
+            budget.record(result)
+            for line in lifecycle.result_lines(result):
+                print(line)
+        return EXIT_OK
+    plan = lifecycle.sweep_plan(mode, eligible)
+    budget = lifecycle.SweepBudget(mode)  # one run cap for the whole sweep
+    ledger = open_live_ledger(mode, new_ledger=args.new_ledger, need=lifecycle.KEY_NAMES,
+                              need_usd=plan.worst_usd, need_credits=plan.max_credits, environ=environ)
+    session = LiveSession("property sweep", mode, ledger, need=lifecycle.KEY_NAMES, uses_registry=True)
+    with session.active():
+        try:
+            session.confirm([plan], extra=[lifecycle.later_routes_line(graph_path),
+                                           lifecycle.cap_scope_line(plan, len(eligible), mode)])
+            for appliance in eligible:
+                if not budget.covers_next():  # live: not started, nothing saved
+                    for line in lifecycle.result_lines(lifecycle.cap_reached_result(appliance, budget)):
+                        print(line)
+                    continue
+                ctx = run_context(lifecycle.new_run_id(), mode, None, secrets=session.secrets)
+                ctx.caps = budget.caps_for(ctx.caps)
+                try:
+                    with _live_capture(session, ctx.run_id, "lookup"):
+                        result = lifecycle.lookup(appliance, ctx)
+                finally:
+                    session.scrub(ctx)
+                budget.record(result)
+                for line in lifecycle.result_lines(result):
+                    print(line)
+                # Its recording candidate: a lifecycle cassette a replay sweep matches to this unit.
+                session._record(SimpleNamespace(state=lookup_recording_state(
+                    lifecycle.identity_of(appliance), result, research_limits=lifecycle.LIMITS_ROW)), ctx)
+        except CliRefusal as refusal:
+            print(f"advisor: refused: {refusal}", file=sys.stderr)
+            return EXIT_REFUSED
+        except Exception as exc:
+            return _live_failure("property sweep", exc)
+    return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
+# advisor property recalls (SC15, decision 71): the product recall check in
+# agent/product_recalls.py. Offline it prints each appliance's latest stored
+# check; --live queries CPSC, which is free and needs no key, so it opens no
+# ledger and reads no ADVISOR_MODE, but still waits for a typed "proceed".
+# ---------------------------------------------------------------------------
+
+RECALLS_RUN_PREFIX = "recalls-"
+
+
+def cmd_property_recalls(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
+    """Print every appliance's latest stored product recall check, or with --live run the check first."""
+    ensure_registry()
+    from agent import product_recalls
+    from agent.registry import Registry
+
+    registry = Registry(config.REGISTRY_PATH)
+    targets = sweep_targets(registry, args)
+    appliances = [a for property_id in targets for a in registry.list_appliances(property_id)]
+    if args.live:
+        return recalls_live(appliances)
+    for a in appliances:
+        result = product_recalls.stored_result(config.RECALLS_DIR, a)
+        checked = str(result.get("checked_at") or "")[:10] or "never"
+        print(f"{a.get('id')}: latest stored check {checked}")
+        for line in product_recalls.text_lines(result):
+            print(f"  {line}")
+    print("the product recall check spent nothing and sent nothing: it read the stored checks only")
+    return EXIT_OK
+
+
+def recalls_live(appliances: Sequence[Mapping[str, object]]) -> int:
+    """Plan, read the typed "proceed", then query CPSC per appliance, store each check and log the run."""
+    import json
+    import uuid
+
+    from agent import product_recalls
+    from agent.build_info import build_id
+    from agent.live.preflight import ask_to_proceed
+    from agent.nodes.persist import RUNS_DIRNAME
+
+    refuse_registry_drift()  # the stored checks keep the model numbers compared, so the seed must be loaded
+    if not ask_to_proceed(product_recalls.plan_lines(appliances, config.RECALLS_DIR), sys.stdin, sys.stdout):
+        raise CliRefusal('the typed confirmation was not exactly "proceed"; nothing was sent.')
+    run_id = f"{RECALLS_RUN_PREFIX}{uuid.uuid4().hex[:16]}"
+    checks, stored, complete = [], [], True
+    try:
+        for a in appliances:
+            if product_recalls.is_synthetic_maker(a):
+                continue
+            try:
+                check = product_recalls.check_appliance(a)
+            except ValueError as exc:  # a model that normalizes to nothing: refused before any request
+                print(f"{a.get('id')}: not checked: {exc}")
+                complete = False
+                continue
+            stored.append(product_recalls.store_check(config.RECALLS_DIR, check))
+            checks.append(check)
+            result = product_recalls.evaluate(check)
+            complete = complete and not result["errors"]
+            for line in product_recalls.text_lines(result):
+                print(line)
+            print(f"  stored: {stored[-1]}")
+    except Exception as exc:  # requests went out: stop, but still log what ran (below)
+        print(f"advisor property recalls: the check failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print("Stop and report this; the checks stored so far are in the run record below.", file=sys.stderr)
+        complete = False
+    finally:
+        # Written whatever happens, so every check stored so far is logged with the run.
+        record = product_recalls.run_record(run_id, checks, stored, build_id())
+        path = config.PAGES_DIR.parent / RUNS_DIRNAME / f"{run_id}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
+        print(f"run record: {path} (cost 0.0000 USD)")
+    return EXIT_OK if complete else EXIT_LIVE_ERROR
 
 
 GRAPH_LABELS = (("runtime graph (live runs)", "GRAPH_PATH"), ("replay graph (replay runs)", "REPLAY_GRAPH_PATH"))
@@ -1227,6 +1577,10 @@ def _dispatch(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
     if args.command in ("ask", "resume"):
         return cmd_run(args, environ)
     if args.command == "property":
+        if args.property_command == "sweep":
+            return cmd_property_sweep(args, environ)
+        if args.property_command == "recalls":
+            return cmd_property_recalls(args, environ)
         return cmd_property_show(args, environ)
     if args.command == "graph":
         return cmd_graph_stats(args, environ)
@@ -1234,6 +1588,8 @@ def _dispatch(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
         return cmd_ledger(args, environ)
     if args.command == "check-schema":
         return cmd_check_schema(args, environ)
+    if args.command == "check-capabilities":
+        return cmd_check_capabilities(args, environ)
     if args.command == "safety-set":
         return cmd_safety_set(args, environ)
     if args.command == "eval":

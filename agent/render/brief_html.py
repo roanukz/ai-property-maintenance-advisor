@@ -45,7 +45,11 @@ agent/tests/fixtures/goldens/README.md lists each one, says whether decision
   graded, so their forum tier is a default, not a finding;
 - CSS rules for the new pieces are appended after v1's CSS;
 - one notice line above the steps (SAFETY_NOTICE) when the run says the
-  automatic safety check was attempted and failed (`run["safety_notice"]`).
+  automatic safety check was attempted and failed (`run["safety_notice"]`);
+- the warranty coverage line code wrote in validate
+  (`warranty.coverage_statement`, SC13), after the age statement and terms:
+  active coverage with end dates and record ids, each synthetic row labeled
+  "synthetic", or "No warranty on file."; never a status computed here.
 
 Legacy mode needs U+2014 (placeholders, title, refusal intro). The repo's
 style scan bans that character and its escapes in source files, so it is
@@ -456,6 +460,8 @@ class _Brief:
         if not self.legacy and warranty.get("terms"):
             lines.append(f"  <p>Warranty terms from property record {esc(warranty.get('record_id') or NOT_RECORDED)}: "
                          f"{esc(warranty.get('terms'))}</p>")
+        if not self.legacy and warranty.get("coverage_statement"):
+            lines.append(f"  <p>{esc(warranty.get('coverage_statement'))}</p>")
         cautions = warranty.get("cautions")
         cautions = [c for c in cautions if isinstance(c, Mapping)] if isinstance(cautions, list) else []
         if cautions:

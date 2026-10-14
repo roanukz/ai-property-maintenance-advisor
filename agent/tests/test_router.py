@@ -472,9 +472,9 @@ def test_classifier_max_tokens_from_config(tmp_path: Path) -> None:
                               documented=[{"code": "FLO", "evidence": FLO_EVIDENCE}])
     assert result.verdict == "match"
     model = ctx.replay["models"]["classifier"]
-    assert model.max_tokens == config.MAX_TOKENS["classifier"]
+    assert model.max_tokens == config.REPLAY_MAX_TOKENS["classifier"]
     reserve = next(r for r in Ledger(ctx.ledger_path).rows(ctx.run_id) if r["kind"] == "reserve")
-    assert (reserve["node"], reserve["output_tokens"]) == ("classifier", config.MAX_TOKENS["classifier"])
+    assert (reserve["node"], reserve["output_tokens"]) == ("classifier", config.REPLAY_MAX_TOKENS["classifier"])
     assert reserve["model"] == config.MODEL_FOR["replay"]["classifier"]
 
 

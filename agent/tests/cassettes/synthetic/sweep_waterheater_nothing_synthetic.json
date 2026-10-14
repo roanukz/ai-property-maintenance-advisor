@@ -1,0 +1,96 @@
+{
+  "cassette_version": 1,
+  "case": "sweep_waterheater_nothing_synthetic",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the example.com URL, its page text, the query, the draft and the usage; only the unit's maker and model name are real (seed appliance appl-waterheater), and no claim here is about the real product",
+      "SC14 replay case: a unit with nothing documented. One search finds a synthetic overview page that mentions the model and no discontinuation; the draft has no upgrade option, so nothing is saved and the page keeps the no discontinuation sentence"
+    ],
+    "built_by": "hand written for the SC14 replacement sweep tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Rheem",
+      "model": "PRO+E50 M2 RH92 CL",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "lifecycle lookup (synthetic): is this model discontinued, and which models succeed it",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Rheem PRO+E50 M2 RH92 CL discontinued successor"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Rheem PRO+E50 M2 RH92 CL discontinued successor",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/rheem/pro-e50-overview",
+            "title": "Synthetic PRO+E50 overview",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/rheem/pro-e50-overview\n\nThis synthetic overview describes the PRO+E50 M2 RH92 CL electric water heater.\nIt lists the tank size and the leak sensor.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/rheem/pro-e50-overview\n\nThis synthetic overview describes the PRO+E50 M2 RH92 CL electric water heater.\nIt lists the tank size and the leak sensor.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 6000,
+        "output_tokens": 400,
+        "total_tokens": 6400
+      },
+      "draft": {
+        "upgrade_options": [],
+        "source_tiers": []
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "nothing_saved",
+    "edges_written": 0
+  }
+}

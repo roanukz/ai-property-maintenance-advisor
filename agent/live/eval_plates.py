@@ -14,6 +14,10 @@ The preflight is priced from config: typical is read_plate's section 9
 estimate per plate; the worst case is the read_plate reservation the ledger
 holds before the call (the call is charged in full, so the actual cost can
 pass it only by the input estimate's error, and never the per run cap).
+
+Once the capabilities check has recorded that the plate model refused the
+photo (decision 69), the batch is refused before anything is spent, with
+preflight.plate_refusal's message.
 """
 
 from __future__ import annotations
@@ -23,8 +27,10 @@ from collections.abc import Mapping
 from typing import IO
 
 from agent import config
+from agent.cli import CliRefusal
 from agent.live import evaluators
 from agent.live.eval_sc3b import EVAL_MODE, Batch, RunEstimate, RunSpec, run_batch
+from agent.live.preflight import plate_refusal
 
 SUITE = "plates"
 PLATES = {"E1": "plate-clear.jpg", "E2": "plate-blurry.jpg"}  # demo-assets, read only
@@ -49,8 +55,7 @@ def read_plate_reservation_usd(spec: RunSpec) -> float:
     model = config.MODEL_FOR[EVAL_MODE]["read_plate"]
     _, estimate_messages = plate_messages(str(spec.photo))
     tokens = estimate_input_tokens(estimate_messages, model=model, images=1)
-    return price_usage(config.PRICES_PER_MTOK[model],
-                       {"input_tokens": tokens, "output_tokens": max_tokens_for("read_plate", EVAL_MODE)})
+    return price_usage(model, {"input_tokens": tokens, "output_tokens": max_tokens_for("read_plate", EVAL_MODE)})
 
 
 def plate_estimate(spec: RunSpec) -> RunEstimate:
@@ -65,6 +70,9 @@ def plate_estimate(spec: RunSpec) -> RunEstimate:
 
 def cmd_eval_plates(args: argparse.Namespace, environ: Mapping[str, str], *, stdin: IO[str] | None = None) -> int:
     """`advisor eval plates --live`: the E1 and E2 plate runs, one preflight, one record each."""
+    refusal = plate_refusal(EVAL_MODE)
+    if refusal:
+        raise CliRefusal(refusal)
     specs = plate_specs()
     worst = max(plate_estimate(s).worst_usd for s in specs)
     batch = Batch(

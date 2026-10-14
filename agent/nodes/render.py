@@ -5,6 +5,8 @@ SC10). Besides the brief, the page is given the run's history_hits (so
 happened_before shows the service record's date), and for a budget stop the
 search trail and stop reason, and whether the automatic safety check was
 attempted and failed (`safety_check.notice_needed`), which adds one notice line.
+The footer's date is the run's one date (`state.run_date`), the day validate
+dated the age statement and the warranty coverage line with.
 
 Default output is config.BRIEFS_OUT_DIR / f"{run_id}.html" (decision 51), or
 the path already in state as html_path. A path inside the published pages is
@@ -16,7 +18,6 @@ to state with the page.
 from __future__ import annotations
 
 import time
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +26,7 @@ from langgraph.runtime import Runtime
 from agent import config
 from agent.nodes.safety_check import notice_needed
 from agent.render.brief_html import budget_stopped_brief, render_brief
-from agent.state import AdvisorState, RunContext
+from agent.state import AdvisorState, RunContext, run_date
 
 NODE = "render"
 
@@ -68,7 +69,7 @@ def render(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
         brief,
         identity=state.get("identity"),
         symptom=state.get("symptom") or "",
-        generated_at=datetime.now(UTC).date().isoformat(),
+        generated_at=run_date(state, runtime.context).isoformat(),  # the run's one date (SC13)
         run=run,
     )
     path = output_path(state)

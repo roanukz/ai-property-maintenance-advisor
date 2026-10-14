@@ -7,7 +7,8 @@ to observed_code_candidate, never to observed_code: only the owner confirms a
 code (--code, or the confirm_identity resume). `intake_input` builds that input
 from CLI values. The node validates it with schemas.Intake, so a non string
 identity field fails here instead of deep in a prompt builder (v1's ".trim is
-not a function"), and it never puts image bytes in state.
+not a function"), and it never puts image bytes in state. It pins the run's
+one UTC date (RunContext.run_date) in state as run_date (SC13).
 """
 
 from __future__ import annotations
@@ -104,7 +105,7 @@ def _appliance(ctx: RunContext, appliance_id: str, property_id: str | None) -> d
 
 
 def intake(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
-    """Validate the input; set run_id, mode, photo, identity, the --code value and the code candidate."""
+    """Validate the input; set run_id, mode, the run date, photo, identity, the --code value and the code candidate."""
     started = time.perf_counter()
     ctx = runtime.context
     if state.get("mode") not in (None, ctx.mode):
@@ -146,6 +147,7 @@ def intake(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     return {
         "run_id": ctx.run_id,
         "mode": ctx.mode,
+        "run_date": ctx.run_date.isoformat(),
         "symptom": data.symptom,
         "photo": photo,
         "identity": identity,

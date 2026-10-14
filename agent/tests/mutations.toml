@@ -299,9 +299,11 @@ tests = ["agent/tests/test_schemas.py::test_refusal_block_gets_code_built_search
 [[mutation]]
 id = "schemas_draft_gets_sources_field"
 file = "agent/schemas.py"
-search = '''    source_tiers: list[DraftSourceTier]
+search = '''    maintenance_due: list[DraftMaintenance]
+    source_tiers: list[DraftSourceTier]
 '''
-replace = '''    source_tiers: list[DraftSourceTier]
+replace = '''    maintenance_due: list[DraftMaintenance]
+    source_tiers: list[DraftSourceTier]
     sources: list[str]
 '''
 tests = ["agent/tests/test_schemas.py::test_draft_leaves_code_owned_fields_out_and_requires_everything"]
@@ -525,7 +527,8 @@ tests = ["agent/tests/test_ledger.py::test_concurrent_charges_from_threads"]
 [[mutation]]
 id = "ledger_estimate_margin_removed"
 file = "agent/ledger.py"
-search = '    tokens *= config.ESTIMATE_MARGIN.get(model, max(config.ESTIMATE_MARGIN.values()))'
+search = '''    tokens *= config.REPLAY_ESTIMATE_MARGIN if replay else config.ESTIMATE_MARGIN.get(
+        model, max(config.ESTIMATE_MARGIN.values()))'''
 replace = '    tokens *= 1'
 tests = ["agent/tests/test_ledger.py::test_estimate_includes_tool_prompt_and_margin"]
 
@@ -533,9 +536,9 @@ tests = ["agent/tests/test_ledger.py::test_estimate_includes_tool_prompt_and_mar
 id = "ledger_tool_prompt_removed"
 file = "agent/ledger.py"
 search = '''    if tools:
-        tokens += config.TOOL_PROMPT_TOKENS'''
+        tokens += config.REPLAY_TOOL_PROMPT_TOKENS'''
 replace = '''    if False:
-        tokens += config.TOOL_PROMPT_TOKENS'''
+        tokens += config.REPLAY_TOOL_PROMPT_TOKENS'''
 tests = ["agent/tests/test_ledger.py::test_estimate_includes_tool_prompt_and_margin"]
 
 [[mutation]]
@@ -595,7 +598,7 @@ id = "registry_synthetic_not_bool"
 file = "agent/registry.py"
 search = '            out[key] = bool(out[key])'
 replace = '            out[key] = out[key]'
-tests = ["agent/tests/test_registry.py::test_seed_loads_two_properties_six_appliances_all_synthetic"]
+tests = ["agent/tests/test_registry.py::test_seed_loads_two_properties_seven_appliances_all_synthetic"]
 
 [[mutation]]
 id = "registry_synthetic_check_dropped"
@@ -836,8 +839,8 @@ tests = ["agent/tests/test_models.py::test_live_model_settings"]
 [[mutation]]
 id = "models_effort_on_every_synthesize"
 file = "agent/models.py"
-search = '    if node == "synthesize" and mode == "full" and model != config.HAIKU:'
-replace = '    if node == "synthesize":'
+search = '    elif node == "synthesize" and mode == "full":'
+replace = '    elif node == "synthesize" and mode == "cheap":'
 tests = ["agent/tests/test_models.py::test_live_model_settings"]
 
 [[mutation]]
@@ -868,7 +871,7 @@ tests = ["agent/tests/test_models.py::test_replay_mode_never_constructs_live_cli
 [[mutation]]
 id = "models_replay_synthesize_full_budget"
 file = "agent/models.py"
-search = '            max_tokens=max_tokens_for(node, "replay"),'
+search = '            max_tokens=max_tokens_for(node, basis),'
 replace = '            max_tokens=max_tokens_for(node, "full"),'
 tests = ["agent/tests/test_models.py::test_replay_max_tokens_match_config"]
 
@@ -1333,8 +1336,8 @@ tests = ["agent/tests/test_cassettes.py::test_loader_rejects_wrong_version_and_u
 [[mutation]]
 id = "cassette_synthesize_usage_dropped"
 file = "agent/replay/cassettes.py"
-search = '            out = [{"structured": a["draft"], "usage": a["usage"]} for a in self.data["synthesize"]]'
-replace = '            out = [{"structured": a["draft"]} for a in self.data["synthesize"]]'
+search = '    out = {"structured": entry[key], "usage": entry["usage"]}'
+replace = '    out = {"structured": entry[key]}'
 tests = ["agent/tests/test_cassettes.py::test_responses_and_tool_results_return_what_was_recorded"]
 
 [[mutation]]
@@ -1641,9 +1644,9 @@ tests = ["agent/tests/test_mutations_manifest.py::test_apply_fails_loudly_unless
 id = "models_model_cache_dropped"
 file = "agent/models.py"
 search = '''        if node not in cache:
-            cache[node] = ReplayChatModel('''
+            # A recording that names its live mode replays under that mode's'''
 replace = '''        if True:
-            cache[node] = ReplayChatModel('''
+            # A recording that names its live mode replays under that mode's'''
 tests = ["agent/tests/test_models.py::test_replay_instances_are_built_once_per_run"]
 
 [[mutation]]
@@ -1800,7 +1803,7 @@ tests = ["agent/tests/test_cli.py::test_live_run_refused_without_ledger_unless_n
 [[mutation]]
 id = "cli_budget_check_skipped"
 file = "agent/cli.py"
-search = '''        ledger.assert_can_start_live_run(mode, need_usd=need_usd, need_credits=None if need_usd is None else 0)
+search = '''        ledger.assert_can_start_live_run(mode, need_usd=need_usd, need_credits=credits)
 '''
 replace = '''        pass
 '''
@@ -3230,7 +3233,7 @@ tests = [
 [[mutation]]
 id = "sc2_replay_priced_at_opus"
 file = "agent/config.py"
-search = '''REPLAY_PRICES = PRICES_PER_MTOK[HAIKU]'''
+search = '''REPLAY_PRICES = {"input": 1.00, "output": 5.00}'''
 replace = '''REPLAY_PRICES = PRICES_PER_MTOK[OPUS_BASELINE]'''
 tests = [
     "agent/tests/test_sc2_replay.py::test_no_sc2_case_ends_budget_stopped[flo]",
@@ -3383,8 +3386,9 @@ tests = ["agent/tests/test_graph_budget.py::test_budget_stop_is_never_no_reliabl
 [[mutation]]
 id = "latency_route_dropped"
 file = "agent/nodes/route.py"
-search = '''        "latency": {NODE: time.perf_counter() - started},'''
-replace = ''''''
+search = '''        "research_limits": limits,
+        "latency": {NODE: time.perf_counter() - started},'''
+replace = '''        "research_limits": limits,'''
 tests = [
     "agent/tests/test_graph_latency.py::test_latency_recorded_for_every_node_that_ran",
     "agent/tests/test_ledger.py::test_latency_recorded_per_node",
@@ -5060,8 +5064,8 @@ tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_
 [[mutation]]
 id = "property_page_successor_dropped"
 file = "agent/render/property_page.py"
-search = '''        lines += _successors(graph, a)'''
-replace = '''        pass'''
+search = '''        _replacement_section(graph, appliances, as_of),'''
+replace = '''        "",'''
 tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_and_labeled_synthetic"]
 
 # ---------------------------------------------------------------- render node
@@ -5237,8 +5241,10 @@ tests = ["agent/tests/test_persist.py::test_persist_writes_phase4_edge_kinds_onl
 [[mutation]]
 id = "cli_property_show_not_written"
 file = "agent/cli.py"
-search = '''    html.write_text(page, encoding="utf-8")'''
-replace = '''    pass'''
+search = '''    html.write_text(page, encoding="utf-8")
+    print(f"advisor property show:'''
+replace = '''    pass
+    print(f"advisor property show:'''
 tests = ["agent/tests/test_cli.py::test_property_show_writes_self_contained_page_under_data"]
 
 [[mutation]]
@@ -5341,8 +5347,8 @@ tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_
 [[mutation]]
 id = "property_page_href_raw"
 file = "agent/render/property_page.py"
-search = '''        link = f'<a href="{esc(url)}">{label}</a>' if url else label'''
-replace = '''        link = f'<a href="{url}">{label}</a>' if url else label'''
+search = '''    link = f'<a href="{esc(url)}">{label}</a>' if url else label'''
+replace = '''    link = f'<a href="{url}">{label}</a>' if url else label'''
 tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_and_labeled_synthetic"]
 why = "safe_url checks only the scheme prefix, so a quote in the URL would break out of the attribute"
 
@@ -5356,8 +5362,8 @@ tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_
 [[mutation]]
 id = "property_page_retrieved_raw"
 file = "agent/render/property_page.py"
-search = '''retrieved {esc(_day(edge.get("retrieved_at")))}'''
-replace = '''retrieved {_day(edge.get("retrieved_at"))}'''
+search = '''retrieved {esc(_day(fact.get("retrieved_at")))}'''
+replace = '''retrieved {_day(fact.get("retrieved_at"))}'''
 tests = ["agent/tests/test_render.py::test_property_page_self_contained_escaped_and_labeled_synthetic"]
 
 [[mutation]]
@@ -5786,9 +5792,9 @@ tests = ["agent/tests/test_live_eval.py::test_sc7b_batch_answers_the_pause_and_r
 [[mutation]]
 id = "eval_first_lookup_accepts_replay"
 file = "agent/live/eval_sc7b.py"
-search = '''        if record.get("mode") not in config.LIVE_MODES:
+search = '''        if record.get("kind") is not None or record.get("mode") not in config.LIVE_MODES:
             continue'''
-replace = '''        if False:
+replace = '''        if record.get("kind") is not None:
             continue'''
 tests = ["agent/tests/test_live_eval.py::test_sc7b_finds_the_phase5_first_lookup_from_its_run_record"]
 
@@ -6130,15 +6136,15 @@ tests = ["agent/tests/test_preflight.py::test_exactly_proceed_continues"]
 [[mutation]]
 id = "schema_check_worst_ignores_max_tokens"
 file = "agent/live/schema_check.py"
-search = '''    worst = price_usage(prices, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})'''
+search = '''    worst = price_usage(model, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})'''
 replace = '''    worst = typical'''
 tests = ["agent/tests/test_preflight.py::test_check_schema_preflight_shows_one_call_and_its_reservation"]
 
 [[mutation]]
 id = "schema_check_typical_is_worst"
 file = "agent/live/schema_check.py"
-search = '''    typical = price_usage(prices, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL})'''
-replace = '''    typical = price_usage(prices, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})'''
+search = '''    typical = price_usage(model, {"input_tokens": tokens, "output_tokens": typical_out})'''
+replace = '''    typical = price_usage(model, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})'''
 tests = ["agent/tests/test_preflight.py::test_check_schema_preflight_shows_one_call_and_its_reservation"]
 
 [[mutation]]
@@ -6161,9 +6167,9 @@ tests = ["agent/tests/test_preflight.py::test_no_flag_skips_the_typed_proceed"]
 [[mutation]]
 id = "recorder_drops_tool_calls"
 file = "agent/live/recorder.py"
-search = '''                     "tool_calls": [{"name": c["name"], "args": c["args"], **({"id": c["id"]} if c.get("id") else {})}
-                                    for c in e.get("tool_calls") or []],'''
-replace = '''                     "tool_calls": [],'''
+search = '''        "tool_calls": [{"name": c["name"], "args": c["args"], **({"id": c["id"]} if c.get("id") else {})}
+                       for c in event.get("tool_calls") or []],'''
+replace = '''        "tool_calls": [],'''
 tests = ["agent/tests/test_recorder.py::test_recording_loads_as_a_cassette_and_replays"]
 
 [[mutation]]
@@ -6176,8 +6182,8 @@ tests = ["agent/tests/test_recorder.py::test_recording_loads_as_a_cassette_and_r
 [[mutation]]
 id = "recorder_structured_as_text"
 file = "agent/live/recorder.py"
-search = '''"draft": _structured(str(e.get("content") or "")),'''
-replace = '''"draft": {UNPARSED_KEY: str(e.get("content") or "")},'''
+search = '''    out = {key: _structured(str(event.get("content") or "")), "usage": _usage(event.get("usage"))}'''
+replace = '''    out = {key: {UNPARSED_KEY: str(event.get("content") or "")}, "usage": _usage(event.get("usage"))}'''
 tests = ["agent/tests/test_recorder.py::test_recording_loads_as_a_cassette_and_replays"]
 
 [[mutation]]
@@ -6725,10 +6731,10 @@ why = "Phase 5 live run: three searches issued together finished out of order"
 id = "recorder_log_order_kept"
 file = "agent/live/recorder.py"
 search = '''    for response in script:
-        for call in response["message"]["tool_calls"]:
+        for call in (response.get("message") or {}).get("tool_calls") or []:
             arg = call.get("args", {}).get("query" if call["name"] == "search" else "url")'''
 replace = '''    for response in []:
-        for call in response["message"]["tool_calls"]:
+        for call in (response.get("message") or {}).get("tool_calls") or []:
             arg = call.get("args", {}).get("query" if call["name"] == "search" else "url")'''
 tests = ["agent/tests/test_recorder.py::test_parallel_calls_are_recorded_in_the_order_the_model_issued_them"]
 why = "the Phase 5 recording failed to load because the log holds parallel calls in finishing order"
@@ -7551,15 +7557,15 @@ tests = ["agent/tests/test_teardown.py::test_tldr_fits_five_sentences_and_100_wo
 [[mutation]]
 id = "teardown_tldr_two_numbers"
 file = "index.html"
-search = 'few or no searches'
-replace = '0 to 2 searches'
+search = 'A newer Claude model cut the cost of a run'
+replace = 'Claude Haiku 5.5 cut the cost of a run'
 tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
 
 [[mutation]]
 id = "teardown_tldr_link"
 file = "index.html"
-search = 'free search service runs'
-replace = 'free <a href="#two-apis">search service</a> runs'
+search = 'flags safety steps, and spending caps'
+replace = 'flags <a href="#decisions">safety steps</a>, and spending caps'
 tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
 
 [[mutation]]
@@ -7649,8 +7655,9 @@ why = "review H3, R1: the cheaper repeat brief left out the steps to try first, 
 id = "build_demo_try_first_not_compared"
 file = "agent/replay/build_demo.py"
 search = '''
-                "try_first_steps": (c["outcome"] or {}).get("try_first_steps")}'''
-replace = '''}'''
+                "try_first_steps": (c["outcome"] or {}).get("try_first_steps"),'''
+replace = '''
+'''
 tests = ["agent/tests/test_build_demo.py::test_repeat_takeaway_says_when_the_brief_was_thinner"]
 why = "review R1: the side by side compares the steps to try first, not only searches, cost and time"
 
@@ -7853,7 +7860,7 @@ tests = ["agent/tests/test_safety.py::test_retry_affordability_counts_the_jev_ca
 [[mutation]]
 id = "safety_check_not_wired"
 file = "agent/graph.py"
-search = '''    builder.add_edge("synthesize", "safety_check")'''
+search = '''    builder.add_conditional_edges("synthesize", after_synthesize, ["safety_check", "render"])'''
 replace = '''    builder.add_edge("synthesize", "validate")'''
 tests = ["agent/tests/test_safety.py::test_retry_asks_jev_about_the_new_draft"]
 
@@ -8254,8 +8261,9 @@ tests = ["agent/tests/test_ledger.py::test_jev_call_priced_on_input_only_with_ty
 [[mutation]]
 id = "ledger_charge_ignores_provider"
 file = "agent/ledger.py"
-search = '''        prices = call_prices(reservation.mode, reservation.provider, reservation.model)'''
-replace = '''        prices = config.REPLAY_PRICES if reservation.mode == "replay" else _prices_for(reservation.model or "")'''
+search = '''        prices = call_prices(reservation.price_mode or reservation.mode, reservation.provider, reservation.model,
+                             prompt_tokens(usage_metadata))'''
+replace = '''        prices = config.REPLAY_PRICES if reservation.mode == "replay" else _prices_for(reservation.model or "", usage_metadata)'''
 tests = ["agent/tests/test_ledger.py::test_jev_call_priced_on_input_only_with_typesafe_on_every_row"]
 
 [[mutation]]
@@ -8481,8 +8489,8 @@ tests = ["agent/tests/test_safety_judge.py::test_build_cap_refuses_a_jev_call_th
 [[mutation]]
 id = "cassettes_safety_check_unknown"
 file = "agent/replay/cassettes.py"
-search = '''OPTIONAL_KEYS = ("classifier", "safety_check")'''
-replace = '''OPTIONAL_KEYS = ("classifier",)'''
+search = '''OPTIONAL_KEYS = ("classifier", "safety_check", "recorded")'''
+replace = '''OPTIONAL_KEYS = ("classifier", "recorded")'''
 tests = ["agent/tests/test_cassettes.py::test_safety_check_is_optional_and_served_as_a_copy", "agent/tests/test_recorder.py::test_recording_carries_the_jev_answers_and_replays_them"]
 
 [[mutation]]
@@ -9331,8 +9339,10 @@ why = "decision 35: a superseded build's batch first lookup is never the reporte
 [[mutation]]
 id = "sc12b_missing_input_crashes"
 file = "agent/live/sc12b.py"
-search = '''        if not recording.is_file():'''
-replace = '''        if False:'''
+search = '''    if recording.is_file():
+        return recording.parent'''
+replace = '''    if True:
+        return recording.parent'''
 tests = ["agent/tests/test_safety_eval.py::test_sc12b_refuses_when_an_input_recording_is_missing"]
 why = "a recorded input filed under data/superseded/ refuses SC12b with the path named, never a crash"
 
@@ -9427,10 +9437,14 @@ why = "check 8: src/demo.js must draw the safety step"
 [[mutation]]
 id = "installed_demo_safety_dropped"
 file = "src/fixtures.js"
-search = '''            "raised_by": "jev",'''
-replace = '''            "raised_by": null,'''
+search = '''            "step": "Turn off the power at the breaker.",
+            "flag": true,
+            "raised_by": "writer",'''
+replace = '''            "step": "Turn off the power at the breaker.",
+            "flag": true,
+            "raised_by": null,'''
 tests = ["agent/tests/test_build_demo.py::test_installed_demo_shows_the_safety_check"]
-why = "the installed vague case shows Jev's flag as Jev's, from its run record"
+why = "the installed first FLO case names the layer behind each flag, here the writer's breaker step, from its run record"
 
 [[mutation]]
 id = "demo_page_safety_bullet_dropped"
@@ -9447,6 +9461,38 @@ search = '''stepNra(c), stepCompare(c), stepSafety(c), stepBrief(c), stepNumbers
 replace = '''stepNra(c), stepCompare(c), stepBrief(c), stepNumbers(c)].filter(Boolean);'''
 tests = ["agent/tests/test_build_demo.py::test_installed_demo_shows_the_safety_check"]
 why = "the page draws the safety step for every case that has one"
+
+[[mutation]]
+id = "installed_demo_js_route_lead_not_drawn"
+file = "src/demo.js"
+search = '''        if (r.lead) {'''
+replace = '''        if (false) {'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_passes_on_the_installed_site"]
+why = "the installed case 3 carries the builder's route lead, and the page must show it, not its own wording"
+
+[[mutation]]
+id = "installed_demo_js_compare_note_not_drawn"
+file = "src/demo.js"
+search = '''        if (cw.note) {'''
+replace = '''        if (false) {'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_passes_on_the_installed_site"]
+why = "the installed side by side tables next to a refusal carry the builder's note, and the page must show it"
+
+[[mutation]]
+id = "installed_demo_js_outcome_row_not_drawn"
+file = "src/demo.js"
+search = '''      rows.unshift(["How it ended", "outcome_text", String]);'''
+replace = '''      rows.length;'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_passes_on_the_installed_site"]
+why = "a refusal next to an answer in the installed side by side tables shows a How it ended row"
+
+[[mutation]]
+id = "installed_demo_js_coverage_not_drawn"
+file = "src/demo.js"
+search = '''        var cov = r.coverage;'''
+replace = '''        var cov = null;'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_passes_on_the_installed_site"]
+why = "the installed records case carries warranty coverage, and the page must draw it"
 
 [[mutation]]
 id = "build_demo_recorded_on_ignored"
@@ -9467,8 +9513,8 @@ why = "a recorded_on more than a day from the runs' UTC day fails the build"
 [[mutation]]
 id = "demo_selection_recorded_on_moved"
 file = "agent/replay/demo_selection.json"
-search = '''  "recorded_on": "2026-09-30",'''
-replace = '''  "recorded_on": "2026-10-01",'''
+search = '''  "recorded_on": "2026-10-14",'''
+replace = '''  "recorded_on": "2026-10-15",'''
 tests = ["agent/tests/test_build_demo.py::test_installed_demo_recorded_date_is_the_selection_day"]
 why = "the installed demo gives the day in the selection's recorded_on, the day README.md and index.html give"
 
@@ -9588,3 +9634,3397 @@ search = '''                and noul is None and s.get("jev_error") not in (None
 replace = '''                and noul is None and s.get("jev_error") is not None'''
 tests = ["agent/tests/test_build_demo.py::test_safety_section_rejects_a_word_fallback_flag_without_a_failed_jev_call[not_recorded]"]
 why = "the demo builder takes a replay's missing answer as a failed Jev call"
+
+# ---------------------------------------------------------------------------
+# The test date pin (PRD 2) and Phase 0, the human label check (SC12c, decision 70)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "conftest_today_unpinned"
+file = "agent/tests/conftest.py"
+search = '''    monkeypatch.setattr(cli, "_today", lambda: TEST_TODAY)'''
+replace = '''    assert cli._today is not None'''
+tests = ["agent/tests/test_test_date_pin.py::test_today_is_pinned_before_the_haiku_gate", "agent/tests/test_test_date_pin.py::test_live_path_passes_with_the_wall_clock_past_the_haiku_gate"]
+why = "every test reads the wall clock again, so the live path tests fail from the Haiku date gate on"
+
+[[mutation]]
+id = "stats_kappa_chance_from_one_rater"
+file = "agent/safety_eval/stats.py"
+search = '''    chance = sum((Fraction(rows[i] * cols[i], n * n) for i in range(k)), Fraction(0))'''
+replace = '''    chance = sum((Fraction(rows[i] * rows[i], n * n) for i in range(k)), Fraction(0))'''
+tests = ["agent/tests/test_sc12c.py::test_cohen_kappa_matches_hand_computed_tables"]
+why = "chance agreement from the first rater's totals alone"
+
+[[mutation]]
+id = "stats_kappa_undefined_divides"
+file = "agent/safety_eval/stats.py"
+search = '''    if chance == 1:
+        return None
+    return (observed - chance) / (1 - chance)'''
+replace = '''    return (observed - chance) / (1 - chance)'''
+tests = ["agent/tests/test_sc12c.py::test_cohen_kappa_matches_hand_computed_tables"]
+why = "one category for every item divides by zero instead of having no kappa"
+
+[[mutation]]
+id = "sc12c_protocol_rendered_not_verbatim"
+file = "agent/safety_eval/sc12c.py"
+search = '''<pre id="{pre_id}">{html.escape(block, quote=False)}</pre>'''
+replace = '''<pre id="{pre_id}">{html.escape(block.replace("**", ""), quote=False)}</pre>'''
+tests = ["agent/tests/test_sc12c.py::test_page_shows_the_protocol_and_worked_examples_byte_for_byte"]
+why = "the page shows the protocol with its bold markers stripped, not what the readers had"
+
+[[mutation]]
+id = "sc12c_payload_leaks_the_half"
+file = "agent/safety_eval/sc12c.py"
+search = ['''    return [{**{key: by_id[item_id].get(key) or "" for key in harness.READER_KEYS}, "index": n}''', '''"@ITEMS@": script_json([{key: item[key] for key in PAYLOAD_KEYS} for item in items]),''']
+replace = ['''    return [{**{key: by_id[item_id].get(key) or "" for key in harness.READER_KEYS}, "index": n,
+             "half": by_id[item_id].get("half")}''', '''"@ITEMS@": script_json(list(items)),''']
+tests = ["agent/tests/test_sc12c.py::test_page_payload_is_the_reader_keys_and_an_index_only", "agent/tests/test_sc12c.py::test_real_page_holds_the_175_held_out_items_and_nothing_else"]
+why = "the payload carries a field beyond the readers' keys and the index, and the page passes it through"
+
+[[mutation]]
+id = "sc12c_order_not_shuffled"
+file = "agent/safety_eval/sc12c.py"
+search = '''    random.Random(seed).shuffle(order)
+'''
+replace = '''    random.Random(seed)
+'''
+tests = ["agent/tests/test_sc12c.py::test_page_order_comes_from_the_recorded_seed_and_holds_on_rebuild"]
+why = "the items are shown sorted by id, not in a random order"
+
+[[mutation]]
+id = "sc12c_rebuild_draws_a_new_seed"
+file = "agent/safety_eval/sc12c.py"
+search = '''        seed = previous["order_seed"]
+'''
+replace = '''        seed = seed or None
+'''
+tests = ["agent/tests/test_sc12c.py::test_page_order_comes_from_the_recorded_seed_and_holds_on_rebuild"]
+why = "a rebuild reorders the items halfway through labeling"
+
+[[mutation]]
+id = "sc12c_csp_connects_anywhere"
+file = "agent/safety_eval/sc12c.py"
+search = '''"connect-src 'self'; img-src'''
+replace = '''"connect-src *; img-src'''
+tests = ["agent/tests/test_sc12c.py::test_page_loads_nothing_and_calls_only_its_own_answer_endpoint"]
+why = "the page's policy lets its script send to any host"
+
+[[mutation]]
+id = "sc12c_page_loads_a_web_font"
+file = "agent/safety_eval/sc12c.py"
+search = '''<title>Safety step check</title>
+<style>'''
+replace = '''<title>Safety step check</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">
+<style>'''
+tests = ["agent/tests/test_sc12c.py::test_page_loads_nothing_and_calls_only_its_own_answer_endpoint"]
+why = "the page loads a stylesheet from the network"
+
+[[mutation]]
+id = "sc12c_server_any_host"
+file = "agent/safety_eval/sc12c.py"
+search = '''        if not host_allowed(self.headers.get("Host")):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_sc12c.py::test_server_serves_one_page_and_refuses_other_paths_methods_and_hosts"]
+why = "a request naming another host (DNS rebinding) is served and its answers logged"
+
+[[mutation]]
+id = "sc12c_server_serves_any_path"
+file = "agent/safety_eval/sc12c.py"
+search = '''        path = self.path.split("?", 1)[0]
+'''
+replace = '''        path = self.path.split("?", 1)[0]
+        path = path if path in ROUTES else "/"
+'''
+tests = ["agent/tests/test_sc12c.py::test_server_serves_one_page_and_refuses_other_paths_methods_and_hosts"]
+why = "any path gets the page instead of a 404"
+
+[[mutation]]
+id = "sc12c_server_any_method"
+file = "agent/safety_eval/sc12c.py"
+search = '''        if self.command != ROUTES[path]:'''
+replace = '''        if self.command not in ("GET", "POST"):'''
+tests = ["agent/tests/test_sc12c.py::test_server_serves_one_page_and_refuses_other_paths_methods_and_hosts"]
+why = "a POST to the page or a GET to the answer endpoint is let through"
+
+[[mutation]]
+id = "sc12c_server_accepts_unknown_ids"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if entry["id"] not in known:'''
+replace = '''    if not entry["id"]:'''
+tests = ["agent/tests/test_sc12c.py::test_server_validates_answers_and_appends_each_one"]
+why = "an answer for a tune item or an unknown id is logged"
+
+[[mutation]]
+id = "sc12c_server_accepts_any_hazard"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if entry["hazard"] not in HAZARDS:'''
+replace = '''    if not entry["hazard"]:'''
+tests = ["agent/tests/test_sc12c.py::test_server_validates_answers_and_appends_each_one", "agent/tests/test_sc12c.py::test_seal_refuses_an_incomplete_set_and_an_edited_log"]
+why = "a hazard outside the five choices is logged and sealed"
+
+[[mutation]]
+id = "sc12c_server_any_origin"
+file = "agent/safety_eval/sc12c.py"
+search = '''        if origin is not None and not (origin.startswith("http://") and host_allowed(origin[len("http://"):])):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_sc12c.py::test_server_validates_answers_and_appends_each_one"]
+why = "a page on another origin can post answers"
+
+[[mutation]]
+id = "sc12c_serve_binds_every_interface"
+file = "agent/safety_eval/sc12c.py"
+search = '''HOST = "127.0.0.1"'''
+replace = '''HOST = "0.0.0.0"'''
+tests = ["agent/tests/test_sc12c.py::test_serve_binds_127_0_0_1_on_its_fixed_port"]
+why = "the server listens on every interface, not only this computer"
+
+[[mutation]]
+id = "sc12c_seal_allows_missing_answers"
+file = "agent/safety_eval/sc12c.py"
+search = '''    missing = sorted(known - set(latest))'''
+replace = '''    missing = []'''
+tests = ["agent/tests/test_sc12c.py::test_seal_refuses_an_incomplete_set_and_an_edited_log"]
+why = "an incomplete set is sealed"
+
+[[mutation]]
+id = "sc12c_seal_reads_any_log_line"
+file = "agent/safety_eval/sc12c.py"
+search = '''        why = answer_error({key: entry[key] for key in ANSWER_KEYS}, known)'''
+replace = '''        why = None'''
+tests = ["agent/tests/test_sc12c.py::test_seal_refuses_an_incomplete_set_and_an_edited_log"]
+why = "an edited answer log line with an invalid answer is sealed"
+
+[[mutation]]
+id = "sc12c_score_skips_the_seal_check"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if actual != sealed.get("human_labels_sha256"):'''
+replace = '''    if actual is None:'''
+tests = ["agent/tests/test_sc12c.py::test_score_refuses_before_the_seal_and_after_the_sealed_file_changes"]
+why = "labels edited after the seal are scored"
+
+[[mutation]]
+id = "sc12c_score_reads_revisions"
+file = "agent/safety_eval/sc12c.py"
+search = '''    human = human_doc["labels"]
+'''
+replace = '''    human = {**human_doc["labels"], **{r["id"]: r for r in load_revisions()}}
+'''
+tests = ["agent/tests/test_sc12c.py::test_synthetic_score_matches_hand_counts_and_revisions_never_change_it"]
+why = "a label revised after scoring replaces the sealed blind label in the score"
+
+[[mutation]]
+id = "sc12c_human_yes_other_counts"
+file = "agent/safety_eval/sc12c.py"
+search = '''    human_as_labels = {k: {"positive": positive_vote(v), "hazard": v["hazard"]} for k, v in human.items()}'''
+replace = '''    human_as_labels = {k: {"positive": v["safety"] == "yes", "hazard": v["hazard"]} for k, v in human.items()}'''
+tests = ["agent/tests/test_sc12c.py::test_synthetic_score_matches_hand_counts_and_revisions_never_change_it"]
+why = "Roanuk's yes with hazard other counts as a safety step, unlike the readers' votes (labels.positive_vote)"
+
+[[mutation]]
+id = "sc12c_published_arm_reads_the_tuned_list"
+file = "agent/safety_eval/sc12c.py"
+search = '''        PUBLISHED_ARM: stats.count(scored, lambda i: i["word_published"]),'''
+replace = '''        PUBLISHED_ARM: stats.count(scored, lambda i: i["word_tuned"]),'''
+tests = ["agent/tests/test_sc12c.py::test_real_score_reproduces_the_published_ai_arms"]
+why = "the published word list arm is scored with the tuned list"
+
+[[mutation]]
+id = "sc12c_score_appends_a_reply"
+file = "agent/safety_eval/sc12c.py"
+search = '''    lock = harness.read_json(lock_file)
+'''
+replace = '''    lock = harness.read_json(lock_file)
+    harness.append_reply(lock["question_hash"], {"item_id": "planted"})
+'''
+tests = ["agent/tests/test_sc12c.py::test_real_score_leaves_every_sc12a_file_untouched"]
+why = "score writes to an SC12a file (the test's copy of the Jev replies, never the real one)"
+
+[[mutation]]
+id = "sc12c_scores_carry_the_step"
+file = "agent/safety_eval/sc12c.py"
+search = '''            "id": k,
+            "roanuk": {'''
+replace = '''            "id": k, "step": by_id[k].get("step"),
+            "roanuk": {'''
+tests = ["agent/tests/test_sc12c.py::test_real_committed_files_carry_no_item_text"]
+why = "the committed scores carry the disagreeing items' step text"
+
+[[mutation]]
+id = "build_info_fingerprints_safety_eval"
+file = "agent/build_info.py"
+search = '''    "safety_eval/",
+})'''
+replace = '''})'''
+tests = ["agent/tests/test_sc12c.py::test_sc12c_files_stay_outside_the_build_fingerprint"]
+why = "Phase 0's files change the build fingerprint"
+
+[[mutation]]
+id = "config_jev_threshold_moved"
+file = "agent/config.py"
+search = '''JEV_THRESHOLD: float | None = 0.51'''
+replace = '''JEV_THRESHOLD: float | None = 0.52'''
+tests = ["agent/tests/test_sc12c.py::test_lock_hashes_match_the_decision_log_and_the_shipped_config", "agent/tests/test_sc12c.py::test_lock_file_matches_its_hash_and_the_current_set"]
+why = "the shipped threshold leaves the Gate 2 lock"
+
+# ---------------------------------------------------------------------------
+# SC13, warranty status in code: the registry table and seed, coverage.py,
+# warranty_dates.py, the run's one date, the property page and the brief line
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "registry_seed_drops_softener"
+file = "seed/registry_seed.json"
+search = [
+'''    },
+    {
+      "id": "appl-softener",
+      "property_id": "prop-b",
+      "category": "water_softener",
+      "manufacturer": "Synthetic Water Co.",
+      "model": "WS-400 (synthetic)",
+      "serial": "SYN-WS-000007",
+      "purchase_date": "2026-04-20",
+      "install_date": "2026-05-04",
+      "warranty_terms": "Synthetic warranty terms for testing: control valve 5 years and resin tank 10 years from the install date; labor 1 year from the purchase date.",
+      "warranty_source": "synthetic seed entry",
+      "status": "active",
+      "notes": "Invented maker and model, installed recently so its warranty coverage is active (SC13; every other seeded term has ended).",
+      "synthetic": true
+    }
+  ],''',
+'''    },
+    {
+      "id": "warr-softener-valve",
+      "appliance_id": "appl-softener",
+      "component": "control valve",
+      "term_months": 60,
+      "start_event": "install",
+      "source_text": "control valve 5 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-softener-tank",
+      "appliance_id": "appl-softener",
+      "component": "resin tank",
+      "term_months": 120,
+      "start_event": "install",
+      "source_text": "resin tank 10 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-softener-labor",
+      "appliance_id": "appl-softener",
+      "component": "labor",
+      "term_months": 12,
+      "start_event": "purchase",
+      "source_text": "labor 1 year from the purchase date",
+      "synthetic": true
+    }
+  ]''',
+]
+replace = [
+'''    }
+  ],''',
+'''    }
+  ]''',
+]
+tests = [
+    "agent/tests/test_registry.py::test_seed_loads_two_properties_seven_appliances_all_synthetic",
+    "agent/tests/test_registry.py::test_lookups_survive_reseed",
+    "agent/tests/test_registry.py::test_concurrent_reads_from_threads",
+]
+why = "the seed loses SC13's seventh appliance, the synthetic water softener, and its coverage rows"
+
+[[mutation]]
+id = "registry_list_appliances_capped"
+file = "agent/registry.py"
+search = '            return self._all("SELECT * FROM appliances ORDER BY id")'
+replace = '            return self._all("SELECT * FROM appliances ORDER BY id LIMIT 6")'
+tests = [
+    "agent/tests/test_registry.py::test_seed_loads_two_properties_seven_appliances_all_synthetic",
+    "agent/tests/test_registry.py::test_lookups_survive_reseed",
+    "agent/tests/test_registry.py::test_concurrent_reads_from_threads",
+]
+
+[[mutation]]
+id = "registry_warranty_synthetic_zero"
+file = "agent/registry.py"
+search = '                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
+replace = '                    VALUES (?, ?, ?, ?, ?, ?, ?, 0)'
+tests = ["agent/tests/test_registry.py::test_seed_loads_two_properties_seven_appliances_all_synthetic"]
+
+[[mutation]]
+id = "registry_term_stored_in_years"
+file = "agent/registry.py"
+search = '                        row["term_months"],'
+replace = '                        row["term_months"] // 12,'
+tests = [
+    "agent/tests/test_registry.py::test_optima_terms_load_as_three_coverage_rows_in_months",
+    "agent/tests/test_warranty_coverage.py::test_optima_terms_map_to_three_rows_all_ended_in_october_2026",
+]
+
+[[mutation]]
+id = "registry_warranty_record_id_check_dropped"
+file = "agent/registry_schema.sql"
+search = "    record_id    TEXT NOT NULL UNIQUE CHECK (record_id = 'warranty:' || id),"
+replace = "    record_id    TEXT NOT NULL UNIQUE,"
+tests = ["agent/tests/test_registry.py::test_schema_checks_warranty_coverage_rows"]
+
+[[mutation]]
+id = "registry_warranty_term_check_dropped"
+file = "agent/registry_schema.sql"
+search = "    term_months  INTEGER NOT NULL CHECK (term_months BETWEEN 1 AND 1200),"
+replace = "    term_months  INTEGER NOT NULL,"
+tests = ["agent/tests/test_registry.py::test_schema_checks_warranty_coverage_rows"]
+
+[[mutation]]
+id = "registry_warranty_start_event_check_dropped"
+file = "agent/registry_schema.sql"
+search = "    start_event  TEXT NOT NULL CHECK (start_event IN ('install', 'purchase')),"
+replace = "    start_event  TEXT NOT NULL,"
+tests = ["agent/tests/test_registry.py::test_schema_checks_warranty_coverage_rows"]
+
+[[mutation]]
+id = "registry_warranty_not_checked_synthetic"
+file = "agent/registry.py"
+search = '''        tables = ("properties", "appliances", "service_records", "maintenance_log", "warranty_coverage")
+        for table in tables:'''
+replace = '''        tables = ("properties", "appliances", "service_records", "maintenance_log", "warranty_coverage")
+        for table in tables[:-1]:'''
+tests = ["agent/tests/test_registry.py::test_seed_coverage_rows_must_be_synthetic_and_may_be_absent"]
+
+[[mutation]]
+id = "registry_warranty_list_required"
+file = "agent/registry.py"
+search = '''        data.setdefault("warranty_coverage", [])
+'''
+replace = ''
+tests = ["agent/tests/test_registry.py::test_seed_coverage_rows_must_be_synthetic_and_may_be_absent"]
+
+[[mutation]]
+id = "registry_seed_softener_installed_long_ago"
+file = "seed/registry_seed.json"
+search = '      "install_date": "2026-05-04",'
+replace = '      "install_date": "2016-05-04",'
+tests = ["agent/tests/test_warranty_coverage.py::test_active_coverage_lists_each_component_and_tells_the_owner_to_check"]
+why = "the new appliance's install based coverage has ended by October 2026, so none of the seed is active"
+
+[[mutation]]
+id = "coverage_end_date_thirty_day_months"
+file = "agent/rules/coverage.py"
+search = '        return _add_months(begin, int(term_months))'
+replace = '        return begin + __import__("datetime").timedelta(days=30 * int(term_months))'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_end_date_adds_months_and_clamps_to_month_end",
+    "agent/tests/test_warranty_coverage.py::test_end_date_properties",
+]
+
+[[mutation]]
+id = "coverage_term_off_by_one"
+file = "agent/rules/coverage.py"
+search = '        return _add_months(begin, int(term_months))'
+replace = '        return _add_months(begin, int(term_months) - 1)'
+tests = ["agent/tests/test_warranty_coverage.py::test_end_date_properties"]
+
+[[mutation]]
+id = "maintenance_add_months_no_clamp"
+file = "agent/rules/maintenance.py"
+search = '    return date(year, month, min(start.day, calendar.monthrange(year, month)[1]))'
+replace = '    return date(year, month, start.day)'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_end_date_adds_months_and_clamps_to_month_end",
+    "agent/tests/test_warranty_coverage.py::test_end_date_properties",
+]
+
+[[mutation]]
+id = "coverage_active_through_end_day"
+file = "agent/rules/coverage.py"
+search = '    return ACTIVE if run_date < end else ENDED'
+replace = '    return ACTIVE if run_date <= end else ENDED'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_status_is_active_only_before_the_end_date",
+    "agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label",
+]
+
+[[mutation]]
+id = "coverage_partial_date_day_one"
+file = "agent/rules/coverage.py"
+search = '''    parsed = parse_partial_date(start)
+    if parsed is None or None in parsed:
+        return None'''
+replace = '''    parsed = parse_partial_date(start)
+    if parsed is None:
+        return None
+    parsed = (parsed[0], parsed[1] or 1, parsed[2] or 1)'''
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_partial_start_dates_are_never_ended",
+    "agent/tests/test_property_page_warranty.py::test_unknown_end_dates_and_hostile_components",
+]
+
+[[mutation]]
+id = "coverage_purchase_reads_install"
+file = "agent/rules/coverage.py"
+search = 'START_FIELDS = {"install": "install_date", "purchase": "purchase_date"}'
+replace = 'START_FIELDS = {"install": "install_date", "purchase": "install_date"}'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_start_event_picks_the_install_or_purchase_date",
+    "agent/tests/test_warranty_coverage.py::test_active_coverage_lists_each_component_and_tells_the_owner_to_check",
+    "agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label",
+]
+
+[[mutation]]
+id = "coverage_latest_is_earliest"
+file = "agent/rules/coverage.py"
+search = '            latest = max(ended, key=lambda r: str(r.get("end_date")))'
+replace = '            latest = min(ended, key=lambda r: str(r.get("end_date")))'
+tests = ["agent/tests/test_warranty_coverage.py::test_optima_terms_map_to_three_rows_all_ended_in_october_2026"]
+
+[[mutation]]
+id = "coverage_check_sentence_dropped"
+file = "agent/rules/coverage.py"
+search = '''    if active or unknown or not_started:
+        parts.append(CHECK_WITH_MAKER)'''
+replace = '''    if False:
+        parts.append(CHECK_WITH_MAKER)'''
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_active_coverage_lists_each_component_and_tells_the_owner_to_check",
+    "agent/tests/test_warranty_coverage.py::test_unknown_end_dates_are_never_counted_as_ended",
+]
+
+[[mutation]]
+id = "coverage_synthetic_label_dropped"
+file = "agent/rules/coverage.py"
+search = '''    return f"{row.get('record_id')}{', synthetic' if row.get('synthetic') else ''}"'''
+replace = '''    return f"{row.get('record_id')}"'''
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_active_coverage_lists_each_component_and_tells_the_owner_to_check",
+    "agent/tests/test_warranty_coverage.py::test_optima_terms_map_to_three_rows_all_ended_in_october_2026",
+    "agent/tests/test_render.py::test_coverage_line_is_drawn_in_v2_only_and_labels_synthetic_rows",
+    "agent/tests/test_render.py::test_v2_render_matches_reviewed_golden",
+]
+
+[[mutation]]
+id = "coverage_no_rows_out_of_warranty"
+file = "agent/rules/coverage.py"
+search = 'NO_WARRANTY = "No warranty on file."'
+replace = 'NO_WARRANTY = "Out of warranty."'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_no_rows_says_no_warranty_on_file",
+    "agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label",
+]
+
+[[mutation]]
+id = "coverage_unknown_called_inactive"
+file = "agent/rules/coverage.py"
+search = '        known = "known to be " if unknown or not_started else ""'
+replace = '        known = ""'
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_unknown_end_dates_are_never_counted_as_ended",
+    "agent/tests/test_warranty_coverage.py::test_partial_start_dates_are_never_ended",
+]
+
+[[mutation]]
+id = "schemas_coverage_statement_undeclared"
+file = "agent/schemas.py"
+search = '''    coverage_statement: StrictStr | None = None
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_coverage.py::test_validate_writes_coverage_and_the_brief_keeps_it"]
+why = "Brief.model_validate drops an undeclared field, so the brief loses the code written line"
+
+[[mutation]]
+id = "pipeline_coverage_not_passed"
+file = "agent/rules/pipeline.py"
+search = '                                   coverage=warranty_coverage)'
+replace = '                                   coverage=None)'
+tests = ["agent/tests/test_warranty_coverage.py::test_validate_writes_coverage_and_the_brief_keeps_it"]
+
+[[mutation]]
+id = "citations_coverage_rows_not_facts"
+file = "agent/rules/citations.py"
+search = '    has_registry_facts = bool(rows) or any('
+replace = '    has_registry_facts = any('
+tests = ["agent/tests/test_warranty_coverage.py::test_rows_alone_create_the_block_and_other_appliances_rows_are_ignored"]
+
+[[mutation]]
+id = "citations_coverage_other_appliance"
+file = "agent/rules/citations.py"
+search = '''    rows = [row for row in coverage or []
+            if registry.get("id") is None or row.get("appliance_id") in (None, registry.get("id"))]'''
+replace = '''    rows = list(coverage or [])'''
+tests = ["agent/tests/test_warranty_coverage.py::test_rows_alone_create_the_block_and_other_appliances_rows_are_ignored"]
+
+[[mutation]]
+id = "citations_coverage_ok_only"
+file = "agent/rules/citations.py"
+search = '    computed = coverage_rule.coverage_rows(rows, registry, today)'
+replace = '    computed = coverage_rule.coverage_rows(rows if brief.get("status") == "ok" else [], registry, today)'
+tests = ["agent/tests/test_warranty_coverage.py::test_refusal_keeps_the_code_coverage_line_and_a_forced_refusal_has_none"]
+
+[[mutation]]
+id = "intake_run_date_not_pinned"
+file = "agent/nodes/intake.py"
+search = '''        "run_date": ctx.run_date.isoformat(),
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_coverage.py::test_intake_pins_the_run_date_and_state_wins_on_resume"]
+
+[[mutation]]
+id = "state_run_date_ignores_state"
+file = "agent/state.py"
+search = '    pinned = (state or {}).get("run_date")'
+replace = '    pinned = None'
+tests = ["agent/tests/test_warranty_coverage.py::test_intake_pins_the_run_date_and_state_wins_on_resume"]
+
+[[mutation]]
+id = "synthesize_prompt_wall_clock"
+file = "agent/nodes/synthesize.py"
+search = '    return [SystemMessage(synthesis_system_prompt(run_date(state, ctx).isoformat())), HumanMessage(user)]'
+replace = '    return [SystemMessage(synthesis_system_prompt(__import__("datetime").date.today().isoformat())), HumanMessage(user)]'
+tests = ["agent/tests/test_warranty_coverage.py::test_one_run_date_reaches_the_prompt_the_brief_and_the_page"]
+
+[[mutation]]
+id = "validate_today_wall_clock"
+file = "agent/nodes/validate.py"
+search = '''        today=run_date(state, ctx),
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_coverage.py::test_one_run_date_reaches_the_prompt_the_brief_and_the_page"]
+
+[[mutation]]
+id = "render_footer_wall_clock"
+file = "agent/nodes/render.py"
+search = "        generated_at=run_date(state, runtime.context).isoformat(),  # the run's one date (SC13)"
+replace = '        generated_at=__import__("datetime").date.today().isoformat(),'
+tests = ["agent/tests/test_warranty_coverage.py::test_one_run_date_reaches_the_prompt_the_brief_and_the_page"]
+
+[[mutation]]
+id = "cli_run_date_not_pinned"
+file = "agent/cli.py"
+search = '''        secrets=list(secrets),
+        run_date=_today(),
+'''
+replace = '''        secrets=list(secrets),
+'''
+tests = ["agent/tests/test_warranty_coverage.py::test_cli_pins_one_date_per_run_and_per_property_page"]
+
+[[mutation]]
+id = "cli_property_page_wall_clock"
+file = "agent/cli.py"
+search = '''        generated_at=_today().isoformat(), recalls_dir=config.RECALLS_DIR,
+    )
+    html.parent.mkdir'''
+replace = '''        generated_at=__import__("datetime").date.today().isoformat(), recalls_dir=config.RECALLS_DIR,
+    )
+    html.parent.mkdir'''
+tests = ["agent/tests/test_warranty_coverage.py::test_cli_pins_one_date_per_run_and_per_property_page"]
+
+[[mutation]]
+id = "warranty_dates_keyword_branch_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|{_KEYWORD}[\s:]+(?:[\w,]+\s+){{0,4}}?"  # until 2027, Expires: June, ends June 10, 2027
+    rf"(?:{_YEAR}|{_FULL_MONTH}(?:\s+{_DAY})?(?:,?\s+{_YEAR})?)"
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+
+[[mutation]]
+id = "warranty_dates_numeric_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"{_YEAR}-\d{{1,2}}(?:-\d{{1,2}})?"  # 2021-06-10, 2021-06
+    rf"|\d{{1,2}}/\d{{1,2}}/'''
+replace = '''    rf"\d{{1,2}}/\d{{1,2}}/'''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+
+[[mutation]]
+id = "warranty_dates_month_day_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|{_MONTHS_BUT_MAY}\s+{_DAY}(?:,?\s+{_YEAR})?"  # June 10, June 10, 2027
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+
+[[mutation]]
+id = "warranty_dates_keyword_any_word"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"(?:{_YEAR}|{_FULL_MONTH}(?:\s+{_DAY})?(?:,?\s+{_YEAR})?)"'''
+replace = '''    rf"(?:{_YEAR}|{_FULL_MONTH}(?:\s+{_DAY})?(?:,?\s+{_YEAR})?|\w+)"'''
+tests = ["agent/tests/test_warranty_dates.py::test_ordinary_warranty_wording_passes"]
+
+[[mutation]]
+id = "warranty_dates_may_alone"
+file = "agent/rules/warranty_dates.py"
+search = '_MONTHS_BUT_MAY = (r"(?:jan(?:uary)?|'
+replace = '_MONTHS_BUT_MAY = (r"(?:may|jan(?:uary)?|'
+tests = ["agent/tests/test_warranty_dates.py::test_ordinary_warranty_wording_passes"]
+
+[[mutation]]
+id = "pipeline_warranty_dates_unchecked"
+file = "agent/rules/pipeline.py"
+search = '''    errors += warranty_dates_rule.check_warranty_dates(brief)
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_a_model_written_warranty_date_fails_validation_in_each_field"]
+
+[[mutation]]
+id = "warranty_dates_verify_unchecked"
+file = "agent/rules/warranty_dates.py"
+search = '''        if isinstance(verify, list):
+            out.append(("warranty.verify", list(verify)))'''
+replace = '''        if False:
+            out.append(("warranty.verify", list(verify)))'''
+tests = [
+    "agent/tests/test_warranty_dates.py::test_a_model_written_warranty_date_fails_validation_in_each_field",
+    "agent/tests/test_warranty_dates.py::test_a_refusal_with_a_warranty_date_fails_too",
+]
+
+[[mutation]]
+id = "warranty_dates_top_caution_unchecked"
+file = "agent/rules/warranty_dates.py"
+search = '        out.append(("warranty_caution", [caution.get("text")]))'
+replace = '        pass'
+tests = ["agent/tests/test_warranty_dates.py::test_a_model_written_warranty_date_fails_validation_in_each_field"]
+
+[[mutation]]
+id = "warranty_dates_ok_only"
+file = "agent/rules/warranty_dates.py"
+search = '''    errors = []
+    for path, texts in _model_texts(brief):'''
+replace = '''    errors = []
+    if brief.get("status") != "ok":
+        return errors
+    for path, texts in _model_texts(brief):'''
+tests = ["agent/tests/test_warranty_dates.py::test_a_refusal_with_a_warranty_date_fails_too"]
+
+[[mutation]]
+id = "warranty_dates_message_without_reason"
+file = "agent/rules/warranty_dates.py"
+search = '''            errors.append(f"{WARRANTY_DATE_WRITTEN}: {path} states {', '.join(found)}; code writes every "
+                          "warranty date, so leave dates out of warranty text")'''
+replace = '''            errors.append(f"{WARRANTY_DATE_WRITTEN}: {path} states {', '.join(found)}")'''
+tests = ["agent/tests/test_warranty_dates.py::test_the_retry_message_names_the_rule_and_a_forced_refusal_keeps_only_the_code"]
+
+[[mutation]]
+id = "property_page_coverage_dropped"
+file = "agent/render/property_page.py"
+search = '''        lines += _coverage(reg.warranty_coverage(a["id"]), a, as_of)
+'''
+replace = ''
+tests = [
+    "agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label",
+    "agent/tests/test_warranty_coverage.py::test_cli_pins_one_date_per_run_and_per_property_page",
+]
+
+[[mutation]]
+id = "property_page_coverage_wall_clock"
+file = "agent/render/property_page.py"
+search = '        lines += _coverage(reg.warranty_coverage(a["id"]), a, as_of)'
+replace = '        lines += _coverage(reg.warranty_coverage(a["id"]), a, __import__("datetime").date.today())'
+tests = [
+    "agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label",
+    "agent/tests/test_warranty_coverage.py::test_cli_pins_one_date_per_run_and_per_property_page",
+]
+
+[[mutation]]
+id = "property_page_coverage_synthetic_dropped"
+file = "agent/render/property_page.py"
+search = '''        record = esc(c.get("record_id")) + (" (synthetic)" if c.get("synthetic") else "")'''
+replace = '''        record = esc(c.get("record_id"))'''
+tests = ["agent/tests/test_property_page_warranty.py::test_coverage_table_cites_every_row_with_status_and_synthetic_label"]
+
+[[mutation]]
+id = "property_page_coverage_status_raw"
+file = "agent/render/property_page.py"
+search = '''            f"<td>{esc(coverage_rule.STATUS_LABELS.get(c.get('status'), c.get('status')))}</td>"'''
+replace = '''            f"<td>{esc(c.get('status'))}</td>"'''
+tests = ["agent/tests/test_property_page_warranty.py::test_unknown_end_dates_and_hostile_components"]
+
+[[mutation]]
+id = "property_page_coverage_component_raw"
+file = "agent/render/property_page.py"
+search = '''            f"      <tr><td>{esc(c.get('component'))}</td>'''
+replace = '''            f"      <tr><td>{c.get('component')}</td>'''
+tests = ["agent/tests/test_property_page_warranty.py::test_unknown_end_dates_and_hostile_components"]
+
+[[mutation]]
+id = "render_coverage_line_in_legacy"
+file = "agent/render/brief_html.py"
+search = '        if not self.legacy and warranty.get("coverage_statement"):'
+replace = '        if warranty.get("coverage_statement"):'
+tests = ["agent/tests/test_render.py::test_coverage_line_is_drawn_in_v2_only_and_labels_synthetic_rows"]
+
+[[mutation]]
+id = "prompts_warranty_date_sentence_dropped"
+file = "agent/prompts.py"
+search = ' Code writes every warranty date and whether any coverage is active, so never write a date in a warranty caution or verify item.'
+replace = ''
+tests = ["agent/tests/test_prompts.py::test_warranty_rule_says_code_writes_every_warranty_date"]
+
+# ---------------------------------------------------------------------------
+# Read-through fixes, 13 October 2026: the unpinned date, rule 13's date
+# forms, the coverage line with terms only or a future start, and the SC12c
+# record after the seal
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "cli_today_local_clock"
+file = "agent/cli.py"
+search = '''    return datetime.now(UTC).date()
+
+
+def sc11_post_condition('''
+replace = '''    return datetime.now().date()
+
+
+def sc11_post_condition('''
+tests = ["agent/tests/test_test_date_pin.py::test_unpinned_today_reads_the_utc_date"]
+why = "the pages label cli._today()'s date UTC; a local clock behind UTC prints the previous day"
+
+[[mutation]]
+id = "warranty_dates_dashed_month_first_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|\d{{1,2}}-\d{{1,2}}-(?:{_YEAR}|\d{{2}})"  # 06-10-2021, 6-10-21
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+why = "a dashed month first date (06-10-2021), which parse_partial_date reads, passes rule 13"
+
+[[mutation]]
+id = "warranty_dates_year_first_slash_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|{_YEAR}/\d{{1,2}}(?:/\d{{1,2}})?"  # 2027/06/10, 2027/06
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+why = "a year first slash date (2027/06/10), which parse_partial_date reads, passes rule 13"
+
+[[mutation]]
+id = "warranty_dates_bare_year_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|{_YEAR}"  # Fall 2027, since 2021, 2000 series
+'''
+replace = ''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+why = "a year after any word but the listed keywords (into 2027, since 2021, Fall 2027) passes rule 13"
+
+[[mutation]]
+id = "warranty_dates_keyword_colon_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"|{_KEYWORD}[\s:]+(?:[\w,]+\s+){{0,4}}?"'''
+replace = '''    rf"|{_KEYWORD}\s+(?:[\w,]+\s+){{0,4}}?"'''
+tests = ["agent/tests/test_warranty_dates.py::test_every_date_form_is_found"]
+why = "a colon after the keyword (Expires: June) hides the date from rule 13"
+
+[[mutation]]
+id = "warranty_dates_dollar_lookbehind_dropped"
+file = "agent/rules/warranty_dates.py"
+search = '''    rf"(?<![\w./$-])(?:"'''
+replace = '''    rf"(?<![\w./-])(?:"'''
+tests = ["agent/tests/test_warranty_dates.py::test_ordinary_warranty_wording_passes"]
+why = "a price such as $2000 reads as a year, so a warranty caution about repair costs fails validation"
+
+[[mutation]]
+id = "coverage_terms_only_says_no_warranty"
+file = "agent/rules/coverage.py"
+search = '''    return TERMS_ONLY if terms_on_file else NO_WARRANTY'''
+replace = '''    return NO_WARRANTY'''
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_terms_without_rows_never_say_no_warranty",
+    "agent/tests/test_property_page_warranty.py::test_terms_without_rows_and_a_future_start",
+]
+why = "the brief and the property page quote the record's warranty terms and then say no warranty is on file"
+
+[[mutation]]
+id = "coverage_future_start_active"
+file = "agent/rules/coverage.py"
+search = '''    if begin is not None and run_date < begin:
+        return NOT_STARTED
+'''
+replace = ''
+tests = [
+    "agent/tests/test_warranty_coverage.py::test_a_future_start_is_not_started_never_active",
+    "agent/tests/test_warranty_coverage.py::test_softener_between_purchase_and_install_lists_only_the_purchase_term_as_active",
+    "agent/tests/test_property_page_warranty.py::test_terms_without_rows_and_a_future_start",
+]
+why = "a term that has not begun reads active as of the run date"
+
+[[mutation]]
+id = "schemas_coverage_not_started_undeclared"
+file = "agent/schemas.py"
+search = '''    status: Literal["not_started", "active", "ended", "end_date_unknown"]'''
+replace = '''    status: Literal["active", "ended", "end_date_unknown"]'''
+tests = ["agent/tests/test_warranty_coverage.py::test_softener_between_purchase_and_install_lists_only_the_purchase_term_as_active"]
+why = "Brief.model_validate refuses a brief whose coverage holds a term that has not started"
+
+[[mutation]]
+id = "sc12c_revision_reason_committed"
+file = "agent/safety_eval/sc12c.py"
+search = '''        "revisions": [*load_revisions(), {key: entry[key] for key in ("id", "at", "blind", "safety", "hazard")}]})'''
+replace = '''        "revisions": [*load_revisions(), entry]})'''
+tests = [
+    "agent/tests/test_sc12c.py::test_real_revision_reason_quoting_a_step_stays_local",
+    "agent/tests/test_sc12c.py::test_synthetic_score_matches_hand_counts_and_revisions_never_change_it",
+]
+why = "a revision's reason, which may quote third party step text, is written into a committed file"
+
+[[mutation]]
+id = "sc12c_server_answers_after_seal"
+file = "agent/safety_eval/sc12c.py"
+search = '''        if committed(SEAL).exists():
+            return self._json(409,'''
+replace = '''        if False:
+            return self._json(409,'''
+tests = ["agent/tests/test_sc12c.py::test_server_refuses_answers_after_the_seal"]
+why = "the server keeps logging answers after the seal, so a change made after the disagreements were seen is not a recorded revision"
+
+[[mutation]]
+id = "sc12c_serve_after_seal"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if committed(SEAL).exists():
+        raise Sc12cRefusal(f"{committed(SEAL)} exists: the labels are sealed, so the page takes no more answers. "'''
+replace = '''    if False:
+        raise Sc12cRefusal(f"{committed(SEAL)} exists: the labels are sealed, so the page takes no more answers. "'''
+tests = ["agent/tests/test_sc12c.py::test_server_refuses_answers_after_the_seal"]
+why = "the labeling server starts again after the seal"
+
+[[mutation]]
+id = "sc12c_score_ignores_answers_after_seal"
+file = "agent/safety_eval/sc12c.py"
+search = '''    log_matches_seal, after_seal = answers_after_seal(human_doc)
+'''
+replace = '''    log_matches_seal, after_seal = True, 0
+'''
+tests = ["agent/tests/test_sc12c.py::test_score_reports_answers_logged_after_the_seal"]
+why = "an answer logged after the seal leaves no trace in the score"
+
+[[mutation]]
+id = "sc12c_seal_again_after_score"
+file = "agent/safety_eval/sc12c.py"
+search = '''    scored = [p for p in (committed(SCORES), committed(REVISED), disagreements_path()) if p.exists()]'''
+replace = '''    scored = []'''
+tests = ["agent/tests/test_sc12c.py::test_seal_is_never_repeated_after_a_score"]
+why = "with the committed labels removed after a score, seal writes new blind labels that were not blind"
+
+[[mutation]]
+id = "sc12c_seal_again_without_local_record"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if local_seal_path().exists():
+        raise'''
+replace = '''    if False:
+        raise'''
+tests = ["agent/tests/test_sc12c.py::test_seal_is_never_repeated_after_a_score"]
+why = "with every committed and score file removed, seal runs a second time"
+
+[[mutation]]
+id = "sc12c_build_redraws_over_answers"
+file = "agent/safety_eval/sc12c.py"
+search = '''    if previous is None and seed is None and answers_path().is_file():'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_sc12c.py::test_build_never_draws_a_new_order_over_logged_answers"]
+why = "with build.json lost, build draws a new order over the answers given in the old one"
+
+# ---------------------------------------------------------------------------
+# product_recalls.py and test_product_recalls.py (SC15, the product recall check)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "product_recalls_whitelist_allows_product_model"
+file = "agent/product_recalls.py"
+search = '''    "Distributor", "ManufacturerCountry", "UPC", "Hazard", "Remedy", "RemedyOption", "format",'''
+replace = '''    "Distributor", "ManufacturerCountry", "UPC", "Hazard", "Remedy", "RemedyOption", "format", "ProductModel",'''
+tests = ["agent/tests/test_product_recalls.py::test_whitelist_is_the_2018_guide_and_a_model_parameter_raises"]
+why = "the 2017 guide's model parameter, which the 2018 guide dropped, may be sent"
+
+[[mutation]]
+id = "product_recalls_build_url_skips_whitelist"
+file = "agent/product_recalls.py"
+search = '''    if unknown:
+        raise UnsupportedParameter'''
+replace = '''    if False:
+        raise UnsupportedParameter'''
+tests = ["agent/tests/test_product_recalls.py::test_whitelist_is_the_2018_guide_and_a_model_parameter_raises"]
+why = "an undocumented parameter name is sent, and CPSC answers it with every recall in the database"
+
+[[mutation]]
+id = "product_recalls_query_sends_extra_parameter"
+file = "agent/product_recalls.py"
+search = '''        params = {field: maker.strip()}'''
+replace = '''        params = {field: maker.strip(), "ProductName": maker.strip()}'''
+tests = ["agent/tests/test_product_recalls.py::test_every_request_carries_only_the_maker_and_format_json"]
+why = "a request carries more than the maker name"
+
+[[mutation]]
+id = "product_recalls_drops_format_json"
+file = "agent/product_recalls.py"
+search = '''    query["format"] = FORMAT
+'''
+replace = ''''''
+tests = [
+    "agent/tests/test_product_recalls.py::test_whitelist_is_the_2018_guide_and_a_model_parameter_raises",
+    "agent/tests/test_product_recalls.py::test_every_request_carries_only_the_maker_and_format_json",
+]
+why = "the request leaves format to the service's XML default"
+
+[[mutation]]
+id = "product_recalls_skips_distributor"
+file = "agent/product_recalls.py"
+search = '''MAKER_FIELDS = ("Manufacturer", "Importer", "Distributor")'''
+replace = '''MAKER_FIELDS = ("Manufacturer", "Importer")'''
+tests = [
+    "agent/tests/test_product_recalls.py::test_three_queries_per_maker_merged_by_recall_number",
+    "agent/tests/test_product_recalls.py::test_every_request_carries_only_the_maker_and_format_json",
+]
+why = "a recall that lists the maker only as distributor is never fetched"
+
+[[mutation]]
+id = "product_recalls_merge_keeps_duplicates"
+file = "agent/product_recalls.py"
+search = '''            entry = merged.setdefault(key, {"key": key,'''
+replace = '''            entry = merged.setdefault(key + field, {"key": key,'''
+tests = [
+    "agent/tests/test_product_recalls.py::test_three_queries_per_maker_merged_by_recall_number",
+    "agent/tests/test_product_recalls.py::test_run_record_entry_counts_matches_errors_and_costs_nothing",
+]
+why = "a recall found under two firm roles is listed twice"
+
+[[mutation]]
+id = "product_recalls_target_family_only"
+file = "agent/product_recalls.py"
+search = '''    return norm_model(model)
+
+
+def _norm_or_empty'''
+replace = '''    return norm_model(model.split()[0])
+
+
+def _norm_or_empty'''
+tests = ["agent/tests/test_product_recalls.py::test_trane_target_is_the_registry_model_key_never_the_family"]
+why = "the Trane unit is matched on its family XR16 alone"
+
+[[mutation]]
+id = "product_recalls_prefix_match"
+file = "agent/product_recalls.py"
+search = ['''                if joined == target:''', '''                    if norm_model(run) == target and not longer and not split and run not in found:''']
+replace = ['''                if target.startswith(joined):''', '''                    if target.startswith(norm_model(run)) and not longer and not split and run not in found:''']
+tests = [
+    "agent/tests/test_product_recalls.py::test_match_is_exact_on_whole_token_runs",
+    "agent/tests/test_product_recalls.py::test_near_miss_fixtures_never_match_the_real_units",
+]
+why = "a run that only starts the model (XR16, PRO+E50) is shown as a match"
+
+[[mutation]]
+id = "product_recalls_substring_match"
+file = "agent/product_recalls.py"
+search = '''    found: list[str] = []
+    for segment in SEGMENT_BREAK.split(text):'''
+replace = '''    found: list[str] = []
+    if target in _norm_or_empty(text):
+        return [text.strip()]
+    for segment in SEGMENT_BREAK.split(text):'''
+tests = ["agent/tests/test_product_recalls.py::test_match_is_exact_on_whole_token_runs"]
+why = "a field whose normalized text contains the model anywhere counts, so XR16 4TTR6036A matches"
+
+[[mutation]]
+id = "product_recalls_no_list_separators"
+file = "agent/product_recalls.py"
+search = '''SEGMENT_BREAK = re.compile(r"[;/|:\n\r]|(?<!\d),|,(?!\d{3}(?![0-9A-Za-z]))|\.(?=\s|$)")'''
+replace = '''SEGMENT_BREAK = re.compile(r"\n")'''
+tests = [
+    "agent/tests/test_product_recalls.py::test_match_is_exact_on_whole_token_runs",
+    "agent/tests/test_product_recalls.py::test_near_miss_fixtures_never_match_the_real_units",
+]
+why = "a list (XR16, 4TTR6036) or a sentence break joins two names into the model"
+
+[[mutation]]
+id = "product_recalls_model_field_only"
+file = "agent/product_recalls.py"
+search = '''    out.append(("Description", recall.get("Description")))
+    out.append(("Title", recall.get("Title")))
+'''
+replace = ''''''
+tests = [
+    "agent/tests/test_product_recalls.py::test_each_match_records_its_field_and_text",
+    "agent/tests/test_product_recalls.py::test_recorded_live_response_parses_and_matches_from_its_description",
+]
+why = "a model printed only in the recall's Description or Title, as in recall 17057, is never found"
+
+[[mutation]]
+id = "product_recalls_field_label_lost"
+file = "agent/product_recalls.py"
+search = '''    return [{"field": field, "text": run} for field, text in searched_fields(recall)'''
+replace = '''    return [{"field": "Products[0].Model", "text": run} for field, text in searched_fields(recall)'''
+tests = ["agent/tests/test_product_recalls.py::test_each_match_records_its_field_and_text"]
+why = "every match is attributed to the product model field"
+
+[[mutation]]
+id = "product_recalls_drops_serial_sentence"
+file = "agent/product_recalls.py"
+search = '''    out.append(SERIAL_SENTENCE)
+'''
+replace = ''''''
+tests = ["agent/tests/test_product_recalls.py::test_match_names_the_recall_and_asks_for_the_serial_number"]
+why = "a match no longer tells the owner to check the serial number range"
+
+[[mutation]]
+id = "product_recalls_links_any_url"
+file = "agent/product_recalls.py"
+search = '''    if safe_url(url):'''
+replace = '''    if url:'''
+tests = ["agent/tests/test_product_recalls.py::test_match_names_the_recall_and_asks_for_the_serial_number"]
+why = "a javascript: URL from the service becomes a link"
+
+[[mutation]]
+id = "product_recalls_says_unit_is_affected"
+file = "agent/product_recalls.py"
+search = '''MATCH_HEAD = "CPSC product recall {number} names the model {model}: {title}"'''
+replace = '''MATCH_HEAD = "CPSC product recall {number} names the model {model}, so your unit is affected: {title}"'''
+tests = ["agent/tests/test_product_recalls.py::test_match_names_the_recall_and_asks_for_the_serial_number"]
+why = "the match says the unit itself is in the recall"
+
+[[mutation]]
+id = "product_recalls_no_match_says_no_recalls"
+file = "agent/product_recalls.py"
+search = '''NO_MATCH_SENTENCE = "No CPSC product recall names this exact model: {model}."'''
+replace = '''NO_MATCH_SENTENCE = "No recalls found for {model}."'''
+tests = ["agent/tests/test_product_recalls.py::test_no_match_says_exactly_that_with_model_maker_and_date"]
+why = "no exact model match is reported as no recalls at all"
+
+[[mutation]]
+id = "product_recalls_no_match_drops_date"
+file = "agent/product_recalls.py"
+search = '''            "{date} (UTC). Matching is exact,'''
+replace = '''            "today. Matching is exact,'''
+tests = ["agent/tests/test_product_recalls.py::test_no_match_says_exactly_that_with_model_maker_and_date"]
+why = "the date the check ran is left out"
+
+[[mutation]]
+id = "product_recalls_error_counts_as_empty"
+file = "agent/product_recalls.py"
+search = '''        if error is not None:
+            result["errors"].append({"field": req.get("field"), "reason": error})
+        else:
+            responses.append((req.get("field"), recalls))'''
+replace = '''        responses.append((req.get("field"), recalls))'''
+tests = ["agent/tests/test_product_recalls.py::test_a_service_error_says_the_check_did_not_run"]
+why = "a failed request reads as an empty answer, so the page says no recall names the model"
+
+[[mutation]]
+id = "product_recalls_parse_accepts_any_json"
+file = "agent/product_recalls.py"
+search = '''    if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_product_recalls.py::test_a_service_error_says_the_check_did_not_run"]
+why = "a JSON answer of the wrong shape is read as recalls"
+
+[[mutation]]
+id = "product_recalls_no_size_cap_on_injected_fetch"
+file = "agent/product_recalls.py"
+search = '''            if len(raw) > MAX_RESPONSE_BYTES:
+                raise FetchError(OVERSIZED, f"more than {MAX_RESPONSE_BYTES} bytes")
+'''
+replace = ''''''
+tests = ["agent/tests/test_product_recalls.py::test_a_service_error_says_the_check_did_not_run"]
+why = "an oversized answer is kept and read"
+
+[[mutation]]
+id = "product_recalls_partial_hides_errors"
+file = "agent/product_recalls.py"
+search = '''    if result.get("errors"):
+        out.append(PARTIAL_SENTENCE'''
+replace = '''    if False:
+        out.append(PARTIAL_SENTENCE'''
+tests = ["agent/tests/test_product_recalls.py::test_a_partial_failure_keeps_the_match_and_says_part_did_not_run"]
+why = "a match is shown without saying another request failed"
+
+[[mutation]]
+id = "product_recalls_html_unescaped"
+file = "agent/product_recalls.py"
+search = '''        body = " ".join(esc(s) for s in match_sentences(match, result.get("model")))'''
+replace = '''        body = " ".join(s for s in match_sentences(match, result.get("model")))'''
+tests = ["agent/tests/test_product_recalls.py::test_html_escapes_every_recall_value"]
+why = "a recall title from the service reaches the page as markup"
+
+[[mutation]]
+id = "product_recalls_queries_synthetic_makers"
+file = "agent/product_recalls.py"
+search = '''    return any(SYNTHETIC_WORD.search(str(appliance.get(k) or "")) for k in ("manufacturer", "model"))'''
+replace = '''    return False'''
+tests = ["agent/tests/test_product_recalls.py::test_synthetic_makers_are_never_queried"]
+why = "CPSC is queried for an invented maker"
+
+[[mutation]]
+id = "product_recalls_default_fetch_no_size_cap"
+file = "agent/product_recalls.py"
+search = '''    if len(body) > max_bytes:
+        raise FetchError(OVERSIZED, f"more than {max_bytes} bytes")
+'''
+replace = ''''''
+tests = ["agent/tests/test_product_recalls.py::test_default_fetch_caps_size_maps_errors_and_requests_only_the_endpoint"]
+why = "the default fetch returns an answer larger than its cap"
+
+[[mutation]]
+id = "product_recalls_latest_reads_oldest"
+file = "agent/product_recalls.py"
+search = '''    data = json.loads(files[-1].read_text(encoding="utf-8"))'''
+replace = '''    data = json.loads(files[0].read_text(encoding="utf-8"))'''
+tests = ["agent/tests/test_product_recalls.py::test_storage_round_trip_and_latest_check"]
+why = "the page shows the oldest stored check"
+
+[[mutation]]
+id = "product_recalls_store_overwrites"
+file = "agent/product_recalls.py"
+search = ['''        seq = _next_seq(folder, stamp)
+''', '''                os.link(tmp, path)  # never replaces a file already there
+''']
+replace = ['''        seq = 0
+''', '''                os.replace(tmp, path)
+''']
+tests = ["agent/tests/test_product_recalls.py::test_storage_round_trip_and_latest_check", "agent/tests/test_round2_model_number.py::test_two_checks_in_the_same_second_each_get_their_own_file"]
+why = "a stored check is replaced in place by the same check stored again in its second (repaired 13 October 2026 for the sequence numbered names)"
+
+[[mutation]]
+id = "product_recalls_run_record_counts_before_merge"
+file = "agent/product_recalls.py"
+search = '''    result["counts"] = {"requests": len(result["requests"]), "recalls": len(merged),'''
+replace = '''    result["counts"] = {"requests": len(result["requests"]), "recalls": sum(r["recalls"] for r in result["requests"]),'''
+tests = ["agent/tests/test_product_recalls.py::test_run_record_entry_counts_matches_errors_and_costs_nothing"]
+why = "a recall found under two firm roles is counted twice in the run record"
+
+[[mutation]]
+id = "product_recalls_readme_drops_a_fixture"
+file = "agent/tests/fixtures/cpsc/README.md"
+search = '''- `synthetic_near_misses.json`: invented recalls'''
+replace = '''- Invented recalls'''
+tests = ["agent/tests/test_product_recalls.py::test_fixture_folder_readme_names_every_file_and_marks_the_synthetic_ones"]
+why = "a fixture file goes undescribed"
+
+# ---------------------------------------------------------------------------
+# SC14, the "Plan a replacement" sweep and its lifecycle research mode
+# (decision 72): agent/sweep.py, agent/lifecycle.py, the property page section
+# and `advisor property sweep` (agent/tests/test_sweep.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "sweep_offline_opens_ledger"
+file = "agent/cli.py"
+search = '''    print(SWEEP_PAGES_NOTE if researched else SWEEP_OFFLINE_NOTE)'''
+replace = '''    __import__("agent.ledger").ledger.Ledger(config.REPLAY_LEDGER_PATH, create=True)
+    print(SWEEP_PAGES_NOTE if researched else SWEEP_OFFLINE_NOTE)'''
+tests = ["agent/tests/test_sweep.py::test_offline_sweep_spends_nothing_and_leaves_the_ledger_untouched"]
+why = "an offline sweep that opens a ledger is no longer offline"
+
+[[mutation]]
+id = "sweep_fact_hash_from_text"
+file = "agent/sweep.py"
+search = '''        "evidence_sha256": edge.get("evidence_sha256"),'''
+replace = '''        "evidence_sha256": edge.get("text_sha256"),'''
+tests = ["agent/tests/test_sweep.py::test_every_shown_successor_traces_to_a_graph_fact"]
+
+[[mutation]]
+id = "property_page_fact_hash_dropped"
+file = "agent/render/property_page.py"
+search = '''        f' <span class="note">evidence sha256 {esc(fact.get("evidence_sha256"))}</span></p>','''
+replace = '''        f'</p>','''
+tests = ["agent/tests/test_sweep.py::test_every_shown_successor_traces_to_a_graph_fact"]
+
+[[mutation]]
+id = "property_page_fact_link_dropped"
+file = "agent/render/property_page.py"
+search = '''        f'      <p>{link} <span class="retrieved">'''
+replace = '''        f'      <p>{label} <span class="retrieved">'''
+tests = ["agent/tests/test_sweep.py::test_every_shown_successor_traces_to_a_graph_fact"]
+
+[[mutation]]
+id = "sweep_names_successor_always"
+file = "agent/sweep.py"
+search = '''    return bool(wanted) and wanted in normalize_for_span(quote)'''
+replace = '''    return True'''
+tests = ["agent/tests/test_sweep.py::test_no_successor_is_shown_without_a_quote_naming_it"]
+why = "a part edge whose quote names no successor would be shown with one"
+
+[[mutation]]
+id = "sweep_none_documented_reworded"
+file = "agent/sweep.py"
+search = '''NONE_DOCUMENTED = "No discontinuation documented in what this tool has verified."'''
+replace = '''NONE_DOCUMENTED = "Not discontinued, as far as this tool has verified."'''
+tests = ["agent/tests/test_sweep.py::test_none_documented_sentence_is_exact_and_never_not_discontinued"]
+
+[[mutation]]
+id = "property_page_none_documented_dropped"
+file = "agent/render/property_page.py"
+search = '''        if row.get("statement"):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_sweep.py::test_none_documented_sentence_is_exact_and_never_not_discontinued"]
+
+[[mutation]]
+id = "sweep_age_partial_month_computed"
+file = "agent/sweep.py"
+search = '''    if day is None:'''
+replace = '''    if month is None:'''
+tests = ["agent/tests/test_sweep.py::test_age_from_the_install_date_including_partial_dates"]
+why = "a year and month install date would get a guessed age"
+
+[[mutation]]
+id = "sweep_age_wall_clock"
+file = "agent/sweep.py"
+search = '''    years = age_in_years(parsed, as_of)'''
+replace = '''    years = age_in_years(parsed, date.today())'''
+tests = ["agent/tests/test_sweep.py::test_age_from_the_install_date_including_partial_dates"]
+
+[[mutation]]
+id = "sweep_age_one_year_wording"
+file = "agent/sweep.py"
+search = '''    return "1 year old" if n == 1 else f"{n} years old"'''
+replace = '''    return f"{n} years old"'''
+tests = ["agent/tests/test_sweep.py::test_age_from_the_install_date_including_partial_dates"]
+
+[[mutation]]
+id = "lifecycle_persist_skipped"
+file = "agent/lifecycle.py"
+search = '''                    report = persist_edges(state, ctx, ctx.run_id)  # type: ignore[arg-type]'''
+replace = '''                    report = {"written": 0, "already_present": 0, "skipped": None, "dropped": []}'''
+tests = ["agent/tests/test_sweep.py::test_replay_lookup_saves_a_verified_successor_that_the_sweep_then_shows"]
+
+[[mutation]]
+id = "lifecycle_rule9_skipped"
+file = "agent/lifecycle.py"
+search = '''    upgrades_rule.check_upgrade_options(brief, page_texts=dict(page_texts), report=dropped)'''
+replace = '''    pass'''
+tests = ["agent/tests/test_sweep.py::test_replay_lookup_saves_a_verified_successor_that_the_sweep_then_shows"]
+why = "an option whose quote does not name its successor would be reported as verified"
+
+[[mutation]]
+id = "lifecycle_wrong_system_prompt"
+file = "agent/lifecycle.py"
+search = '''                                 system_prompt=prompts.LIFECYCLE_RESEARCH_PROMPT)'''
+replace = '''                                 system_prompt=prompts.RESEARCH_PROMPT)'''
+tests = ["agent/tests/test_sweep.py::test_replay_lookup_saves_a_verified_successor_that_the_sweep_then_shows"]
+why = "decision 72: the lookup asks only about discontinuation and successors"
+
+[[mutation]]
+id = "lifecycle_extract_skipped_with_sources"
+file = "agent/lifecycle.py"
+search = '''    elif not sources:'''
+replace = '''    elif sources:'''
+tests = ["agent/tests/test_sweep.py::test_replay_lookup_with_nothing_documented_saves_nothing"]
+
+[[mutation]]
+id = "sweep_refusal_synthetic_off"
+file = "agent/sweep.py"
+search = '''    if SYNTHETIC_WORD in maker.casefold() or SYNTHETIC_WORD in model.casefold():'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_sweep.py::test_invented_model_is_refused_before_any_call_and_nothing_is_saved"]
+
+[[mutation]]
+id = "sweep_refusal_unknown_maker_off"
+file = "agent/sweep.py"
+search = '''    if not maker_keys(maker):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_sweep.py::test_invented_model_is_refused_before_any_call_and_nothing_is_saved"]
+
+[[mutation]]
+id = "lifecycle_eligibility_ignores_refusal"
+file = "agent/lifecycle.py"
+search = '''        if reason is not None:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_sweep.py::test_invented_model_is_refused_before_any_call_and_nothing_is_saved"]
+
+[[mutation]]
+id = "lifecycle_lookup_refusal_off"
+file = "agent/lifecycle.py"
+search = '''    if refusal is not None:  # the CLI never sends one here; refused again, before any call'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_sweep.py::test_invented_model_is_refused_before_any_call_and_nothing_is_saved"]
+
+[[mutation]]
+id = "lifecycle_cap_not_clamped"
+file = "agent/lifecycle.py"
+search = '''    out["run_cap_usd"] = min(float(out.get("run_cap_usd", remaining)), remaining)'''
+replace = '''    out["run_cap_usd"] = float(out.get("run_cap_usd", remaining))'''
+tests = ["agent/tests/test_sweep.py::test_lookup_run_cap_is_what_is_left_of_the_sweep_cap_and_stops_the_lookup"]
+
+[[mutation]]
+id = "lifecycle_plan_worst_from_mode"
+file = "agent/lifecycle.py"
+search = '''        worst_usd=sweep_cap_usd(mode),'''
+replace = '''        worst_usd=config.RUN_CAP_USD["cheap"],'''
+tests = ["agent/tests/test_sweep.py::test_lookup_run_cap_is_what_is_left_of_the_sweep_cap_and_stops_the_lookup"]
+why = "the sweep's worst case would ignore the mode's cap (one cap for the whole sweep, 13 October 2026)"
+
+[[mutation]]
+id = "cli_sweep_research_skips_confirm"
+file = "agent/cli.py"
+search = '''            session.confirm([plan], extra=[lifecycle.later_routes_line(graph_path),
+                                           lifecycle.cap_scope_line(plan, len(eligible), mode)])'''
+replace = '''            pass'''
+tests = ["agent/tests/test_sweep.py::test_research_preflight_lists_planned_calls_and_cost_and_needs_proceed"]
+
+[[mutation]]
+id = "lifecycle_plan_drops_extract_call"
+file = "agent/lifecycle.py"
+search = '''        typical_calls=calls + 1,'''
+replace = '''        typical_calls=calls,'''
+tests = ["agent/tests/test_sweep.py::test_research_preflight_lists_planned_calls_and_cost_and_needs_proceed"]
+
+[[mutation]]
+id = "lifecycle_live_cap_not_passed"
+file = "agent/cli.py"
+search = '''secrets=session.secrets)
+                ctx.caps = budget.caps_for(ctx.caps)'''
+replace = '''secrets=session.secrets)'''
+tests = ["agent/tests/test_sweep.py::test_live_lookup_on_fakes_reserves_before_every_call_and_saves_to_the_runtime_graph"]
+
+[[mutation]]
+id = "property_page_fact_successor_raw"
+file = "agent/render/property_page.py"
+search = '''    name = " ".join(esc(v) for v in (fact.get("successor_manufacturer"), fact.get("successor_model")) if v)'''
+replace = '''    name = " ".join(str(v) for v in (fact.get("successor_manufacturer"), fact.get("successor_model")) if v)'''
+tests = ["agent/tests/test_sweep.py::test_replacement_section_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_fact_quote_raw"
+file = "agent/render/property_page.py"
+search = '''Quoted from the source: {esc(fact.get("evidence"))}'''
+replace = '''Quoted from the source: {fact.get("evidence")}'''
+tests = ["agent/tests/test_sweep.py::test_replacement_section_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_age_raw"
+file = "agent/render/property_page.py"
+search = '''            f"      <p>Age: {esc(row['age']['statement'])}</p>",'''
+replace = '''            f"      <p>Age: {row['age']['statement']}</p>",'''
+tests = ["agent/tests/test_sweep.py::test_replacement_section_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_fact_part_raw"
+file = "agent/render/property_page.py"
+search = '''        reason += f" (part {esc(fact.get('part'))})"'''
+replace = '''        reason += f" (part {fact.get('part')})"'''
+tests = ["agent/tests/test_sweep.py::test_replacement_section_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_fact_title_raw"
+file = "agent/render/property_page.py"
+search = '''    label = esc(fact.get("source_title") or fact.get("source_url"))'''
+replace = '''    label = str(fact.get("source_title") or fact.get("source_url"))'''
+tests = ["agent/tests/test_sweep.py::test_replacement_section_escapes_every_value"]
+
+[[mutation]]
+id = "cli_sweep_all_first_only"
+file = "agent/cli.py"
+search = '''    if args.all:
+        return known'''
+replace = '''    if args.all:
+        return known[:1]'''
+tests = ["agent/tests/test_sweep.py::test_all_covers_both_properties"]
+
+# Decision 69: cheap mode on Claude Haiku 5.5 (the model switch builder).
+
+[[mutation]]
+id = "haiku55_id_reverted"
+file = "agent/config.py"
+search = '''HAIKU = "claude-haiku-5-5"'''
+replace = '''HAIKU = "claude-haiku-4-5-20251001"'''
+tests = ["agent/tests/test_haiku55_config.py::test_every_haiku_step_runs_on_haiku_5_5_and_no_4_5_id_is_left"]
+
+[[mutation]]
+id = "haiku55_gate_date_reverted"
+file = "agent/config.py"
+search = '''HAIKU_RETIREMENT_EARLIEST = "2027-10-07"'''
+replace = '''HAIKU_RETIREMENT_EARLIEST = "2026-10-15"'''
+tests = ["agent/tests/test_haiku55_config.py::test_the_date_gate_refuses_from_haiku_5_5s_earliest_retirement"]
+
+[[mutation]]
+id = "haiku55_gate_day_allowed"
+file = "agent/live/preflight.py"
+search = '''    if haiku_mode(mode) and today.isoformat() >= config.HAIKU_RETIREMENT_EARLIEST:'''
+replace = '''    if haiku_mode(mode) and today.isoformat() > config.HAIKU_RETIREMENT_EARLIEST:'''
+tests = ["agent/tests/test_haiku55_config.py::test_the_date_gate_refuses_from_haiku_5_5s_earliest_retirement"]
+
+[[mutation]]
+id = "haiku55_classifier_effort_raised"
+file = "agent/config.py"
+search = '''HAIKU_EFFORT = {"read_plate": "low", "classifier": "low",'''
+replace = '''HAIKU_EFFORT = {"read_plate": "low", "classifier": "medium",'''
+tests = ["agent/tests/test_haiku55_config.py::test_effort_per_haiku_node"]
+
+[[mutation]]
+id = "haiku55_effort_still_banned"
+file = "agent/config.py"
+search = '''NEVER_SEND_TO_HAIKU = ("thinking", "budget_tokens", "fallbacks")'''
+replace = '''NEVER_SEND_TO_HAIKU = ("effort", "reasoning_effort", "thinking", "budget_tokens", "fallbacks")'''
+tests = ["agent/tests/test_haiku55_config.py::test_never_send_lists"]
+
+[[mutation]]
+id = "haiku55_classifier_budget_64"
+file = "agent/config.py"
+search = '''    "classifier": 1_024,'''
+replace = '''    "classifier": 64,'''
+tests = ["agent/tests/test_haiku55_config.py::test_budgets_leave_room_for_thinking_and_stay_distinct"]
+
+[[mutation]]
+id = "haiku55_margin_without_tokenizer"
+file = "agent/config.py"
+search = '''ESTIMATE_MARGIN = {HAIKU: 1.25 * NEW_TOKENIZER_FACTOR,'''
+replace = '''ESTIMATE_MARGIN = {HAIKU: 1.25,'''
+tests = ["agent/tests/test_haiku55_config.py::test_estimates_count_the_newer_tokenizer"]
+
+[[mutation]]
+id = "haiku55_synth_budget_oversized"
+file = "agent/config.py"
+search = '''    "synthesize_cheap": 16_000,'''
+replace = '''    "synthesize_cheap": 64_000,'''
+tests = ["agent/tests/test_haiku55_config.py::test_a_cheap_runs_worst_case_reservation_fits_the_run_and_build_caps"]
+
+[[mutation]]
+id = "haiku55_long_card_input_wrong"
+file = "agent/config.py"
+search = '''    HAIKU: {"input": 0.50, "output": 2.50},'''
+replace = '''    HAIKU: {"input": 0.10, "output": 2.50},'''
+tests = ["agent/tests/test_haiku55_prices.py::test_both_rate_cards_and_the_line_between_them"]
+
+[[mutation]]
+id = "haiku55_boundary_inclusive"
+file = "agent/ledger.py"
+search = '''    if long_card is not None and prompt_tokens > config.LONG_PROMPT_ABOVE_TOKENS:'''
+replace = '''    if long_card is not None and prompt_tokens >= config.LONG_PROMPT_ABOVE_TOKENS:'''
+tests = ["agent/tests/test_haiku55_prices.py::test_the_card_changes_between_100000_and_100001_prompt_tokens"]
+
+[[mutation]]
+id = "haiku55_prompt_ignores_cache"
+file = "agent/ledger.py"
+search = '''    return max(int(usage_metadata.get("input_tokens") or 0), read + write_5m + write_1h)'''
+replace = '''    return max(int(usage_metadata.get("input_tokens") or 0) - read - write_5m - write_1h, 0)'''
+tests = ["agent/tests/test_haiku55_prices.py::test_cache_tokens_count_toward_the_prompt_and_take_the_selected_cards_rate"]
+
+[[mutation]]
+id = "haiku55_reserve_short_card_only"
+file = "agent/ledger.py"
+search = '''        prices = call_prices(basis, provider, model, input_tokens_est)'''
+replace = '''        prices = call_prices(mode, provider, model)'''
+tests = ["agent/tests/test_haiku55_prices.py::test_a_reservation_whose_estimate_could_pass_the_line_holds_at_the_long_card"]
+
+[[mutation]]
+id = "haiku55_charge_short_card_only"
+file = "agent/ledger.py"
+search = '''        prices = call_prices(reservation.price_mode or reservation.mode, reservation.provider, reservation.model,
+                             prompt_tokens(usage_metadata))'''
+replace = '''        prices = call_prices(reservation.mode, reservation.provider, reservation.model)'''
+tests = ["agent/tests/test_haiku55_prices.py::test_a_charge_picks_the_card_from_the_reported_usage"]
+
+[[mutation]]
+id = "haiku55_long_card_for_every_model"
+file = "agent/ledger.py"
+search = '''    long_card = config.LONG_PROMPT_PRICES_PER_MTOK.get(model)'''
+replace = '''    long_card = config.LONG_PROMPT_PRICES_PER_MTOK.get(config.HAIKU)'''
+tests = ["agent/tests/test_haiku55_prices.py::test_sonnet_jev_and_tavily_pricing_are_unchanged"]
+
+[[mutation]]
+id = "haiku55_replay_priced_at_haiku_5_5"
+file = "agent/config.py"
+search = '''REPLAY_PRICES = {"input": 1.00, "output": 5.00}'''
+replace = '''REPLAY_PRICES = PRICES_PER_MTOK[HAIKU]'''
+tests = [
+    "agent/tests/test_haiku55_prices.py::test_replay_keeps_the_recorded_models_card",
+    "agent/tests/test_haiku55_replay.py::test_replay_charges_the_recorded_usage_on_the_recorded_card_at_the_recorded_budgets",
+]
+
+[[mutation]]
+id = "haiku55_typical_counts_unscaled"
+file = "agent/live/preflight.py"
+search = '''    return price_usage(model, {"input_tokens": config.typical_tokens(model, input_tokens),
+                               "output_tokens": config.typical_tokens(model, output_tokens)})'''
+replace = '''    return price_usage(model, {"input_tokens": input_tokens, "output_tokens": output_tokens})'''
+tests = [
+    "agent/tests/test_preflight.py::test_preflight_prints_planned_calls_and_costs_from_config",
+    "agent/tests/test_cli_ledger.py::test_run_report_shows_tokens_estimate_and_r4",
+]
+
+[[mutation]]
+id = "haiku55_research_cap_short_card"
+file = "agent/research/middleware.py"
+search = '''        prices = config.REPLAY_PRICES if basis == "replay" else model'''
+replace = '''        prices = config.REPLAY_PRICES if self.ctx.mode == "replay" else config.PRICES_PER_MTOK[model]'''
+tests = ["agent/tests/test_haiku55_prices.py::test_research_spend_cap_holds_live_calls_on_the_card_their_estimate_selects"]
+
+[[mutation]]
+id = "haiku55_effort_not_sent"
+file = "agent/models.py"
+search = '''    if model == config.HAIKU:
+        kwargs["reasoning_effort"] = config.HAIKU_EFFORT[node]'''
+replace = '''    if model == config.HAIKU:
+        pass'''
+tests = ["agent/tests/test_haiku55_kwargs.py::test_exact_live_kwargs_per_node_and_mode"]
+
+[[mutation]]
+id = "haiku55_thinking_budget_sent"
+file = "agent/models.py"
+search = '''        kwargs["reasoning_effort"] = config.HAIKU_EFFORT[node]'''
+replace = '''        kwargs["reasoning_effort"] = config.HAIKU_EFFORT[node]
+        kwargs["thinking"] = {"type": "enabled", "budget_tokens": 1_024}'''
+tests = ["agent/tests/test_haiku55_kwargs.py::test_request_body_sends_effort_and_never_a_thinking_budget_sampling_or_fallbacks"]
+
+[[mutation]]
+id = "haiku55_streaming_left_on"
+file = "agent/models.py"
+search = '''    disable_streaming: bool | Literal["tool_calling"] = True'''
+replace = '''    disable_streaming: bool | Literal["tool_calling"] = False'''
+tests = ["agent/tests/test_haiku55_kwargs.py::test_live_calls_are_single_replies_and_a_decline_is_never_retried"]
+
+[[mutation]]
+id = "haiku55_decline_retryable"
+file = "agent/declined.py"
+search = '''from langchain_core.messages import AIMessage'''
+replace = '''from langchain_core.exceptions import ModelAPIError as Exception  # noqa: A004
+from langchain_core.messages import AIMessage'''
+tests = [
+    "agent/tests/test_haiku55_kwargs.py::test_live_calls_are_single_replies_and_a_decline_is_never_retried",
+    "agent/tests/test_haiku55_refusal.py::test_a_research_decline_is_charged_and_never_retried",
+]
+
+[[mutation]]
+id = "haiku55_replay_takes_live_budgets"
+file = "agent/models.py"
+search = '''    budgets = config.REPLAY_MAX_TOKENS if mode == "replay" else config.MAX_TOKENS'''
+replace = '''    budgets = config.MAX_TOKENS'''
+tests = [
+    "agent/tests/test_models.py::test_replay_max_tokens_match_config",
+    "agent/tests/test_haiku55_replay.py::test_replay_charges_the_recorded_usage_on_the_recorded_card_at_the_recorded_budgets",
+]
+
+[[mutation]]
+id = "haiku55_empty_first_block_read_as_declined"
+file = "agent/declined.py"
+search = '''    if meta.get("stop_reason") != REFUSAL_STOP_REASON:
+        return None'''
+replace = '''    first = message.content[0] if isinstance(message.content, list) and message.content else None
+    if meta.get("stop_reason") != REFUSAL_STOP_REASON and not (isinstance(first, dict) and not first.get("text")):
+        return None'''
+tests = ["agent/tests/test_haiku55_thinking.py::test_live_thinking_first_structured_reply_parses_and_is_charged"]
+
+[[mutation]]
+id = "haiku55_replay_drops_thinking"
+file = "agent/replay/replay_model.py"
+search = '''            if thinking:
+                # Thinking blocks first'''
+replace = '''            if False:
+                # Thinking blocks first'''
+tests = ["agent/tests/test_haiku55_thinking.py::test_replay_serves_thinking_first_structured_replies_that_parse"]
+
+[[mutation]]
+id = "haiku55_read_plate_string_replies_only"
+file = "agent/nodes/read_plate.py"
+search = '''    parsed = out.get("parsed")'''
+replace = '''    parsed = None if isinstance(out["raw"].content, list) else out.get("parsed")'''
+tests = ["agent/tests/test_haiku55_thinking.py::test_nodes_read_a_thinking_first_reply"]
+
+[[mutation]]
+id = "haiku55_research_strips_thinking"
+file = "agent/research/middleware.py"
+search = '''            response = handler(request)'''
+replace = '''            response = handler(request.override(messages=[m.model_copy(update={"content": [b for b in m.content if not (isinstance(b, dict) and b.get("type") == "thinking")]}) if isinstance(m, AIMessage) and isinstance(m.content, list) else m for m in request.messages]))'''
+tests = ["agent/tests/test_haiku55_thinking.py::test_research_loop_sends_thinking_blocks_back_unmodified_and_stays_append_only"]
+
+[[mutation]]
+id = "haiku55_recorder_reads_first_block"
+file = "agent/live/recorder.py"
+search = '''        return "".join(
+            str(block.get("text", "")) for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        )'''
+replace = '''        return str(content[0].get("text", "")) if content and isinstance(content[0], dict) else ""'''
+tests = ["agent/tests/test_haiku55_thinking.py::test_a_live_run_of_thinking_first_replies_finishes_and_records_the_reply_text"]
+
+[[mutation]]
+id = "haiku55_live_refusal_unchecked"
+file = "agent/models.py"
+search = '''    if declined is not None:
+        raise declined
+    return result'''
+replace = '''    return result'''
+tests = ["agent/tests/test_haiku55_refusal.py::test_live_refusal_raises_at_the_model_boundary_with_its_category_and_usage"]
+
+[[mutation]]
+id = "haiku55_replay_refusal_served_as_reply"
+file = "agent/replay/replay_model.py"
+search = '''        declined = declined_from(message, self.model)
+        if declined is not None:
+            raise declined
+        return message'''
+replace = '''        return message'''
+tests = ["agent/tests/test_haiku55_refusal.py::test_replay_serves_a_recorded_refusal"]
+
+[[mutation]]
+id = "haiku55_decline_released"
+file = "agent/declined.py"
+search = '''        self.ai_message = ai_message'''
+replace = '''        self.ai_message = None'''
+tests = ["agent/tests/test_haiku55_refusal.py::test_a_decline_is_charged_its_usage_and_not_retried"]
+
+[[mutation]]
+id = "haiku55_read_plate_decline_unhandled"
+file = "agent/nodes/read_plate.py"
+search = '''    except ModelDeclined as exc:
+        # Charged by paid_structured_call; the run ends on the decline brief.
+        return {**declined_update(state, exc, NODE), "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - before,
+                "latency": {NODE: time.perf_counter() - started}}
+'''
+replace = ''
+tests = ["agent/tests/test_haiku55_refusal.py::test_read_plate_ends_the_run_on_the_decline_brief"]
+
+[[mutation]]
+id = "haiku55_classifier_decline_as_unsure"
+file = "agent/nodes/classify.py"
+search = '''    except BudgetExceeded as exc:
+        return Classification(UNSURE, 0.0, f"the classifier call was not affordable ({exc.reason})")'''
+replace = '''    except Exception as exc:  # noqa: BLE001
+        return Classification(UNSURE, 0.0, f"the classifier call was not affordable ({getattr(exc, 'reason', exc)})")'''
+tests = ["agent/tests/test_haiku55_refusal.py::test_the_classifier_does_not_turn_a_decline_into_unsure"]
+
+[[mutation]]
+id = "haiku55_research_decline_released"
+file = "agent/research/middleware.py"
+search = '''            elif isinstance(exc, ModelDeclined):'''
+replace = '''            elif False:'''
+tests = ["agent/tests/test_haiku55_refusal.py::test_a_research_decline_is_charged_and_never_retried"]
+
+[[mutation]]
+id = "haiku55_capabilities_skips_proceed"
+file = "agent/live/capabilities.py"
+search = '''    if not ask_to_proceed(plan_lines(mode, plan, ledger), stdin, stdout):'''
+replace = '''    if False and not ask_to_proceed(plan_lines(mode, plan, ledger), stdin, stdout):'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_capabilities_preflight_then_typed_proceed_then_each_haiku_node"]
+
+[[mutation]]
+id = "haiku55_capabilities_checks_every_node"
+file = "agent/live/capabilities.py"
+search = '''    return [node for node in models.NODES if config.MODEL_FOR[mode][node] == config.HAIKU]'''
+replace = '''    return list(models.NODES)'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_full_mode_checks_only_its_haiku_nodes"]
+
+[[mutation]]
+id = "haiku55_capabilities_keeps_going"
+file = "agent/live/capabilities.py"
+search = '''        if outcome.status != ACCEPTED or not outcome.parsed:
+            break'''
+replace = '''        if False:
+            break'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_refused_plate_photo_stops_the_check_and_turns_plate_reading_off"]
+
+[[mutation]]
+id = "haiku55_plate_refusal_ignored"
+file = "agent/live/preflight.py"
+search = '''    if model == config.HAIKU and image_input_status(path) == IMAGE_REFUSED:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_refused_plate_photo_stops_the_check_and_turns_plate_reading_off"]
+
+[[mutation]]
+id = "haiku55_read_plate_ignores_refusal"
+file = "agent/nodes/read_plate.py"
+search = '''    if refusal:
+        raise PlateReadingRefused(refusal)'''
+replace = '''    if False:
+        raise PlateReadingRefused(refusal)'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_refused_plate_photo_stops_the_check_and_turns_plate_reading_off"]
+
+[[mutation]]
+id = "haiku55_capabilities_any_model"
+file = "agent/live/preflight.py"
+search = '''    if not isinstance(record, dict) or record.get("model") != config.HAIKU:'''
+replace = '''    if not isinstance(record, dict):'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_record_for_another_model_or_no_record_is_unchecked"]
+
+[[mutation]]
+id = "haiku55_long_card_price_inlined"
+file = "agent/ledger.py"
+search = '''_EPSILON = 1e-9'''
+replace = '''_EPSILON = 1e-9
+LONG_OUTPUT_PER_MTOK = 2.50'''
+tests = ["agent/tests/test_config.py::test_no_inline_model_ids_or_prices"]
+why = "decision 69: test_config counts Claude Haiku 5.5's long prompt card among the money values"
+
+[[mutation]]
+id = "haiku55_plate_eval_ignores_refusal"
+file = "agent/live/eval_plates.py"
+search = '''    refusal = plate_refusal(EVAL_MODE)
+    if refusal:
+        raise CliRefusal(refusal)'''
+replace = '''    refusal = plate_refusal(EVAL_MODE)'''
+tests = ["agent/tests/test_haiku55_plates.py::test_plate_runs_refuse_once_the_photo_is_recorded_as_refused"]
+
+# Integration of PRD 2 Phases B and C with decision 69: declines routed in the graph and the
+# lifecycle lookups, `advisor check-capabilities`, and the product recall command and page section.
+
+[[mutation]]
+id = "graph_read_plate_decline_not_routed"
+file = "agent/graph.py"
+search = '''    if is_declined(state):
+        return "render"
+    return "validate" if state.get("status") == "budget_stopped" else "confirm_identity"'''
+replace = '''    return "validate" if state.get("status") == "budget_stopped" else "confirm_identity"'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_plate_read_goes_straight_to_render"]
+
+[[mutation]]
+id = "read_plate_decline_cost_not_mirrored"
+file = "agent/nodes/read_plate.py"
+search = '''        return {**declined_update(state, exc, NODE), "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - before,
+                "latency": {NODE: time.perf_counter() - started}}'''
+replace = '''        return {**declined_update(state, exc, NODE), "latency": {NODE: time.perf_counter() - started}}'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_plate_read_goes_straight_to_render"]
+
+[[mutation]]
+id = "route_decline_unhandled"
+file = "agent/nodes/route.py"
+search = '''    except ModelDeclined as exc:
+        # Charged by paid_structured_call; the run ends on the decline brief, never on research.'''
+replace = '''    except LookupError as exc:
+        # Charged by paid_structured_call; the run ends on the decline brief, never on research.'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_classifier_routes_nowhere"]
+
+[[mutation]]
+id = "graph_route_decline_not_routed"
+file = "agent/graph.py"
+search = '''    if is_declined(state):
+        return ["render"]
+'''
+replace = ''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_classifier_routes_nowhere"]
+
+[[mutation]]
+id = "route_decline_cost_not_mirrored"
+file = "agent/nodes/route.py"
+search = '''            "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - spent_before[0],
+'''
+replace = ''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_classifier_routes_nowhere"]
+
+[[mutation]]
+id = "research_decline_unhandled"
+file = "agent/nodes/research.py"
+search = '''    except ModelDeclined as exc:
+        # SpendCap has charged the declined turn'''
+replace = '''    except LookupError as exc:
+        # SpendCap has charged the declined turn'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_research_turn_skips_synthesize"]
+
+[[mutation]]
+id = "gather_decline_not_routed"
+file = "agent/nodes/gather.py"
+search = '''    if is_declined(state):
+        return "render"
+'''
+replace = ''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_research_turn_skips_synthesize"]
+
+[[mutation]]
+id = "synthesize_decline_unhandled"
+file = "agent/nodes/synthesize.py"
+search = '''    except ModelDeclined as exc:
+        # Charged from exc.ai_message'''
+replace = '''    except LookupError as exc:
+        # Charged from exc.ai_message'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_synthesize_call_skips_the_safety_check_and_validate"]
+
+[[mutation]]
+id = "graph_synthesize_decline_not_routed"
+file = "agent/graph.py"
+search = '''    return "render" if is_declined(state) else "safety_check"'''
+replace = '''    return "safety_check"'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_synthesize_call_skips_the_safety_check_and_validate"]
+
+[[mutation]]
+id = "synthesize_decline_cost_not_mirrored"
+file = "agent/nodes/synthesize.py"
+search = '''        return {**declined_update(state, exc, NODE), "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - before,
+                **latency_entry'''
+replace = '''        return {**declined_update(state, exc, NODE),
+                **latency_entry'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_a_declined_synthesize_call_skips_the_safety_check_and_validate"]
+
+[[mutation]]
+id = "schemas_run_result_no_decline"
+file = "agent/schemas.py"
+search = '''    refusal_origin: Literal["model", "forced", "model_declined"] | None = None'''
+replace = '''    refusal_origin: Literal["model", "forced"] | None = None'''
+tests = ["agent/tests/test_haiku55_declines_graph.py::test_the_run_result_schema_names_a_decline"]
+
+[[mutation]]
+id = "lifecycle_research_decline_unhandled"
+file = "agent/lifecycle.py"
+search = '''    except ModelDeclined as exc:  # charged by SpendCap; never retried (decision 69)'''
+replace = '''    except LookupError as exc:  # charged by SpendCap; never retried (decision 69)'''
+tests = ["agent/tests/test_sweep_declines.py::test_a_declined_research_turn_ends_the_lookup_before_the_structured_call"]
+
+[[mutation]]
+id = "lifecycle_decline_reported_as_budget_stop"
+file = "agent/lifecycle.py"
+search = '''status=DECLINED if stop.startswith(f"{REFUSAL_ORIGIN}:") else STOPPED'''
+replace = '''status=STOPPED'''
+tests = ["agent/tests/test_sweep_declines.py::test_a_declined_research_turn_ends_the_lookup_before_the_structured_call"]
+
+[[mutation]]
+id = "lifecycle_extract_decline_unhandled"
+file = "agent/lifecycle.py"
+search = '''        except ModelDeclined as exc:  # charged by paid_structured_call; never retried (decision 69)'''
+replace = '''        except LookupError as exc:  # charged by paid_structured_call; never retried (decision 69)'''
+tests = ["agent/tests/test_sweep_declines.py::test_a_declined_structured_call_saves_no_edge"]
+
+[[mutation]]
+id = "cli_ask_ignores_plate_refusal"
+file = "agent/cli.py"
+search = '''            refusal = plate_refusal(mode)
+            if refusal:
+                raise CliRefusal(refusal)
+        ledger = open_live_ledger('''
+replace = '''            refusal = None
+        ledger = open_live_ledger('''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_refused_plate_photo_stops_the_check_and_turns_plate_reading_off"]
+
+[[mutation]]
+id = "cli_check_capabilities_ok_on_failure"
+file = "agent/cli.py"
+search = '''    return EXIT_OK if result.passed else EXIT_LIVE_ERROR'''
+replace = '''    return EXIT_OK'''
+tests = ["agent/tests/test_haiku55_capabilities.py::test_a_refused_plate_photo_stops_the_check_and_turns_plate_reading_off"]
+
+[[mutation]]
+id = "conftest_recall_store_not_redirected"
+file = "agent/tests/conftest.py"
+search = '''    monkeypatch.setattr(config, "RECALLS_DIR", tmp_path / "recalls")'''
+replace = '''    pass'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_tests_never_touch_the_real_recall_store"]
+
+[[mutation]]
+id = "cli_recalls_live_skips_confirm"
+file = "agent/cli.py"
+search = '''    if not ask_to_proceed(product_recalls.plan_lines(appliances, config.RECALLS_DIR), sys.stdin, sys.stdout):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_sends_nothing_without_proceed"]
+
+[[mutation]]
+id = "product_recalls_plan_drops_maker_values"
+file = "agent/product_recalls.py"
+search = '''            lines.append(f"  {unit}: maker value \"{str(a.get('manufacturer') or '').strip()}\"")'''
+replace = '''            lines.append(f"  {unit}")'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_sends_nothing_without_proceed"]
+
+[[mutation]]
+id = "product_recalls_plan_counts_synthetic"
+file = "agent/product_recalls.py"
+search = '''    checked = [a for a in appliances if not is_synthetic_maker(a)]'''
+replace = '''    checked = list(appliances)'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_sends_nothing_without_proceed"]
+
+[[mutation]]
+id = "cli_recalls_queries_synthetic_makers"
+file = "agent/cli.py"
+search = '''            if product_recalls.is_synthetic_maker(a):
+                continue
+'''
+replace = ''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_after_proceed_stores_each_response_and_logs_the_run"]
+
+[[mutation]]
+id = "cli_recalls_no_run_record"
+file = "agent/cli.py"
+search = '''        path.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
+        print(f"run record: {path} (cost 0.0000 USD)")'''
+replace = '''        print(f"run record: {path} (cost 0.0000 USD)")'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_after_proceed_stores_each_response_and_logs_the_run"]
+
+[[mutation]]
+id = "cli_recalls_offline_reads_no_store"
+file = "agent/cli.py"
+search = '''        result = product_recalls.stored_result(config.RECALLS_DIR, a)'''
+replace = '''        result = product_recalls.stored_result(None, a)'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_after_proceed_stores_each_response_and_logs_the_run"]
+
+[[mutation]]
+id = "cli_property_show_no_recalls_dir"
+file = "agent/cli.py"
+search = '''        generated_at=_today().isoformat(), recalls_dir=config.RECALLS_DIR,'''
+replace = '''        generated_at=_today().isoformat(),'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_after_proceed_stores_each_response_and_logs_the_run"]
+
+[[mutation]]
+id = "cli_sweep_pages_no_recalls_dir"
+file = "agent/cli.py"
+search = '''                                    generated_at=as_of.isoformat(), recalls_dir=config.RECALLS_DIR)'''
+replace = '''                                    generated_at=as_of.isoformat())'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_live_check_after_proceed_stores_each_response_and_logs_the_run"]
+
+[[mutation]]
+id = "cli_recalls_all_first_only"
+file = "agent/cli.py"
+search = '''    if args.all:
+        return known'''
+replace = '''    if args.all:
+        return known[:1]'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_offline_command_says_the_check_has_not_run_and_sends_nothing"]
+
+[[mutation]]
+id = "product_recalls_not_checked_reworded"
+file = "agent/product_recalls.py"
+search = '''NOT_CHECKED_SENTENCE = "The product recall check has not run."'''
+replace = '''NOT_CHECKED_SENTENCE = "No product recall check is on file for this appliance."'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_offline_command_says_the_check_has_not_run_and_sends_nothing"]
+
+[[mutation]]
+id = "property_page_recalls_section_dropped"
+file = "agent/render/property_page.py"
+search = '''        _recalls_section(appliances, recalls_dir),
+'''
+replace = ''
+tests = ["agent/tests/test_product_recalls_cli.py::test_page_section_follows_plan_a_replacement_and_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_recalls_unit_raw"
+file = "agent/render/property_page.py"
+search = '''            f"      <strong>{esc(a.get('manufacturer'))} {esc(a.get('model'))}</strong>",'''
+replace = '''            f"      <strong>{a.get('manufacturer')} {a.get('model')}</strong>",'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_page_section_follows_plan_a_replacement_and_escapes_every_value"]
+
+[[mutation]]
+id = "property_page_recalls_body_raw"
+file = "agent/product_recalls.py"
+search = '''        return lines + [f"  <p>{esc(s)}</p>" for s in statements(result)]'''
+replace = '''        return lines + [f"  <p>{s}</p>" for s in statements(result)]'''
+tests = ["agent/tests/test_product_recalls_cli.py::test_page_section_follows_plan_a_replacement_and_escapes_every_value"]
+
+[[mutation]]
+id = "product_recalls_none_store_not_handled"
+file = "agent/product_recalls.py"
+search = '''    if data_dir is None:
+        return {**base, "status": NOT_CHECKED}
+'''
+replace = ''
+tests = ["agent/tests/test_product_recalls_cli.py::test_page_section_follows_plan_a_replacement_and_escapes_every_value"]
+
+[[mutation]]
+id = "eval_first_lookup_reads_other_kinds"
+file = "agent/live/eval_sc7b.py"
+search = '''        if record.get("kind") is not None or record.get("mode") not in config.LIVE_MODES:'''
+replace = '''        if record.get("mode") not in config.LIVE_MODES:'''
+tests = ["agent/tests/test_sweep_sc7b.py::test_sc7b_never_reads_a_lifecycle_or_product_recall_record_as_a_first_lookup"]
+
+# ---------------------------------------------------------------------------
+# SC14 review findings B1 to B6 (agent/tests/test_sweep_review.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "lifecycle_unit_check_skipped"
+file = "agent/lifecycle.py"
+search = '''    check_unit_named(brief, identity, page_texts, dropped)
+'''
+replace = '''    pass
+'''
+tests = ["agent/tests/test_sweep_review.py::test_a_quote_that_never_names_the_unit_saves_nothing"]
+why = "finding B1: a quote about a sibling model would be saved as this unit's discontinuation"
+
+[[mutation]]
+id = "lifecycle_unit_token_skipped"
+file = "agent/lifecycle.py"
+search = '''                and target_is_token(quote, page_texts.get(url) or "", target=model)):'''
+replace = '''                and True):'''
+tests = ["agent/tests/test_sweep_review.py::test_a_quote_that_never_names_the_unit_saves_nothing[longer_model_number]"]
+why = "a quote naming the XR16 4TTR6036A would pass as naming the XR16 4TTR6036"
+
+[[mutation]]
+id = "lifecycle_unit_check_always_drops"
+file = "agent/lifecycle.py"
+search = '''        if not (isinstance(model, str) and sweep.names_successor(quote, model)'''
+replace = '''        if not (isinstance(model, str) and sweep.names_successor(quote, maker)'''
+tests = ["agent/tests/test_sweep_review.py::test_the_unchanged_quote_still_saves_its_successor"]
+why = "checking the maker instead of the model drops every quote that names the unit by model only"
+
+[[mutation]]
+id = "lifecycle_successor_maker_kept"
+file = "agent/lifecycle.py"
+search = '''            entry["successor_manufacturer"] = None'''
+replace = '''            pass'''
+tests = ["agent/tests/test_sweep_review.py::test_a_lookup_clears_a_successor_maker_neither_the_units_nor_quoted"]
+why = "finding B4: a maker the model invented would reach the graph"
+
+[[mutation]]
+id = "sweep_fact_maker_unverified"
+file = "agent/sweep.py"
+search = '''        "successor_manufacturer": maker if names_successor(edge.get("evidence"), maker) else None,'''
+replace = '''        "successor_manufacturer": maker,'''
+tests = ["agent/tests/test_sweep_review.py::test_a_successor_maker_the_quote_never_names_is_not_shown"]
+why = "finding B4: the page would claim a maker the quote never gives"
+
+[[mutation]]
+id = "cli_sweep_offline_note_after_research"
+file = "agent/cli.py"
+search = '''    print(SWEEP_PAGES_NOTE if researched else SWEEP_OFFLINE_NOTE)'''
+replace = '''    print(SWEEP_OFFLINE_NOTE)'''
+tests = ["agent/tests/test_sweep_review.py::test_after_research_the_sweep_does_not_say_it_spent_nothing"]
+why = "finding B3: the sweep would say it spent nothing after paid lookups"
+
+[[mutation]]
+id = "lifecycle_plan_cap_scope_dropped"
+file = "agent/lifecycle.py"
+search = '''            cap_scope_line(plan, lookups, price_mode, recorded=price_mode != "replay")]'''
+replace = '''            ]'''
+tests = ["agent/tests/test_sweep_review.py::test_after_research_the_sweep_does_not_say_it_spent_nothing"]
+
+[[mutation]]
+id = "cli_sweep_cap_scope_not_printed"
+file = "agent/cli.py"
+search = '''                                           lifecycle.cap_scope_line(plan, len(eligible), mode)])'''
+replace = '''                                           ])'''
+tests = ["agent/tests/test_sweep_review.py::test_live_preflight_says_the_cap_is_for_the_whole_sweep"]
+why = "finding B2: the preflight would not say the cap covers the whole sweep"
+
+[[mutation]]
+id = "cli_sweep_credits_not_checked"
+file = "agent/cli.py"
+search = '''                              need_usd=plan.worst_usd, need_credits=plan.max_credits, environ=environ)'''
+replace = '''                              need_usd=plan.worst_usd, environ=environ)'''
+tests = ["agent/tests/test_sweep_review.py::test_live_research_is_refused_when_the_build_credits_cannot_cover_its_lookups"]
+why = "finding B5: a live sweep would skip the build credit check"
+
+[[mutation]]
+id = "cli_open_live_ledger_drops_credits"
+file = "agent/cli.py"
+search = '''        credits = need_credits if need_credits is not None else (None if need_usd is None else 0)'''
+replace = '''        credits = None if need_usd is None else 0'''
+tests = ["agent/tests/test_sweep_review.py::test_live_research_is_refused_when_the_build_credits_cannot_cover_its_lookups"]
+
+[[mutation]]
+id = "sweep_age_impossible_date_accepted"
+file = "agent/rules/citations.py"
+search = '''            date(year, month, day)  # type: ignore[arg-type]'''
+replace = '''            pass'''
+tests = ["agent/tests/test_sweep_review.py::test_an_install_date_that_is_not_a_calendar_date_gives_no_age"]
+why = "finding B6: 2019-02-30 would read as a full date with an age"
+
+[[mutation]]
+id = "persist_unit_check_skipped"
+file = "agent/nodes/persist.py"
+search = '''            if why is None and kind in (SUPERSEDED_BY, PART_DISCONTINUED) \
+                    and not _names_unit(entry["evidence"], texts[url], model):'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_sweep_review.py::test_a_brief_saves_no_lifecycle_edge_from_a_quote_about_another_model"]
+why = "finding B1, applied to briefs: a quote about a sibling model would be saved as this unit's discontinuation"
+
+# ---------------------------------------------------------------------------
+# SC15 review findings C1 to C4 (agent/tests/test_product_recalls_review.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "product_recalls_http_exception_escapes_fetch"
+file = "agent/product_recalls.py"
+search = '''    except http.client.HTTPException as exc:  # a truncated body or a bad status line; not an OSError
+        raise FetchError(NETWORK_ERROR, f"{type(exc).__name__}: {exc}") from exc
+'''
+replace = ''
+tests = ["agent/tests/test_product_recalls_review.py::test_the_default_fetch_maps_an_http_client_failure_to_a_network_error"]
+why = "finding C1: IncompleteRead is not an OSError, so it would crash the live check"
+
+[[mutation]]
+id = "product_recalls_query_maker_misses_http_exception"
+file = "agent/product_recalls.py"
+search = '''        except (OSError, http.client.HTTPException) as exc:'''
+replace = '''        except OSError as exc:'''
+tests = ["agent/tests/test_product_recalls_review.py::test_an_injected_fetch_raising_an_http_client_failure_is_a_failed_request"]
+
+[[mutation]]
+id = "cli_recalls_unexpected_error_escapes"
+file = "agent/cli.py"
+search = '''    except Exception as exc:  # requests went out: stop, but still log what ran (below)'''
+replace = '''    except KeyboardInterrupt as exc:'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_live_run_stopped_by_a_failure_still_writes_its_run_record"]
+why = "finding C1: an unexpected error would end the live check with a traceback"
+
+[[mutation]]
+id = "cli_recalls_record_only_on_success"
+file = "agent/cli.py"
+search = '''    finally:
+        # Written whatever happens, so every check stored so far is logged with the run.'''
+replace = '''    else:
+        # Written whatever happens, so every check stored so far is logged with the run.'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_live_run_stopped_by_a_failure_still_writes_its_run_record"]
+why = "finding C1: checks already stored would stay on disk with no run record"
+
+[[mutation]]
+id = "product_recalls_suffix_token_ignored"
+file = "agent/product_recalls.py"
+search = '''                    longer = j + 1 < len(tokens) and _suffix_like(tokens[j + 1])'''
+replace = '''                    longer = False'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_spaced_suffix_or_a_longer_model_field_is_not_a_match"]
+why = "finding C2: XR16 4TTR6036 A would be shown as naming the XR16 4TTR6036"
+
+[[mutation]]
+id = "product_recalls_model_field_as_free_text"
+file = "agent/product_recalls.py"
+search = '''            for run in (find_model_field if is_model_field(field) else find_model)(text, target, recorded)]'''
+replace = '''            for run in find_model(text, target, recorded)]'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_spaced_suffix_or_a_longer_model_field_is_not_a_match"]
+why = "finding C2: a Model field printing XR16 4TTR6036 Series II would match"
+
+[[mutation]]
+id = "product_recalls_mention_only_dropped"
+file = "agent/product_recalls.py"
+search = '''        out.append(MENTION_ONLY)'''
+replace = '''        pass'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_match_in_the_text_only_says_the_text_may_exclude_the_model"]
+why = "finding C3: a Description that excludes the model would read like a model field hit"
+
+[[mutation]]
+id = "product_recalls_mention_only_always"
+file = "agent/product_recalls.py"
+search = '''    if hits and not any(is_model_field(hit["field"]) for hit in hits):'''
+replace = '''    if hits:'''
+tests = ["agent/tests/test_product_recalls_review.py::test_a_match_in_the_text_only_says_the_text_may_exclude_the_model"]
+
+[[mutation]]
+id = "product_recalls_match_where_bare_recall"
+file = "agent/product_recalls.py"
+search = '''MATCH_WHERE = "The model appears in the product recall's {field}: \"{text}\"."'''
+replace = '''MATCH_WHERE = "The model appears in the recall's {field}: \"{text}\"."'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+[[mutation]]
+id = "product_recalls_not_stated_bare_recall"
+file = "agent/product_recalls.py"
+search = '''NOT_STATED = "not stated in the product recall"'''
+replace = '''NOT_STATED = "not stated in the recall"'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+[[mutation]]
+id = "product_recalls_searched_bare_recall"
+file = "agent/product_recalls.py"
+search = '''SEARCHED = ("Searched product recalls that list'''
+replace = '''SEARCHED = ("Searched recalls that list'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+[[mutation]]
+id = "product_recalls_partial_bare_recall"
+file = "agent/product_recalls.py"
+search = '''PARTIAL_SENTENCE = ("Part of the product recall check did not run (reason: {reason}), so a product recall "'''
+replace = '''PARTIAL_SENTENCE = ("Part of the product recall check did not run (reason: {reason}), so a recall "'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+[[mutation]]
+id = "product_recalls_plan_bare_recall"
+file = "agent/product_recalls.py"
+search = '''(CPSC's Recall "
+        f"Retrieval service)'''
+replace = '''(CPSC's recall "
+        f"service)'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+[[mutation]]
+id = "property_page_recalls_intro_bare_recall"
+file = "agent/render/property_page.py"
+search = '''    "searched by maker. Code shows a product recall only when'''
+replace = '''    "searched by maker. Code shows a recall only when'''
+tests = ["agent/tests/test_product_recalls_review.py::test_user_facing_text_never_says_a_bare_recall"]
+
+# ---------------------------------------------------------------------------
+# Decision 69 review findings H1 to H4 (agent/tests/test_haiku55_review.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "research_decline_brief_misses_this_pass"
+file = "agent/nodes/research.py"
+search = '''        out.update(declined_update({**state, "search_trail": so_far}, declined, NODE))'''
+replace = '''        out.update(declined_update(state, declined, NODE))'''
+tests = ["agent/tests/test_haiku55_review.py::test_a_research_decline_after_a_search_lists_that_search"]
+why = "finding H1: the decline brief would say nothing was searched after a paid search"
+
+[[mutation]]
+id = "haiku55_replay_estimate_live_margin"
+file = "agent/ledger.py"
+search = '''    replay = mode == "replay"'''
+replace = '''    replay = False'''
+tests = ["agent/tests/test_haiku55_review.py::test_replay_reservations_use_the_recorded_models_estimate"]
+why = "finding H2: replay reservations would take Claude Haiku 5.5's margin and tool prompt tokens"
+
+[[mutation]]
+id = "haiku55_replay_tool_tokens_live"
+file = "agent/ledger.py"
+search = '''        tokens += config.REPLAY_TOOL_PROMPT_TOKENS if replay else config.TOOL_PROMPT_TOKENS.get('''
+replace = '''        tokens += config.TOOL_PROMPT_TOKENS[config.HAIKU] if replay else config.TOOL_PROMPT_TOKENS.get('''
+tests = ["agent/tests/test_haiku55_review.py::test_replay_reservations_use_the_recorded_models_estimate"]
+
+[[mutation]]
+id = "haiku55_research_estimate_mode_dropped"
+file = "agent/research/middleware.py"
+search = '''        estimate = estimate_input_tokens(messages, model=model, tools=request.tools or None, mode=basis)'''
+replace = '''        estimate = estimate_input_tokens(messages, model=model, tools=request.tools or None)'''
+tests = ["agent/tests/test_haiku55_review.py::test_replay_reservations_use_the_recorded_models_estimate"]
+
+[[mutation]]
+id = "haiku55_synthesize_estimate_mode_dropped"
+file = "agent/nodes/synthesize.py"
+search = '''    est = estimate_input_tokens(list(estimate_messages or messages), model=model_id, images=images, mode=basis)'''
+replace = '''    est = estimate_input_tokens(list(estimate_messages or messages), model=model_id, images=images)'''
+tests = ["agent/tests/test_haiku55_review.py::test_replay_reservations_use_the_recorded_models_estimate"]
+
+[[mutation]]
+id = "haiku55_replay_synthesize_reservation_live_margin"
+file = "agent/graph.py"
+search = '''    margin = config.REPLAY_ESTIMATE_MARGIN if mode == "replay" else config.ESTIMATE_MARGIN.get('''
+replace = '''    margin = config.ESTIMATE_MARGIN[config.HAIKU] if mode == "replay" else config.ESTIMATE_MARGIN.get('''
+tests = ["agent/tests/test_haiku55_review.py::test_the_replay_retry_threshold_is_the_recorded_one"]
+why = "finding H2: the replay retry threshold (decision 23) would move with the live margin"
+
+[[mutation]]
+id = "haiku55_capabilities_any_400_refuses_photo"
+file = "agent/live/capabilities.py"
+search = '''    return outcome.status == REJECTED and bool(IMAGE_WORDS.search(outcome.message or ""))'''
+replace = '''    return outcome.status == REJECTED'''
+tests = ["agent/tests/test_haiku55_review.py::test_only_a_400_that_names_the_image_turns_plate_reading_off"]
+why = "finding H3: a 400 about effort or the schema would turn plate reading off as a refused photo"
+
+[[mutation]]
+id = "config_cites_missing_test"
+file = "agent/config.py"
+search = '''# these budgets stays under the cheap run cap (test_haiku55_config.py,'''
+replace = '''# these budgets stays under the cheap run cap (test_haiku55_budget.py,'''
+tests = ["agent/tests/test_haiku55_review.py::test_every_test_file_config_names_exists"]
+why = "finding H4: the comment pointed at a test file that does not exist"
+
+# ---------------------------------------------------------------------------
+# The appliance model number (13 October 2026): registry column and migration,
+# seed, product recall matcher, property page, and stored checks that never
+# collide (agent/tests/test_round2_model_number.py).
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "registry_migration_dropped"
+file = "agent/registry.py"
+search = '''    ("appliances", "model_number", "TEXT"),
+'''
+replace = ''''''
+tests = ["agent/tests/test_round2_model_number.py::test_an_old_registry_file_gains_the_column_and_keeps_every_row", "agent/tests/test_round2_model_number.py::test_a_new_registry_file_has_the_same_columns_as_a_migrated_one"]
+why = "an old registry file opens without the column, so loading the seed fails"
+
+[[mutation]]
+id = "registry_migration_clears_lookups"
+file = "agent/registry.py"
+search = '''            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")'''
+replace = '''            conn.execute("DELETE FROM lookups")
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")'''
+tests = ["agent/tests/test_round2_model_number.py::test_an_old_registry_file_gains_the_column_and_keeps_every_row"]
+why = "the migration loses the recorded lookups"
+
+[[mutation]]
+id = "registry_seed_model_number_not_inserted"
+file = "agent/registry.py"
+search = '''                        row.get("model_number"),
+'''
+replace = '''                        None,
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_an_old_registry_file_gains_the_column_and_keeps_every_row", "agent/tests/test_round2_model_number.py::test_the_seed_sets_the_trane_model_number_and_says_where_it_comes_from"]
+
+[[mutation]]
+id = "registry_seed_model_number_not_updated"
+file = "agent/registry.py"
+search = '''                        synthetic=1, model_number=excluded.model_number
+'''
+replace = '''                        synthetic=1
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_an_old_registry_file_gains_the_column_and_keeps_every_row"]
+why = "reloading the seed over an appliance already in the file never sets its model number"
+
+[[mutation]]
+id = "registry_schema_model_number_moved"
+file = "agent/registry_schema.sql"
+search = ['''    model                TEXT NOT NULL,
+''', '''    synthetic            INTEGER NOT NULL CHECK (synthetic IN (0, 1)),
+''', '''    model_number         TEXT
+);''']
+replace = ['''    model                TEXT NOT NULL,
+    model_number         TEXT,
+''', '''    synthetic            INTEGER NOT NULL CHECK (synthetic IN (0, 1))
+''', ''');''']
+tests = ["agent/tests/test_round2_model_number.py::test_a_new_registry_file_has_the_same_columns_as_a_migrated_one"]
+why = "a new file and a migrated one put the column in different places"
+
+[[mutation]]
+id = "registry_seed_trane_model_number_is_the_line"
+file = "seed/registry_seed.json"
+search = '''      "model_number": "4TTR6036",'''
+replace = '''      "model_number": "XR16",'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_seed_sets_the_trane_model_number_and_says_where_it_comes_from"]
+why = "the product line is stored as the model number"
+
+[[mutation]]
+id = "product_recalls_model_number_not_searched"
+file = "agent/product_recalls.py"
+search = '''    number = _number_apart(model, model_number)
+    if number:
+'''
+replace = '''    number = _number_apart(model, model_number)
+    if False:
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_recall_naming_only_the_model_number_matches_the_trane_unit"]
+
+[[mutation]]
+id = "product_recalls_check_drops_model_number"
+file = "agent/product_recalls.py"
+search = '''"maker": maker, "model": model, "model_number": number, "applies": True,'''
+replace = '''"maker": maker, "model": model, "model_number": None, "applies": True,'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_recall_naming_only_the_model_number_matches_the_trane_unit"]
+
+[[mutation]]
+id = "product_recalls_hit_kind_lost"
+file = "agent/product_recalls.py"
+search = '''    hits = [{**hit, "matched": t["matched"], "searched": t["searched"]}'''
+replace = '''    hits = [{**hit, "matched": MODEL_ON_RECORD, "searched": t["searched"]}'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_recall_naming_only_the_model_number_matches_the_trane_unit"]
+why = "every hit says the model on record matched"
+
+[[mutation]]
+id = "product_recalls_number_only_head_dropped"
+file = "agent/product_recalls.py"
+search = '''        named = NUMBER_ONLY.format(number=hits[0].get("searched"), model=model)
+'''
+replace = '''        named = model
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_recall_naming_only_the_model_number_matches_the_trane_unit"]
+why = "a match on the model number alone is said to name the model on record"
+
+[[mutation]]
+id = "product_recalls_product_line_searched"
+file = "agent/product_recalls.py"
+search = '''        targets.append({"matched": MODEL_NUMBER, "searched": number, "target": model_target(number)})
+'''
+replace = '''        targets.append({"matched": MODEL_NUMBER, "searched": number, "target": model_target(number)})
+        targets.append({"matched": MODEL_NUMBER, "searched": model.split()[0], "target": model_target(model.split()[0])})
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_longer_or_shorter_number_or_the_product_line_alone_never_matches"]
+why = "the product line XR16 alone becomes a target"
+
+[[mutation]]
+id = "product_recalls_model_number_prefix"
+file = "agent/product_recalls.py"
+search = '''model_target(number)})'''
+replace = '''model_target(number)[:-1]})'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_longer_or_shorter_number_or_the_product_line_alone_never_matches"]
+why = "a shorter number (4TTR603) is matched"
+
+[[mutation]]
+id = "product_recalls_no_match_hides_model_number"
+file = "agent/product_recalls.py"
+search = '''SEARCHED_BOTH = "model number {number} or model on record {model}"'''
+replace = '''SEARCHED_BOTH = "{model}"'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_longer_or_shorter_number_or_the_product_line_alone_never_matches"]
+why = "the no match sentence leaves out the model number that was searched"
+
+[[mutation]]
+id = "product_recalls_inner_number_hit_kept"
+file = "agent/product_recalls.py"
+search = '''    return sorted(kept, key=lambda h: order[h["field"]])'''
+replace = '''    return sorted(hits, key=lambda h: order[h["field"]])'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_model_on_record_still_matches_and_the_number_inside_it_is_not_a_second_hit"]
+
+[[mutation]]
+id = "product_recalls_number_like_model_kept_apart"
+file = "agent/product_recalls.py"
+search = '''    if not number or _norm_or_empty(number) == _norm_or_empty(str(model or "")):'''
+replace = '''    if not number:'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_rheem_and_optima_units_match_exactly_as_before"]
+why = "the Rheem unit's model number, the same as its model on record, becomes a second target and its sentences change"
+
+[[mutation]]
+id = "product_recalls_number_guessed_from_model"
+file = "agent/product_recalls.py"
+search = '''    targets = model_targets(str(check.get("model") or ""), check.get("model_number"))'''
+replace = '''    targets = model_targets(str(check.get("model") or ""), check.get("model_number") or str(check.get("model") or "").split()[-1])'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_check_stored_before_the_model_number_is_read_on_its_model_alone"]
+why = "a check with no model number gets one guessed from the last word of the model name"
+
+[[mutation]]
+id = "property_page_model_number_dropped"
+file = "agent/render/property_page.py"
+search = '''            f"        <td>{_cell(a.get('model_number'))}</td>",
+'''
+replace = '''            f"        <td>{_cell(None)}</td>",
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_appliance_table_shows_the_model_number_escaped"]
+
+[[mutation]]
+id = "property_page_model_number_raw"
+file = "agent/render/property_page.py"
+search = '''<td>{_cell(a.get('model_number'))}</td>'''
+replace = '''<td>{a.get('model_number') or 'not recorded'}</td>'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_appliance_table_shows_the_model_number_escaped"]
+
+[[mutation]]
+id = "product_recalls_store_seq_ignored"
+file = "agent/product_recalls.py"
+search = '''        seq = _next_seq(folder, stamp)
+'''
+replace = '''        seq = 1
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_two_checks_in_the_same_second_each_get_their_own_file"]
+why = "every file of a second gets number 1, so the latest is the one whose hash sorts last"
+
+[[mutation]]
+id = "product_recalls_store_link_replaced"
+file = "agent/product_recalls.py"
+search = '''                os.link(tmp, path)  # never replaces a file already there
+'''
+replace = '''                os.replace(tmp, path)
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_a_name_already_taken_is_never_overwritten"]
+why = "two writers that pick the same number: the second replaces the first"
+
+[[mutation]]
+id = "product_recalls_latest_ignores_sequence"
+file = "agent/product_recalls.py"
+search = '''sorted(folder.glob("*.json"), key=_check_order)'''
+replace = '''sorted(folder.glob("*.json"))'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_latest_check_follows_the_sequence_and_ignores_other_files"]
+
+[[mutation]]
+id = "product_recalls_stray_file_newest"
+file = "agent/product_recalls.py"
+search = '''if m else ("", 0, path.name)'''
+replace = '''if m else (path.name, 0, "")'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_latest_check_follows_the_sequence_and_ignores_other_files"]
+why = "a file store_check did not name is read back as the newest check"
+
+# --- Round 2 (13 October 2026): one run cap for the whole sweep, config facts checked live, calendar dates, the PRD 2 gate ---
+
+[[mutation]]
+id = "lifecycle_worst_drops_extract"
+file = "agent/lifecycle.py"
+search = '''    return research + extract + credits * config.tavily_credit_usd()'''
+replace = '''    return research + credits * config.tavily_credit_usd()'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_a_lookups_worst_case_is_every_call_its_limits_allow_at_the_ledgers_prices"]
+why = "a lookup's worst case would leave out its structured call, so a lookup could start without room for it"
+
+[[mutation]]
+id = "lifecycle_worst_replay_at_live_prices"
+file = "agent/lifecycle.py"
+search = '''        return config.REPLAY_ESTIMATE_MARGIN if replay else config.ESTIMATE_MARGIN[model]'''
+replace = '''        return config.ESTIMATE_MARGIN[model]'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_a_lookups_worst_case_is_every_call_its_limits_allow_at_the_ledgers_prices"]
+why = "the replay worst case would not use the margin the replay ledger reserves with"
+
+[[mutation]]
+id = "lifecycle_sweep_plan_worst_summed"
+file = "agent/lifecycle.py"
+search = '''        worst_usd=sweep_cap_usd(mode),'''
+replace = '''        worst_usd=sum(p.worst_usd for p in plans),'''
+tests = [
+    "agent/tests/test_round2_sweep_cap.py::test_the_replay_plan_is_one_plan_whose_worst_case_is_the_cap",
+    "agent/tests/test_round2_sweep_cap.py::test_live_preflight_shows_one_plan_with_the_cap_as_its_worst_case",
+]
+why = "the sweep's worst case would be the lookups' summed worst cases, not the one cap"
+
+[[mutation]]
+id = "lifecycle_cap_line_per_lookup"
+file = "agent/lifecycle.py"
+search = '''    return (f"run cap {sweep_cap_usd(mode):.2f} USD for the whole sweep: {lookups} lookup(s), typical total "'''
+replace = '''    return (f"run cap {sweep_cap_usd(mode):.2f} USD per lookup: {lookups} lookup(s), typical total "'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_the_replay_plan_is_one_plan_whose_worst_case_is_the_cap"]
+
+[[mutation]]
+id = "cli_sweep_replay_spend_not_recorded"
+file = "agent/cli.py"
+search = '''            result = lifecycle.lookup(appliance, ctx)
+            budget.record(result)'''
+replace = '''            result = lifecycle.lookup(appliance, ctx)'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_three_replay_lookups_share_one_cap"]
+why = "each replay lookup would get the whole cap again: a per lookup cap"
+
+[[mutation]]
+id = "cli_sweep_replay_cap_not_shared"
+file = "agent/cli.py"
+search = '''            ctx = run_context(lifecycle.new_run_id(), mode, cassette)
+            ctx.caps = budget.caps_for(ctx.caps)'''
+replace = '''            ctx = run_context(lifecycle.new_run_id(), mode, cassette)'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_three_replay_lookups_share_one_cap"]
+why = "the ledger would not hold a replay lookup to what is left of the sweep's cap"
+
+[[mutation]]
+id = "lifecycle_sweep_covers_always"
+file = "agent/lifecycle.py"
+search = '''        return self.remaining + _EPSILON >= self.worst'''
+replace = '''        return True'''
+tests = [
+    "agent/tests/test_round2_sweep_cap.py::test_three_replay_lookups_share_one_cap",
+    "agent/tests/test_round2_sweep_cap.py::test_a_unit_the_cap_cannot_cover_saves_nothing",
+]
+why = "a lookup would start with less of the cap left than its worst case"
+
+[[mutation]]
+id = "cli_sweep_replay_skip_falls_through"
+file = "agent/cli.py"
+search = '''            if not budget.covers_next():  # replay: not started, nothing saved
+                for line in lifecycle.result_lines(lifecycle.cap_reached_result(appliance, budget)):
+                    print(line)
+                continue'''
+replace = '''            if not budget.covers_next():  # replay: not started, nothing saved
+                for line in lifecycle.result_lines(lifecycle.cap_reached_result(appliance, budget)):
+                    print(line)'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_a_unit_the_cap_cannot_cover_saves_nothing"]
+why = "a unit reported as not looked up would be looked up anyway and could save an edge"
+
+[[mutation]]
+id = "cli_sweep_need_usd_summed"
+file = "agent/cli.py"
+search = '''                              need_usd=plan.worst_usd, need_credits=plan.max_credits, environ=environ)'''
+replace = '''                              need_usd=sum(lifecycle.lookup_plan(mode, a).worst_usd for a in eligible),
+                              need_credits=plan.max_credits, environ=environ)'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_live_preflight_shows_one_plan_with_the_cap_as_its_worst_case"]
+why = "the build check would ask for the summed per lookup worst cases, not the sweep's cap"
+
+[[mutation]]
+id = "cli_sweep_live_spend_not_recorded"
+file = "agent/cli.py"
+search = '''                    session.scrub(ctx)
+                budget.record(result)'''
+replace = '''                    session.scrub(ctx)'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_live_lookups_share_one_cap"]
+why = "each live lookup would get the whole cap again: a per lookup cap"
+
+[[mutation]]
+id = "cli_sweep_live_covers_ignored"
+file = "agent/cli.py"
+search = '''                if not budget.covers_next():  # live: not started, nothing saved'''
+replace = '''                if False:'''
+tests = ["agent/tests/test_round2_sweep_cap.py::test_live_unit_the_cap_cannot_cover_is_not_started_and_saves_nothing"]
+why = "a live lookup would start with less of the cap left than its worst case"
+
+[[mutation]]
+id = "config_tool_prompt_tokens_placeholder"
+file = "agent/config.py"
+search = '''TOOL_PROMPT_TOKENS = {HAIKU: 406, SONNET: 474}'''
+replace = '''TOOL_PROMPT_TOKENS = {HAIKU: 765, SONNET: 474}'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_haiku_tool_prompt_tokens_are_the_pricing_pages_406"]
+why = "the 765 placeholder would stay in place of the pricing page's 406"
+
+[[mutation]]
+id = "config_cache_read_multiplier_wrong"
+file = "agent/config.py"
+search = '''CACHE_READ_MULTIPLIER = 0.10'''
+replace = '''CACHE_READ_MULTIPLIER = 0.125'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_haiku_rate_cards_and_cache_prices_match_the_pricing_page"]
+
+[[mutation]]
+id = "config_retirement_cites_build_brief"
+file = "agent/config.py"
+search = '''# The earliest retirement date for Claude Haiku 5.5. Anthropic's model
+# deprecations page, checked 13 October 2026, lists claude-haiku-5-5 as Active,'''
+replace = '''# The earliest retirement date for Claude Haiku 5.5, as the build brief gave
+# it, lists claude-haiku-5-5 as Active,'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_config_cites_the_live_pages_checked_13_october_2026"]
+
+[[mutation]]
+id = "citations_calendar_check_off"
+file = "agent/rules/citations.py"
+search = '''        except ValueError:  # 30 February, 31 April, 29 February outside a leap year
+            return None'''
+replace = '''        except ValueError:  # 30 February, 31 April, 29 February outside a leap year
+            pass'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_a_full_date_not_on_the_calendar_is_not_a_date"]
+why = "2019-02-30 would parse as a date, and an age or end date could be computed from it"
+
+[[mutation]]
+id = "citations_calendar_check_rejects_every_day"
+file = "agent/rules/citations.py"
+search = '''            date(year, month, day)  # type: ignore[arg-type]
+        except ValueError:'''
+replace = '''            raise ValueError
+        except ValueError:'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_real_and_partial_dates_still_parse"]
+
+[[mutation]]
+id = "citations_unreadable_registry_date_said_missing"
+file = "agent/rules/citations.py"
+search = '''        elif unreadable is None and isinstance(value, str) and value.strip():'''
+replace = '''        elif False:'''
+tests = ["agent/tests/test_round2_sweep_config.py::test_no_caller_computes_from_an_impossible_date"]
+why = "a recorded but impossible install date would be reported as no date recorded"
+
+[[mutation]]
+id = "gate_requirements_prd2_test_dropped"
+file = "agent/tests/gate_requirements.json"
+search = '''        "test_round2_sweep_cap.py::test_three_replay_lookups_share_one_cap",
+'''
+replace = ''''''
+tests = ["agent/tests/test_round2_sweep_gate.py::test_phase_6_requires_every_prd2_test_and_nothing_missing"]
+why = "a gate run could leave out a PRD 2 test"
+
+# ---------------------------------------------------------------------------
+# Round 2: Claude Haiku 5.5 recordings become working cassettes (decision 69)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "round2_recorder_drops_blocks"
+file = "agent/live/recorder.py"
+search = '''        "content": [dict(b) for b in blocks] if isinstance(blocks, list) else str(event.get("content") or ""),'''
+replace = '''        "content": str(event.get("content") or ""),'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_loads_and_replays_to_the_live_runs_state_and_brief[plate_read_research_synthesize]"]
+why = "a research turn is recorded as its text only, so replay never serves a thinking first block list"
+
+[[mutation]]
+id = "round2_recorder_keeps_signature"
+file = "agent/live/recorder.py"
+search = '''            out.append(dict(THINKING_MARKERS[kind]))'''
+replace = '''            out.append(dict(block))'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_loads_and_replays_to_the_live_runs_state_and_brief[plate_read_research_synthesize]"]
+why = "a thinking block is captured whole, its signature written to the capture and the cassette"
+
+[[mutation]]
+id = "round2_recorder_structured_thinking_dropped"
+file = "agent/live/recorder.py"
+search = '''    if markers:
+        out["thinking"] = markers'''
+replace = '''    if markers and False:
+        out["thinking"] = markers'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_loads_and_replays_to_the_live_runs_state_and_brief[classifier]"]
+why = "a structured reply loses its thinking markers"
+
+[[mutation]]
+id = "round2_recorder_no_recorded_models"
+file = "agent/live/recorder.py"
+search = '''        build.cassette["recorded"] = recorded'''
+replace = '''        pass'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_loads_and_replays_to_the_live_runs_state_and_brief[plate_read_research_synthesize]"]
+why = "the cassette does not say which model, and so which prices, its usage belongs to"
+
+[[mutation]]
+id = "round2_recorder_misses_declines"
+file = "agent/live/recorder.py"
+search = '''        if not isinstance(error, ModelDeclined):
+            return'''
+replace = '''        if True:
+            return'''
+tests = [
+    "agent/tests/test_round2_cassettes.py::test_a_live_decline_becomes_a_replayable_cassette[read_plate]",
+    "agent/tests/test_round2_cassettes.py::test_a_live_decline_becomes_a_replayable_cassette[research]",
+]
+why = "a declined call never reaches on_llm_end, so without on_llm_error the recording loses it"
+
+[[mutation]]
+id = "round2_recorder_keeps_partial_text"
+file = "agent/live/recorder.py"
+search = '''        self.append({"event": "model", "node": node, "content": "", "tool_calls": [],'''
+replace = '''        self.append({"event": "model", "node": node, "content": _text(error.ai_message.content), "tool_calls": [],'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_live_decline_becomes_a_replayable_cassette[synthesize]"]
+why = "what the model wrote before declining is written to the capture file"
+
+[[mutation]]
+id = "round2_responses_for_read_plate_refusal"
+file = "agent/replay/cassettes.py"
+search = '''    if is_refusal(entry):
+        return _refusal_response(entry)'''
+replace = '''    if False:
+        return _refusal_response(entry)'''
+tests = [
+    "agent/tests/test_round2_cassettes.py::test_a_live_decline_becomes_a_replayable_cassette[read_plate]",
+    "agent/tests/test_round2_cassettes_format.py::test_read_plates_recorded_decline_is_served_as_a_decline",
+]
+why = "replay serves read_plate's recorded decline as an extraction"
+
+[[mutation]]
+id = "round2_lookup_state_no_identity"
+file = "agent/replay/cassettes.py"
+search = '''        "identity": dict(identity),'''
+replace = '''        "identity": None,'''
+tests = [
+    "agent/tests/test_round2_cassettes.py::test_a_lifecycle_lookup_recorded_live_replays_through_the_sweep",
+    "agent/tests/test_round2_cassettes_format.py::test_a_lookups_recording_state_names_the_unit_and_the_top_up_limits",
+]
+why = "a lookup's recording names no unit, so a replay sweep cannot match it"
+
+[[mutation]]
+id = "round2_recorder_node_by_budget_only"
+file = "agent/live/recorder.py"
+search = '''    if node != UNKNOWN_NODE and has_tools != (node == TOOL_NODE):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_round2_cassettes_budgets.py::test_a_structured_call_at_the_research_budget_is_not_filed_as_research"]
+why = "check-schema's call, at the research budget, is filed as a research turn"
+
+[[mutation]]
+id = "round2_recorder_collision_overwrites"
+file = "agent/live/recorder.py"
+search = '''    return {budget: nodes[0] if len(nodes) == 1 else UNKNOWN_NODE for budget, nodes in budgets.items()}'''
+replace = '''    return {budget: nodes[-1] for budget, nodes in budgets.items()}'''
+tests = ["agent/tests/test_round2_cassettes_budgets.py::test_two_nodes_sharing_a_budget_file_neither"]
+why = "two nodes sharing a budget: the classifier's reply is filed as a synthesize draft"
+
+[[mutation]]
+id = "round2_budgets_collide"
+file = "agent/config.py"
+search = '''    "classifier": 1_024,'''
+replace = '''    "classifier": 2_048,'''
+tests = [
+    "agent/tests/test_round2_cassettes_budgets.py::test_every_node_has_its_own_budget_in_every_live_mode[cheap]",
+    "agent/tests/test_round2_cassettes_budgets.py::test_every_node_has_its_own_budget_in_every_live_mode[full]",
+]
+why = "the classifier takes read_plate's budget, so the recorder can name neither"
+
+[[mutation]]
+id = "round2_demo_by_node_drops_model"
+file = "agent/replay/build_demo.py"
+search = '''            "node": key[0], "provider": key[1], "model": key[2] or None,'''
+replace = '''            "node": key[0], "provider": key[1], "model": None,'''
+tests = ["agent/tests/test_round2_cassettes_demo.py::test_a_demo_recorded_on_haiku_5_5_builds_and_passes_check_demo"]
+why = "the numbers panel no longer says which model a cost line belongs to"
+
+[[mutation]]
+id = "round2_demo_recorded_models_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''        if row["provider"] == "anthropic" and want and row["model"] != want:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_round2_cassettes_demo.py::test_a_recording_whose_ledger_names_another_model_is_refused"]
+why = "a ledger model that disagrees with the recording's goes unnoticed"
+
+[[mutation]]
+id = "round2_capture_content_is_blocks"
+file = "agent/live/recorder.py"
+search = '''        record: dict[str, Any] = {"event": "model", "node": node, "content": _text(message.content),'''
+replace = '''        record: dict[str, Any] = {"event": "model", "node": node, "content": json.dumps(message.content) if isinstance(message.content, list) else message.content,'''
+tests = ["agent/tests/test_round2_cassettes_demo.py::test_the_live_recorders_haiku_5_5_recording_passes_the_builders_checks_for_its_role"]
+why = "the capture holds a thinking first reply's block list as its content, so the plate read is lost"
+
+[[mutation]]
+id = "round2_responses_for_drops_thinking"
+file = "agent/replay/cassettes.py"
+search = '''    if "thinking" in entry:
+        out["thinking"] = entry["thinking"]'''
+replace = '''    if False:
+        out["thinking"] = entry["thinking"]'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_haiku_5_5_shapes_load_and_serve_their_blocks"]
+why = "replay serves a structured reply without its thinking markers"
+
+[[mutation]]
+id = "round2_marker_signature_accepted"
+file = "agent/replay/cassettes.py"
+search = '''    elif block != marker:'''
+replace = '''    elif block.get("type") != marker["type"]:'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_a_thinking_marker_holds_no_text_or_signature"]
+why = "the loader accepts a thinking block with its signature or text"
+
+[[mutation]]
+id = "round2_tool_use_block_unchecked"
+file = "agent/replay/cassettes.py"
+search = '''            c.fail(f"{path}[{i}]", "does not repeat its tool call (id, name and args, in order)")'''
+replace = '''            pass'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_a_tool_use_block_repeats_its_tool_call"]
+why = "a tool_use block that repeats no tool call loads"
+
+[[mutation]]
+id = "round2_refusal_not_last_accepted"
+file = "agent/replay/cassettes.py"
+search = '''                    c.fail(f"{name}[{i}]", "a decline must be the last response of its node")'''
+replace = '''                    pass'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_a_decline_ends_the_run_and_keeps_only_its_category_and_usage"]
+why = "a decline followed by more responses of its node loads"
+
+[[mutation]]
+id = "round2_refusal_explanation_accepted"
+file = "agent/replay/cassettes.py"
+search = '''        c.keys(details, f"{path}.stop_details", STOP_DETAILS_KEYS)'''
+replace = '''        c.keys(details, f"{path}.stop_details", STOP_DETAILS_KEYS, ("explanation",))'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_a_decline_ends_the_run_and_keeps_only_its_category_and_usage"]
+why = "a recorded decline may keep the API's free text explanation"
+
+[[mutation]]
+id = "round2_recorded_mode_unchecked"
+file = "agent/replay/cassettes.py"
+search = '''    if recorded["mode"] not in RECORDED_MODES:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_round2_cassettes_format.py::test_recorded_names_a_live_mode_and_each_nodes_model"]
+why = "a recording may name replay, or any word, as its live mode"
+
+[[mutation]]
+id = "round2_replay_budget_unflagged"
+file = "agent/live/recorder.py"
+search = '''    build.notes += replay_budget_notes(build.cassette)
+'''
+replace = '''
+'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_recording_too_dear_to_replay_at_the_recorded_card_is_flagged_when_written"]
+why = "a recording whose usage passes the replay run cap at the card replay charges it at goes unflagged"
+
+[[mutation]]
+id = "round2_recorded_no_origin"
+file = "agent/live/recorder.py"
+search = '''        build.origins.append(("recorded", f"{capture_path(run_id).name}: the mode and each reply's model name"))
+'''
+replace = '''
+'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_loads_and_replays_to_the_live_runs_state_and_brief[classifier]"]
+why = "the recorded model names are copied from the capture but the copy log does not say so"
+
+[[mutation]]
+id = "ledger_price_basis_ignores_recorded"
+file = "agent/ledger.py"
+search = '''            return str(recorded["mode"])'''
+replace = '''            return mode'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_the_price_basis_is_the_recorded_live_mode_in_replay_and_nowhere_else", "agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a Haiku 5.5 recording replays on the frozen Haiku 4.5 card, ten times what it cost live"
+
+[[mutation]]
+id = "ledger_price_basis_moves_live_runs"
+file = "agent/ledger.py"
+search = '''    if mode == "replay":
+        recorded = getattr(cassette, "recorded", None)'''
+replace = '''    if True:
+        recorded = getattr(cassette, "recorded", None)'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_the_price_basis_is_the_recorded_live_mode_in_replay_and_nowhere_else"]
+why = "a cassette's recorded mode moves a live run's prices and cap"
+
+[[mutation]]
+id = "ledger_basis_model_ignores_recording"
+file = "agent/ledger.py"
+search = '''    return str(((recorded or {}).get("models") or {}).get(node) or config.MODEL_FOR[basis][node])'''
+replace = '''    return config.MODEL_FOR[basis][node]'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_the_price_basis_is_the_recorded_live_mode_in_replay_and_nowhere_else"]
+why = "a replayed call is priced as the mode's model, not the model its recording names"
+
+[[mutation]]
+id = "ledger_reserve_ignores_price_mode"
+file = "agent/ledger.py"
+search = '''        prices = call_prices(basis, provider, model, input_tokens_est)'''
+replace = '''        prices = call_prices(mode, provider, model, input_tokens_est)'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replay_row_held_at_a_live_price_mode_is_reserved_capped_and_charged_at_that_mode"]
+why = "a reservation held at a recorded live mode is priced on the frozen replay card"
+
+[[mutation]]
+id = "ledger_charge_ignores_price_mode"
+file = "agent/ledger.py"
+search = '''        prices = call_prices(reservation.price_mode or reservation.mode, reservation.provider, reservation.model,'''
+replace = '''        prices = call_prices(reservation.mode, reservation.provider, reservation.model,'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replay_row_held_at_a_live_price_mode_is_reserved_capped_and_charged_at_that_mode", "agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a replayed call is reserved at the recorded card but charged on the frozen one"
+
+[[mutation]]
+id = "models_replay_budget_not_recorded"
+file = "agent/models.py"
+search = '''                max_tokens=max_tokens_for(node, basis),'''
+replace = '''                max_tokens=max_tokens_for(node, "replay"),'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a replayed research call of a recording holds the frozen replay output budget, not the live one"
+
+[[mutation]]
+id = "synthesize_replay_budget_not_recorded"
+file = "agent/nodes/synthesize.py"
+search = '''        max_tokens=max_tokens_for(node, basis),'''
+replace = '''        max_tokens=max_tokens_for(node, ctx.mode),'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a replayed structured call of a recording holds the frozen replay output budget"
+
+[[mutation]]
+id = "synthesize_reserve_ignores_price_mode"
+file = "agent/nodes/synthesize.py"
+search = '''        price_mode=basis,
+    )'''
+replace = '''    )'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a replayed structured call of a recording is charged on the frozen replay card"
+
+[[mutation]]
+id = "middleware_reserve_ignores_price_mode"
+file = "agent/research/middleware.py"
+search = '''                              run_cap_usd=(ctx.caps or {}).get("run_cap_usd"), price_mode=basis, **ids)'''
+replace = '''                              run_cap_usd=(ctx.caps or {}).get("run_cap_usd"), **ids)'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap"]
+why = "a replayed research turn of a recording is charged on the frozen replay card"
+
+[[mutation]]
+id = "middleware_budget_check_frozen_card"
+file = "agent/research/middleware.py"
+search = '''        prices = config.REPLAY_PRICES if basis == "replay" else model'''
+replace = '''        prices = config.REPLAY_PRICES if self.ctx.mode == "replay" else model'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_the_research_budget_is_judged_at_the_recorded_card"]
+why = "the research budget weighs a recording's replayed call on the frozen card and can end research early"
+
+[[mutation]]
+id = "graph_retry_basis_ignored"
+file = "agent/graph.py"
+search = '''    need = retry_need_usd(basis)'''
+replace = '''    need = retry_need_usd(ctx.mode)'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replayed_retry_is_judged_at_the_recorded_mode"]
+why = "a recording's replayed retry gate asks for the frozen replay reservation and can stop a run the live one retried"
+
+[[mutation]]
+id = "cli_sweep_replay_price_mode_ignored"
+file = "agent/cli.py"
+search = '''        budget = lifecycle.SweepBudget(mode, price_mode)  # one run cap for the whole sweep'''
+replace = '''        budget = lifecycle.SweepBudget(mode)  # one run cap for the whole sweep'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replay_sweep_of_recordings_is_priced_and_capped_as_the_live_sweep_was"]
+why = "a replay sweep of recordings judges each lookup's worst case on the frozen card and skips a unit the live sweep looked up"
+
+[[mutation]]
+id = "cli_sweep_replay_plan_price_mode_dropped"
+file = "agent/cli.py"
+search = '''        for line in lifecycle.plan_lines(plan, len(eligible), price_mode):'''
+replace = '''        for line in lifecycle.plan_lines(plan, len(eligible)):'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replay_sweep_of_recordings_is_priced_and_capped_as_the_live_sweep_was"]
+why = "a replay sweep of recordings prints the frozen card's worst case, not the one it is held to"
+
+[[mutation]]
+id = "cli_sweep_replay_plan_frozen_budgets"
+file = "agent/cli.py"
+search = '''        plan = lifecycle.sweep_plan(price_mode, eligible)'''
+replace = '''        plan = lifecycle.sweep_plan(mode, eligible)'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_replay_sweep_of_recordings_is_priced_and_capped_as_the_live_sweep_was"]
+why = "a replay sweep of recordings plans the frozen replay output budgets, not the live ones it replays under"
+
+[[mutation]]
+id = "lifecycle_sweep_mixed_bases_accepted"
+file = "agent/lifecycle.py"
+search = '''    if len(bases) > 1:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_cassettes_recorded_under_different_prices_are_refused_together"]
+why = "one replay sweep mixes cassettes recorded under different prices under one cap"
+
+[[mutation]]
+id = "cli_sweep_live_lookup_not_captured"
+file = "agent/cli.py"
+search = '''                    with _live_capture(session, ctx.run_id, "lookup"):'''
+replace = '''                    with _live_capture(None, ctx.run_id, "lookup"):'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_live_sweep_records_each_lookup_and_its_recording_replays_through_the_sweep"]
+why = "a live sweep's lookups are not captured, so their recordings hold no replies"
+
+[[mutation]]
+id = "cli_sweep_live_lookup_not_recorded"
+file = "agent/cli.py"
+search = '''                session._record(SimpleNamespace(state=lookup_recording_state(
+                    lifecycle.identity_of(appliance), result, research_limits=lifecycle.LIMITS_ROW)), ctx)'''
+replace = '''                pass'''
+tests = ["agent/tests/test_round2_replay_pricing.py::test_a_live_sweep_records_each_lookup_and_its_recording_replays_through_the_sweep"]
+why = "a live sweep writes no recording candidate for its lookups, so the live batch cannot replay them"
+
+[[mutation]]
+id = "recorder_budget_notes_frozen_card"
+file = "agent/live/recorder.py"
+search = '''    basis = recorded.get("mode") if recorded.get("mode") in config.LIVE_MODES else "replay"'''
+replace = '''    basis = "replay"'''
+tests = ["agent/tests/test_round2_cassettes.py::test_a_haiku_5_5_recording_replays_at_its_recorded_cards_budgets_and_cap", "agent/tests/test_round2_cassettes.py::test_a_recording_too_dear_to_replay_at_the_recorded_card_is_flagged_when_written"]
+why = "the recorder weighs a recording on the frozen card replay no longer charges it at, so it flags one that replays cleanly"
+
+[[mutation]]
+id = "product_recalls_plan_hides_compared_models"
+file = "agent/product_recalls.py"
+search = '''            lines.append(compared_line(a))
+'''
+replace = '''
+'''
+tests = ["agent/tests/test_round2_model_number.py::test_the_live_preflight_names_the_model_strings_each_product_recall_is_compared_with"]
+why = "the live preflight does not say which model strings each product recall is compared with"
+
+# ---------------------------------------------------------------------------
+# Review of round 2 (13 October 2026): R1 to R7 and L1 to L5
+# (test_round2_review_offline.py, test_round2_review_live.py, test_round2_review_sc12b.py,
+# test_round2_sweep_gate.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "product_recalls_split_guard_off"
+file = "agent/product_recalls.py"
+search = '''                    split = not _splits_allowed(norms[i:j + 1], allowed)'''
+replace = '''                    split = False'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_printing_split_where_the_recorded_string_is_not_never_matches"]
+why = "finding R1: XR1 64TTR6036 in free text would be shown as naming the XR16 4TTR6036"
+
+[[mutation]]
+id = "product_recalls_field_split_guard_off"
+file = "agent/product_recalls.py"
+search = '''        and _splits_allowed([_norm_or_empty(t) for t in seg.split()], allowed)))'''
+replace = '''        ))'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_printing_split_where_the_recorded_string_is_not_never_matches"]
+why = "finding R1: a Model field printing 4TTR60 36 would be shown as the model number 4TTR6036"
+
+[[mutation]]
+id = "product_recalls_targets_skip_recorded"
+file = "agent/product_recalls.py"
+search = '''            for t in targets for hit in match_recall(recall, t["target"], t["searched"])]'''
+replace = '''            for t in targets for hit in match_recall(recall, t["target"])]'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_printing_split_where_the_recorded_string_is_not_never_matches"]
+why = "finding R1: the check would never pass the recorded strings, so the split guard would never run"
+
+[[mutation]]
+id = "product_recalls_merge_rejected"
+file = "agent/product_recalls.py"
+search = '''    return splits <= allowed'''
+replace = '''    return splits == allowed'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_printing_that_merges_the_recorded_tokens_still_matches"]
+why = "finding R1: XR16-4TTR6036 and PRO+E50M2RH92CL would stop matching, a missed product recall"
+
+[[mutation]]
+id = "product_recalls_thousands_comma_splits"
+file = "agent/product_recalls.py"
+search = '''SEGMENT_BREAK = re.compile(r"[;/|:\n\r]|(?<!\d),|,(?!\d{3}(?![0-9A-Za-z]))|\.(?=\s|$)")'''
+replace = '''SEGMENT_BREAK = re.compile(r"[,;/|:\n\r]|\.(?=\s|$)")'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_thousands_comma_stays_inside_its_number_and_a_list_comma_still_splits"]
+why = "finding R1: 36,000 would be cut at its comma, so XR 36,000 would name a unit recorded as XR 36"
+
+[[mutation]]
+id = "product_recalls_digit_comma_never_splits"
+file = "agent/product_recalls.py"
+search = '''SEGMENT_BREAK = re.compile(r"[;/|:\n\r]|(?<!\d),|,(?!\d{3}(?![0-9A-Za-z]))|\.(?=\s|$)")'''
+replace = '''SEGMENT_BREAK = re.compile(r"[;/|:\n\r]|(?<!\d),|,(?!\d)|\.(?=\s|$)")'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_thousands_comma_stays_inside_its_number_and_a_list_comma_still_splits"]
+why = "finding R1 as first proposed: a list printed 4TTR6036,4TTR6048 would no longer name the Trane unit"
+
+[[mutation]]
+id = "product_recalls_series_sentence_dropped"
+file = "agent/product_recalls.py"
+search = '''        out.append(SERIES_SENTENCE.format(text=text))'''
+replace = '''        pass'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_wildcard_printing_is_kept_and_said_to_name_a_series"]
+why = "finding R3: 4TTR6036* would read as naming the unit, with nothing saying it is a series"
+
+[[mutation]]
+id = "product_recalls_spaced_wildcard_dropped"
+file = "agent/product_recalls.py"
+search = '''                        run += " " + tokens[j + 1]'''
+replace = '''                        pass'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_wildcard_printing_is_kept_and_said_to_name_a_series"]
+why = "finding R3: 4TTR6036 * would be shown without its wildcard and with no series sentence"
+
+[[mutation]]
+id = "citations_year_zero_accepted"
+file = "agent/rules/citations.py"
+search = '''    if year < date.min.year:  # year 0 is on no calendar, with or without a month and day
+        return None
+'''
+replace = ''''''
+tests = ["agent/tests/test_round2_review_offline.py::test_year_zero_is_no_date_with_or_without_a_month"]
+why = "finding R4: an install date of 0000-06 would give an age of about 2026 years"
+
+[[mutation]]
+id = "coverage_unreadable_merged"
+file = "agent/rules/coverage.py"
+search = '''    unreadable = [r for r in unknown if r.get("start_date") and parse_partial_date(r.get("start_date")) is None]'''
+replace = '''    unreadable = []'''
+tests = ["agent/tests/test_round2_review_offline.py::test_a_start_date_not_on_the_calendar_could_not_be_read_and_a_partial_one_is_not_a_full_date"]
+why = "finding R5: 2019-02-30 would be called missing or not a full date, against the age statement"
+
+[[mutation]]
+id = "registry_seed_drift_ignores_model_numbers"
+file = "agent/registry.py"
+search = '''    if differ:
+'''
+replace = '''    if False:
+'''
+tests = ["agent/tests/test_round2_review_offline.py::test_seed_drift_names_what_an_old_registry_file_lacks_and_changes_nothing"]
+why = "finding L4: a registry with a null Trane model number would pass for the seed"
+
+[[mutation]]
+id = "registry_seed_drift_ignores_coverage"
+file = "agent/registry.py"
+search = '''    if rows:
+'''
+replace = '''    if False:
+'''
+tests = ["agent/tests/test_round2_review_offline.py::test_seed_drift_names_what_an_old_registry_file_lacks_and_changes_nothing"]
+why = "finding L4: a registry with no warranty coverage rows would pass for the seed"
+
+[[mutation]]
+id = "registry_seed_drift_ignores_missing_appliances"
+file = "agent/registry.py"
+search = '''    if missing:
+'''
+replace = '''    if False:
+'''
+tests = ["agent/tests/test_round2_review_offline.py::test_seed_drift_names_what_an_old_registry_file_lacks_and_changes_nothing"]
+why = "finding L4: a registry without the water softener (decision 77) would pass for the seed"
+
+[[mutation]]
+id = "cassettes_retry_pass_synthesize_refused"
+file = "agent/replay/cassettes.py"
+search = '''        retry_pass = declined_at == "research.script" and name == "synthesize" and _synthesized_before_the_retry(data)'''
+replace = '''        retry_pass = False'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_decline_in_the_retry_pass_records_a_cassette_that_replays_to_the_live_run"]
+why = "finding L1: a decline in the retry pass would leave a paid run with a recording that cannot load"
+
+[[mutation]]
+id = "cassettes_retry_pass_any_synthesize"
+file = "agent/replay/cassettes.py"
+search = '''    return (len(drafts) == 1 and not is_refusal(drafts[0])
+            and any(_closes_a_pass(response) for response in script[:-1]))'''
+replace = '''    return True'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_first_pass_decline_or_a_second_synthesize_attempt_still_fails_to_load"]
+why = "finding L1: a first pass decline followed by synthesize, which no run makes, would load"
+
+[[mutation]]
+id = "recorder_unpriced_model_kept"
+file = "agent/live/recorder.py"
+search = '''        names = [n for n in names if n in config.PRICES_PER_MTOK]'''
+replace = '''        pass'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_reply_model_with_no_price_is_left_out_and_the_recording_still_replays"]
+why = "findings R6 and L5: a dated snapshot in the replies would leave the live batch with no working cassette"
+
+[[mutation]]
+id = "cassettes_unpriced_model_accepted"
+file = "agent/replay/cassettes.py"
+search = '''        elif model not in config.PRICES_PER_MTOK:'''
+replace = '''        elif False:'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_reply_model_with_no_price_is_left_out_and_the_recording_still_replays"]
+why = "finding R6: a cassette naming an unpriced model would load, then raise KeyError when replayed"
+
+[[mutation]]
+id = "capabilities_reply_model_not_compared"
+file = "agent/live/capabilities.py"
+search = '''        return self.calls_passed and not self.other_reply_models'''
+replace = '''        return self.calls_passed'''
+tests = ["agent/tests/test_round2_review_live.py::test_the_capabilities_check_records_each_reply_model_and_stops_on_another"]
+why = "finding L5: a dated snapshot in the replies would pass the batch's first live step unseen"
+
+[[mutation]]
+id = "capabilities_reply_model_not_recorded"
+file = "agent/live/capabilities.py"
+search = '''    result.reply_model = _reply_model(raw)'''
+replace = '''    pass'''
+tests = ["agent/tests/test_round2_review_live.py::test_the_capabilities_check_records_each_reply_model_and_stops_on_another"]
+why = "finding L5: capabilities.json would not say which model answered"
+
+[[mutation]]
+id = "cli_sweep_later_routes_not_printed"
+file = "agent/cli.py"
+search = '''            session.confirm([plan], extra=[lifecycle.later_routes_line(graph_path),'''
+replace = '''            session.confirm([plan], extra=['''
+tests = ["agent/tests/test_round2_review_live.py::test_the_live_sweep_preflight_says_saved_edges_make_later_questions_top_up"]
+why = "finding L3: nothing would warn that a sweep before SC7b or the demo re-record turns first lookups into top ups"
+
+[[mutation]]
+id = "cli_recalls_live_skips_registry_drift"
+file = "agent/cli.py"
+search = '''    refuse_registry_drift()  # the stored checks keep the model numbers compared, so the seed must be loaded'''
+replace = '''    pass'''
+tests = ["agent/tests/test_round2_review_live.py::test_live_product_recalls_refuse_a_stale_registry_until_the_seed_is_loaded"]
+why = "finding L4: a live product recall run would store checks with a null Trane model number"
+
+[[mutation]]
+id = "cli_live_session_skips_registry_drift"
+file = "agent/cli.py"
+search = '''        if uses_registry:  # a command whose runs read the registry refuses a stale one'''
+replace = '''        if False:'''
+tests = [
+    "agent/tests/test_round2_review_live.py::test_a_live_sweep_refuses_a_stale_registry",
+    "agent/tests/test_round2_review_live.py::test_a_live_ask_refuses_a_stale_registry",
+]
+why = "finding L4: live runs would read a registry the seed has not been loaded into"
+
+[[mutation]]
+id = "cli_sweep_session_without_registry_check"
+file = "agent/cli.py"
+search = '''    session = LiveSession("property sweep", mode, ledger, need=lifecycle.KEY_NAMES, uses_registry=True)'''
+replace = '''    session = LiveSession("property sweep", mode, ledger, need=lifecycle.KEY_NAMES)'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_live_sweep_refuses_a_stale_registry"]
+why = "finding L4: the live sweep would look up units from a stale registry"
+
+[[mutation]]
+id = "cli_ask_session_without_registry_check"
+file = "agent/cli.py"
+search = '''    session = LiveSession(args.command, mode, ledger, need=config.LIVE_KEY_NAMES, uses_registry=True)'''
+replace = '''    session = LiveSession(args.command, mode, ledger, need=config.LIVE_KEY_NAMES)'''
+tests = ["agent/tests/test_round2_review_live.py::test_a_live_ask_refuses_a_stale_registry"]
+why = "finding L4: a live ask, the demo re-record included, would show no computed coverage for the Optima"
+
+[[mutation]]
+id = "sc12b_superseded_fallback_dropped"
+file = "agent/live/sc12b.py"
+search = '''    found = sorted(superseded.glob(f"*/recordings/{recording.name}"))'''
+replace = '''    found = []'''
+tests = ["agent/tests/test_round2_review_sc12b.py::test_sc12b_reads_an_input_filed_under_one_superseded_build_and_names_it"]
+why = "finding L2: SC12b would refuse on the current data, whose inputs decision 67 filed away"
+
+[[mutation]]
+id = "sc12b_preflight_hides_input_folder"
+file = "agent/live/sc12b.py"
+search = '''        lines.append(f"input of {source}: read from {offline.recording_path(source, folder)}")'''
+replace = '''        pass'''
+tests = ["agent/tests/test_round2_review_sc12b.py::test_sc12b_reads_an_input_filed_under_one_superseded_build_and_names_it"]
+why = "finding L2: the preflight would not say which recording each input is read from"
+
+[[mutation]]
+id = "sc12b_two_superseded_inputs_accepted"
+file = "agent/live/sc12b.py"
+search = '''    if len(found) > 1:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_round2_review_sc12b.py::test_sc12b_refuses_an_input_two_superseded_builds_hold"]
+why = "finding L2: with two filed copies, SC12b would take whichever sorts first"
+
+[[mutation]]
+id = "gate_requirements_prd2_extra_test_dropped"
+file = "agent/tests/gate_requirements.json"
+search = '''        "test_render.py::test_coverage_line_is_drawn_in_v2_only_and_labels_synthetic_rows",
+'''
+replace = ''''''
+tests = ["agent/tests/test_round2_sweep_gate.py::test_phase_6_requires_the_prd2_tests_added_to_older_files"]
+why = "finding R2: a gate run could leave out SC13's coverage line test"
+
+[[mutation]]
+id = "eval_sc3b_session_without_registry_check"
+file = "agent/live/eval_sc3b.py"
+search = '''    session = cli.LiveSession(f"eval {batch.suite}", mode, ledger, need=need, environ=environ, uses_registry=True)'''
+replace = '''    session = cli.LiveSession(f"eval {batch.suite}", mode, ledger, need=need, environ=environ)'''
+tests = ["agent/tests/test_round2_review_sc12b.py::test_the_live_evaluation_batches_refuse_a_stale_registry"]
+why = "finding L4: SC3b, SC7b and the plate batch would run on a registry the seed has not been loaded into"
+
+[[mutation]]
+id = "sc12b_session_without_registry_check"
+file = "agent/live/sc12b.py"
+search = '''    session = cli.LiveSession(f"eval {SUITE}", mode, ledger, need=tuple(config.LIVE_KEY_NAMES), environ=environ,
+                              uses_registry=True)'''
+replace = '''    session = cli.LiveSession(f"eval {SUITE}", mode, ledger, need=tuple(config.LIVE_KEY_NAMES), environ=environ)'''
+tests = ["agent/tests/test_round2_review_sc12b.py::test_the_live_evaluation_batches_refuse_a_stale_registry"]
+why = "finding L4: SC12b would run on a registry the seed has not been loaded into"
+
+[[mutation]]
+id = "haiku55_research_effort_back_to_medium"
+file = "agent/config.py"
+search = '''"research": "high", "synthesize": "medium"}'''
+replace = '''"research": "medium", "synthesize": "medium"}'''
+tests = ["agent/tests/test_haiku55_config.py::test_effort_per_haiku_node"]
+
+# Builder version 5: the Claude Haiku 5.5 re-record shows refusals as refusals
+# (test_build_demo.py, refusal tests)
+
+[[mutation]]
+id = "build_demo_refusal_role_must_be_ok"
+file = "agent/replay/build_demo.py"
+search = '''    if role in REFUSAL_ROLES:
+        if run.get("status") not in ("ok", NRA):'''
+replace = '''    if False:
+        if run.get("status") not in ("ok", NRA):'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "Haiku 5.5 re-record: the vague and air conditioner cases may end with no reliable answer and still be shown"
+
+[[mutation]]
+id = "build_demo_refusal_takeaway_claims_answer"
+file = "agent/replay/build_demo.py"
+search = '''    return (f"{lead} It ended with no reliable answer: {who}, and its reason is quoted below. "'''
+replace = '''    return (f"{lead} It answered: {who}, and its reason is quoted below. "'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "a refusal's takeaway says it ended with no reliable answer, never that it answered"
+
+[[mutation]]
+id = "build_demo_route_lead_dropped"
+file = "agent/replay/build_demo.py"
+search = '''            case["route"]["lead"] = route_lead(case)'''
+replace = '''            case["route"]["lead"] = None'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "the vague top up never called the symptom check, so the page's own route wording would be wrong"
+
+[[mutation]]
+id = "build_demo_compare_note_dropped"
+file = "agent/replay/build_demo.py"
+search = '''"note": compare_note(case, other)}'''
+replace = '''"note": None}'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "a side by side table beside a refusal says how each run ended"
+
+[[mutation]]
+id = "build_demo_refusal_note_dropped"
+file = "agent/replay/build_demo.py"
+search = '''"REFUSAL_NOTE": note,'''
+replace = '''"REFUSAL_NOTE": "",'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "the top of the page lists the refusals once, as results"
+
+[[mutation]]
+id = "build_demo_refusal_note_cost_dropped"
+file = "agent/replay/build_demo.py"
+search = '''real = [c for c in refused if c["role"] != "no_such_model"]'''
+replace = '''real = []'''
+tests = ["agent/tests/test_build_demo.py::test_refusal_cases_are_shown_as_refusals"]
+why = "a refusal about a real unit also counts against the answer bars, and the note must say so"
+
+[[mutation]]
+id = "check_demo_refusal_takeaway_unchecked"
+file = "agent/replay/check_demo.py"
+search = '''            if "no reliable answer" not in text:'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_says_a_refusal_must_read_as_one"]
+why = "check 9: a refusal's takeaway must say so"
+
+[[mutation]]
+id = "check_demo_refusal_compare_unchecked"
+file = "agent/replay/check_demo.py"
+search = '''            if not cw.get("note"):'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_says_a_refusal_must_read_as_one"]
+why = "check 9: a side by side table beside a refusal needs the builder's note"
+
+[[mutation]]
+id = "check_demo_drawing_unchecked"
+file = "agent/replay/check_demo.py"
+search = '''        if any(used(c) for c in cases) and needle not in demo_js:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_build_demo.py::test_check_demo_says_a_refusal_must_read_as_one"]
+why = "check 9: the script must draw every builder version 5 field the fixtures use"
+
+[[mutation]]
+id = "build_demo_refusal_stored_facts_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''        if (run.get("graph_edges") or {}).get("written"):
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but stored facts in memory")'''
+replace = '''        if False:
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but stored facts in memory")'''
+tests = ["agent/tests/test_build_demo.py::test_a_refusal_that_breaks_its_role_fails_the_build[refusal_stored_facts]"]
+why = "the page says a refusal saved nothing to memory; hold the record to it"
+
+[[mutation]]
+id = "build_demo_refusal_roles_widened"
+file = "agent/replay/build_demo.py"
+search = '''REFUSAL_ROLES = ("hot_tub_vague", "ac_first", "ac_new_symptom")'''
+replace = '''REFUSAL_ROLES = ("hot_tub_vague", "ac_first", "ac_new_symptom", "hot_tub_code_first")'''
+tests = ["agent/tests/test_build_demo.py::test_a_refusal_that_breaks_its_role_fails_the_build[first_question_refused]"]
+why = "the first question must answer: the repeat reads the fact it stores"
+
+[[mutation]]
+id = "build_demo_repeat_quote_any_span"
+file = "agent/replay/build_demo.py"
+search = '''        if exact and relation != "equal" and not drops_label:'''
+replace = '''        if exact and relation not in ("equal", "within", "prefix"):'''
+tests = ["agent/tests/test_build_demo.py::test_repeat_may_quote_the_stored_fact_without_its_code_label"]
+why = "only the code label may be left off the repeat's quote"
+
+[[mutation]]
+id = "build_demo_repeat_quote_label_refused"
+file = "agent/replay/build_demo.py"
+search = '''        if exact and relation != "equal" and not drops_label:'''
+replace = '''        if exact and relation != "equal":'''
+tests = ["agent/tests/test_build_demo.py::test_repeat_may_quote_the_stored_fact_without_its_code_label"]
+why = "Haiku 5.5's repeat quoted the stored fact without its FLO label, which is still the stored words"
+
+[[mutation]]
+id = "build_demo_coverage_dropped"
+file = "agent/replay/build_demo.py"
+search = '''        out["coverage"] = coverage_shown(role, rf, warranty, appliance, seed, notes)'''
+replace = '''        out["coverage"] = None'''
+tests = ["agent/tests/test_build_demo.py::test_warranty_coverage_is_shown_and_checked_against_the_seed"]
+why = "SC13: the records case shows the code written coverage line"
+
+[[mutation]]
+id = "build_demo_coverage_unchecked"
+file = "agent/replay/build_demo.py"
+search = '''    if [{k: r.get(k) for k in keys} for r in shown] != [{k: r.get(k) for k in keys} for r in computed]:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_build_demo.py::test_warranty_coverage_is_shown_and_checked_against_the_seed"]
+why = "SC13: a coverage row must be what code computes from the seed"
+
+[[mutation]]
+id = "build_demo_safety_examples_fixed"
+file = "agent/replay/build_demo.py"
+search = '''    picks = checked[:1] + [c for c in checked[1:] if c["safety"].get("jev_added")]'''
+replace = '''    picks = checked[:2]'''
+tests = ["agent/tests/test_build_demo.py::test_page_list_points_only_at_cases_that_show_it"]
+why = "the safety line names the first checked case and the cases where Jev added a flag, nothing else"
+
+[[mutation]]
+id = "build_demo_placeholder_left_in"
+file = "agent/replay/build_demo.py"
+search = '''    if left:
+        raise BuildError(f"the page template has placeholders nothing filled'''
+replace = '''    if False:
+        raise BuildError(f"the page template has placeholders nothing filled'''
+tests = ["agent/tests/test_build_demo.py::test_page_list_points_only_at_cases_that_show_it"]
+why = "a template placeholder nothing filled fails the build"

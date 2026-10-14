@@ -112,6 +112,8 @@ class Reservation:
     credits: int = 0
     thread_id: str | None = None
     settled: bool = False
+    # The mode whose prices the call is charged at (price_basis); None: its own mode.
+    price_mode: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -119,22 +121,73 @@ class Reservation:
 # ---------------------------------------------------------------------------
 
 
-def _prices_for(model_or_prices: str | dict[str, float]) -> dict[str, float]:
+def rate_card(model: str, prompt_tokens: int) -> dict[str, float]:
+    """The model's per million token prices for a call with this long a prompt.
+
+    A model with a long prompt card (Claude Haiku 5.5, decision 69) is billed on
+    it, input and output, when the prompt is longer than
+    config.LONG_PROMPT_ABOVE_TOKENS; at or below, and for every other model,
+    on its one row of PRICES_PER_MTOK.
+    """
+    long_card = config.LONG_PROMPT_PRICES_PER_MTOK.get(model)
+    if long_card is not None and prompt_tokens > config.LONG_PROMPT_ABOVE_TOKENS:
+        return long_card
+    return config.PRICES_PER_MTOK[model]
+
+
+def prompt_tokens(usage_metadata: dict[str, Any]) -> int:
+    """The prompt length that picks a rate card: input plus cache reads and writes.
+
+    langchain-anthropic's input_tokens already includes the cache tokens (see
+    _cache_tokens); the larger of the two sums guards a usage that leaves them out.
+    """
+    read, write_5m, write_1h = _cache_tokens(usage_metadata)
+    return max(int(usage_metadata.get("input_tokens") or 0), read + write_5m + write_1h)
+
+
+def _prices_for(model_or_prices: str | dict[str, float], usage_metadata: dict[str, Any]) -> dict[str, float]:
     if isinstance(model_or_prices, dict):
         return model_or_prices
-    return config.PRICES_PER_MTOK[model_or_prices]
+    return rate_card(model_or_prices, prompt_tokens(usage_metadata))
 
 
-def call_prices(mode: str, provider: str, model: str | None) -> dict[str, float]:
-    """Per million token prices for one call.
+def price_basis(mode: str, cassette: Any = None) -> str:
+    """The mode whose prices, output budgets, estimate settings and run cap a run's calls are held to.
+
+    A live mode is its own basis. Replay is held to the frozen settings its
+    Haiku 4.5 cassettes were recorded under (config.REPLAY_PRICES,
+    REPLAY_MAX_TOKENS, REPLAY_ESTIMATE_MARGIN, REPLAY_TOOL_PROMPT_TOKENS and
+    REPLAY_RUN_CAP_USD), unless its cassette names the live mode it was
+    recorded in (the "recorded" block of a Claude Haiku 5.5 recording,
+    decision 69). Then the basis is that mode, so a replay reserves and
+    charges every call at the card, budgets and cap the live run had, and
+    stops where it stopped. Its rows are still replay rows, which never count
+    toward the build total.
+    """
+    if mode == "replay":
+        recorded = getattr(cassette, "recorded", None)
+        if recorded:
+            return str(recorded["mode"])
+    return mode
+
+
+def basis_model(basis: str, node: str, cassette: Any = None) -> str:
+    """The model a node's call is priced as: the one its recording names, else the basis mode's."""
+    recorded = getattr(cassette, "recorded", None) if basis in config.LIVE_MODES else None
+    return str(((recorded or {}).get("models") or {}).get(node) or config.MODEL_FOR[basis][node])
+
+
+def call_prices(mode: str, provider: str, model: str | None, prompt: int = 0) -> dict[str, float]:
+    """Per million token prices for one call whose prompt is `prompt` tokens long.
 
     A TypeSafe call is priced from Jev's row in every mode, with output at 0
-    (TypeSafe bills input only). An Anthropic call uses its model's row, or
-    REPLAY_PRICES in replay.
+    (TypeSafe bills input only). An Anthropic call uses its model's card for
+    that prompt length (rate_card), or REPLAY_PRICES in replay: the recorded
+    model's one card, whatever the length.
     """
     if provider == config.JEV_PROVIDER:
         return {"input": config.PRICES_PER_MTOK[config.JEV_MODEL]["input"], "output": 0}
-    return config.REPLAY_PRICES if mode == "replay" else _prices_for(model or "")
+    return config.REPLAY_PRICES if mode == "replay" else rate_card(model or "", prompt)
 
 
 def _cache_tokens(usage_metadata: dict[str, Any]) -> tuple[int, int, int]:
@@ -156,8 +209,12 @@ def _cache_tokens(usage_metadata: dict[str, Any]) -> tuple[int, int, int]:
 
 
 def price_usage(model_or_prices: str | dict[str, float], usage_metadata: dict[str, Any]) -> float:
-    """Actual cost in dollars of one call's usage_metadata."""
-    prices = _prices_for(model_or_prices)
+    """Actual cost in dollars of one call's usage_metadata.
+
+    Given a model, the card is picked from the call's prompt length; given a
+    card, that card is used as it is.
+    """
+    prices = _prices_for(model_or_prices, usage_metadata)
     input_price = prices["input"] / 1_000_000
     output_price = prices["output"] / 1_000_000
     read, write_5m, write_1h = _cache_tokens(usage_metadata)
@@ -179,12 +236,21 @@ def estimate_input_tokens(
     model: str,
     tools: Sequence[Any] | None = None,
     images: int = 0,
+    mode: str | None = None,
 ) -> int:
-    """Conservative input token estimate for a call's reservation."""
+    """Conservative input token estimate for a call's reservation.
+
+    In replay the margin and tool prompt tokens are the recorded model's
+    (config.REPLAY_ESTIMATE_MARGIN, config.REPLAY_TOOL_PROMPT_TOKENS), so
+    replay reservations stay as recorded.
+    """
+    replay = mode == "replay"
     tokens: float = count_tokens_approximately(messages, tools=list(tools) if tools else None)
     if tools:
-        tokens += config.TOOL_PROMPT_TOKENS.get(model, max(config.TOOL_PROMPT_TOKENS.values()))
-    tokens *= config.ESTIMATE_MARGIN.get(model, max(config.ESTIMATE_MARGIN.values()))
+        tokens += config.REPLAY_TOOL_PROMPT_TOKENS if replay else config.TOOL_PROMPT_TOKENS.get(
+            model, max(config.TOOL_PROMPT_TOKENS.values()))
+    tokens *= config.REPLAY_ESTIMATE_MARGIN if replay else config.ESTIMATE_MARGIN.get(
+        model, max(config.ESTIMATE_MARGIN.values()))
     tokens += images * config.IMAGE_TOKENS_ESTIMATE
     return math.ceil(tokens)
 
@@ -368,18 +434,25 @@ class Ledger:
         thread_id: str | None = None,
         run_cap_usd: float | None = None,
         provider: str = PROVIDER_ANTHROPIC,
+        price_mode: str | None = None,
     ) -> Reservation:
         """Hold budget for one model call, or raise BudgetExceeded before it is made.
 
         `provider` is carried into every row of the call: "anthropic", or
         config.JEV_PROVIDER for a Jev call, priced by call_prices.
+        `price_mode` (price_basis) is the mode whose prices and run cap the
+        call is held to, when that is not `mode`: a replay of a recording
+        names the live mode it was recorded in. Rows always carry `mode`.
         """
         self._check_mode(mode)
+        basis = price_mode or mode
+        self._check_mode(basis)
         if provider not in CALL_PROVIDERS:
             raise ValueError(f"unknown call provider {provider!r}; expected one of {CALL_PROVIDERS}")
-        prices = call_prices(mode, provider, model)
+        # An estimate over the long prompt line holds at the long prompt card.
+        prices = call_prices(basis, provider, model, input_tokens_est)
         usd = price_usage(prices, {"input_tokens": input_tokens_est, "output_tokens": max_tokens})
-        cap = self.run_cap(mode, run_cap_usd)
+        cap = self.run_cap(basis, run_cap_usd)
         error: BudgetExceeded | None = None
         with self._connect(write=True) as conn:
             spent, held, _, _ = self._run_sums(conn, run_id)
@@ -409,7 +482,7 @@ class Ledger:
         return Reservation(
             id=rid, run_id=run_id, mode=mode, node=node, model=model, provider=provider,
             usd=usd, input_tokens_est=input_tokens_est, max_tokens=max_tokens,
-            thread_id=thread_id,
+            thread_id=thread_id, price_mode=None if basis == mode else basis,
         )
 
     def _settle(self, conn: sqlite3.Connection, reservation: Reservation) -> None:
@@ -425,7 +498,8 @@ class Ledger:
 
     def charge(self, reservation: Reservation, usage_metadata: dict[str, Any]) -> float:
         """Record a call's full actual cost, even above its reservation, and release it."""
-        prices = call_prices(reservation.mode, reservation.provider, reservation.model)
+        prices = call_prices(reservation.price_mode or reservation.mode, reservation.provider, reservation.model,
+                             prompt_tokens(usage_metadata))
         usd = price_usage(prices, usage_metadata)
         read, write_5m, write_1h = _cache_tokens(usage_metadata)
         note = f"reservation {reservation.id}"

@@ -334,7 +334,10 @@ def _installed_denylist() -> list[str]:
 
 
 def test_check_demo_passes_on_the_installed_site() -> None:
-    """Mutation installed_demo_off_origin_image: tool.html loads an image from another origin."""
+    """Mutation installed_demo_off_origin_image: tool.html loads an image from another origin.
+    Mutations installed_demo_js_route_lead_not_drawn, installed_demo_js_compare_note_not_drawn,
+    installed_demo_js_outcome_row_not_drawn and installed_demo_js_coverage_not_drawn: the
+    installed data uses a builder version 5 field that src/demo.js no longer draws (check 9)."""
     assert check_demo.check(ROOT, _installed_denylist()) == []
     demo = build_demo.parse_fixtures((ROOT / "src" / "fixtures.js").read_text(encoding="utf-8"))
     assert demo["data_status"] == "rerun"
@@ -555,29 +558,34 @@ def test_check_demo_requires_the_safety_display(env: Env) -> None:
 
 def test_installed_demo_shows_the_safety_check() -> None:
     """The installed page: every case whose brief has steps to try first shows its safety
-    check; the vague case says plainly that Jev raised a flag the writer left off, from its
-    run record; the page lists the check under New in version 2, linked to that case; the
-    script draws the step and judges no step itself. Mutations installed_demo_safety_dropped,
-    demo_page_safety_bullet_dropped and demo_js_safety_step_not_drawn."""
+    check; every flagged row names the layer that raised it, and a flag Jev added that the
+    writer left off is said in the case's takeaway, all from the run record; the list under
+    New in version 2 names the check and points only at cases that show what it says
+    (build_demo.page_fills on the installed cases); the script draws the step and judges no
+    step itself. Mutations installed_demo_safety_dropped, demo_page_safety_bullet_dropped
+    and demo_js_safety_step_not_drawn."""
     demo = build_demo.parse_fixtures((ROOT / "src" / "fixtures.js").read_text(encoding="utf-8"))
-    by_role = {c["role"]: c for c in demo["cases"]}
     for case in demo["cases"]:
         steps = (case.get("outcome") or {}).get("try_first_steps") or 0
         assert bool(case.get("safety")) == bool(steps), case["role"]
-        if steps:
-            assert len(case["safety"]["steps"]) == steps, case["role"]
-    vague = by_role["hot_tub_vague"]
-    added = vague["safety"]["jev_added"]
-    assert len(added) == 1 and vague["id"] == "c3"
-    assert "Jev raised a safety flag the writer left off" in vague["takeaway"]
-    flagged = [x for x in vague["safety"]["steps"] if x["flag"]]
-    assert [(x["step"], x["raised_by"], x["writer_flag"]) for x in flagged] == [(added[0]["step"], "jev", False)]
-    for page in (ROOT / "tool.html", ROOT / "agent" / "replay" / "demo_page.html"):
+        if not steps:
+            continue
+        rows = case["safety"]["steps"]
+        assert len(rows) == steps, case["role"]
+        for row in rows:
+            assert (row["raised_by"] in build_demo.SAFETY_LAYER_NAMES) == row["flag"], (case["role"], row)
+        added = [{"step": x["step"], "jev_probability": x["jev_probability"]}
+                 for x in rows if x["raised_by"] == "jev" and not x["writer_flag"]]
+        assert case["safety"]["jev_added"] == added, case["role"]
+        assert ("Jev raised a safety flag the writer left off" in case["takeaway"]) == bool(added), case["role"]
+    examples = " ".join(build_demo.page_fills(demo["cases"])["SAFETY_EXAMPLES"].split())
+    assert examples
+    for page, want in ((ROOT / "tool.html", examples), (ROOT / "agent" / "replay" / "demo_page.html",
+                                                         "{{SAFETY_EXAMPLES}}")):
         text = " ".join(page.read_text(encoding="utf-8").split())
         bullet = text.split('<h2 id="newTitle">New in version 2</h2>', 1)[1].split("</ul>", 1)[0]
         assert "can add a safety flag, never remove one" in bullet, page.name
-        assert ('<a href="#c1">See case 1</a>, where Jev agrees with both of the writer\'s flags, and '
-                '<a href="#c3">case 3</a>, with the one flag Jev added that the writer left off.') in bullet, page.name
+        assert want in bullet, page.name
     js = (ROOT / "src" / "demo.js").read_text(encoding="utf-8")
     assert "stepSafety(c), stepBrief(c)" in js and "Jev raised a flag the writer left off" in js
     assert "This page does not judge which steps are safety steps." in js
@@ -666,3 +674,238 @@ def test_installed_demo_recorded_date_is_the_selection_day() -> None:
     assert len(recorded) > 1
     for line in recorded:
         assert line.startswith((want + ",", want + " (")), line
+
+
+# ---------------------------------------------------------------------------
+# Refusals shown as refusals (builder version 5, the Claude Haiku 5.5 re-record)
+# ---------------------------------------------------------------------------
+
+
+def to_refusal(env: Env, run_id: str) -> None:
+    """Turn a synthetic run into one the model declined: no causes, no steps, no sources,
+    nothing stored, no safety check, and a brief file without the safety notice line."""
+    from agent.render.brief_html import SAFETY_NOTICE
+
+    record = env.json(f"runs/{run_id}.json")
+    record["status"] = "no_reliable_answer"
+    record["refusal_origin"] = "model"
+    record["grounding"] = []
+    brief = record["brief"]
+    brief.update(status="no_reliable_answer", candidates=[], try_first=[], sources=[],
+                 no_reliable_answer={"found": ["Synthetic: a page for another model."],
+                                     "why_insufficient": "Synthetic: no source documents this unit.",
+                                     "searched": []})
+    record["safety"] = {"model": config.JEV_MODEL, "status": "skipped", "reason": "the draft has no try_first steps",
+                        "steps": []}
+    record["graph_edges"] = {"written": 0, "already_present": 0, "dropped": [],
+                             "skipped": "the brief is not an ok brief"}
+    env.write(f"runs/{run_id}.json", record)
+    path = env.data / "briefs" / f"{run_id}.html"
+    path.write_text(path.read_text(encoding="utf-8").replace(SAFETY_NOTICE, ""), encoding="utf-8")
+
+
+def drawing_problems_for(js: str, demo: dict) -> list[str]:
+    """The check 9 drawing problems a script would raise for these fixtures."""
+    return [p for p in check_demo.refusal_problems(demo, js) if p.startswith("drawing: ")]
+
+
+def test_refusal_cases_are_shown_as_refusals(env: Env) -> None:
+    """With the vague question and both air conditioner questions ending with no reliable
+    answer, the page still builds; each takeaway says how the run got there and that it
+    ended with no reliable answer, never that it answered; the vague route step gets the
+    builder's lead (the symptom check never ran); each side by side table says how both
+    runs ended; and the top of the page lists the refusals once. Mutations
+    build_demo_refusal_role_must_be_ok, build_demo_refusal_takeaway_claims_answer,
+    build_demo_route_lead_dropped, build_demo_compare_note_dropped and
+    build_demo_refusal_note_dropped."""
+    for run_id in (VAGUE, AC_FIRST, AC_NEW):
+        to_refusal(env, run_id)
+    # As recorded on Claude Haiku 5.5: the first air conditioner question stored nothing,
+    # so the new symptom found nothing in memory and took the full research route.
+    record = env.json(f"runs/{AC_NEW}.json")
+    record.update(route=["research"], research_limits="main",
+                  route_reason="Route table row 5: the graph has nothing verified for this unit.")
+    env.write(f"runs/{AC_NEW}.json", record)
+    assert env.build() == 0
+    demo = env.fixtures()
+    by_role = {c["role"]: c for c in demo["cases"]}
+    for role in build_demo.REFUSAL_ROLES:
+        case = by_role[role]
+        assert case["outcome"]["status"] == "no_reliable_answer", role
+        assert ("It ended with no reliable answer: the model declined to write a brief from what it found, "
+                "and its reason is quoted below.") in case["takeaway"], role
+        assert "nothing was saved to memory" in case["takeaway"], role
+        assert "answered" not in case["takeaway"].lower(), role
+    assert by_role["hot_tub_vague"]["takeaway"].startswith(
+        "Memory held 1 fact for this unit, stored by case 1, but not enough to answer this question on its own, "
+        "so a short top up search ran instead of a full one")
+    assert by_role["ac_new_symptom"]["takeaway"].startswith(
+        "The first question on this unit (case 4) also ended with no reliable answer and saved nothing to memory")
+    assert by_role["hot_tub_vague"]["route"]["lead"].startswith(
+        "Memory is checked first. It held facts for this unit, but none that could answer this question on its own: "
+        "the owner confirmed no code")
+    assert by_role["ac_first"]["route"]["lead"] is None
+    vague_cmp = by_role["hot_tub_vague"]["compare_with"]
+    assert [col["outcome_text"] for col in vague_cmp["columns"]][1] == "No reliable answer"
+    assert vague_cmp["note"].startswith("The two runs ended differently: case 1 returned a brief with")
+    assert "and case 3 ended with no reliable answer." in vague_cmp["note"]
+    ac_cmp = by_role["ac_new_symptom"]["compare_with"]
+    assert [col["outcome_text"] for col in ac_cmp["columns"]] == ["No reliable answer", "No reliable answer"]
+    assert ac_cmp["note"].startswith("Both runs ended with no reliable answer. A run that ends that way saves "
+                                     "nothing to memory")
+    assert by_role["hot_tub_code_repeat"]["compare_with"]["note"] is None
+    page = (env.out / "tool.html").read_text(encoding="utf-8")
+    assert ('four of the eight cases end with no reliable answer: cases <a href="#c3">3</a>, <a href="#c4">4</a>, '
+            '<a href="#c5">5</a> and <a href="#c6">6</a>.') in page
+    # The refusals about real units also count against the answer bars the teardown
+    # scores, so the note says so; the invented model's refusal is the only clean win.
+    # Mutation build_demo_refusal_note_cost_dropped.
+    assert ("Cases 3, 4 and 5 ask about real units, so those refusals also count against the tool's own "
+            'answer bars, as Part 8 of the <a href="index.html#results">teardown</a> reports.') in page
+    js = (ROOT / "src" / "demo.js").read_text(encoding="utf-8")
+    problems = check_demo.check(env.out, env.denylist())
+    assert sorted(problems) == sorted(drawing_problems_for(js, demo)), problems
+
+
+def test_check_demo_says_a_refusal_must_read_as_one(env: Env, tmp_path: Path) -> None:
+    """A refusal whose takeaway claims an answer, a side by side table beside a refusal
+    with no note or no outcome, and a script that does not draw what the fixtures use,
+    each fail the checker. Mutations check_demo_refusal_takeaway_unchecked,
+    check_demo_refusal_compare_unchecked and check_demo_drawing_unchecked."""
+    to_refusal(env, VAGUE)
+    assert env.build() == 0
+    fixtures = env.out / "src" / "fixtures.js"
+    original = fixtures.read_text(encoding="utf-8")
+    demo = build_demo.parse_fixtures(original)
+    vague = next(c for c in demo["cases"] if c["role"] == "hot_tub_vague")
+    vague["takeaway"] = "Answered from memory: 2 searches, for $0.0040."
+    vague["compare_with"]["note"] = None
+    vague["compare_with"]["columns"][1]["outcome_text"] = "1 confirmed cause"
+    fixtures.write_text(original.split("window.ADVISOR_DEMO = ", 1)[0] + "window.ADVISOR_DEMO = "
+                        + json.dumps(demo, indent=2, ensure_ascii=False) + ";\n", encoding="utf-8")
+    problems = check_demo.check(env.out, env.denylist())
+    for message in ("ended with no reliable answer but its takeaway does not say so",
+                    "takeaway says 'answered', but the run gave no answer",
+                    "side by side table has a run with no reliable answer but no note",
+                    "side by side table does not say case c3 ended with no reliable answer"):
+        assert any(message in p for p in problems), (message, problems)
+
+    js = (ROOT / "src" / "demo.js").read_text(encoding="utf-8")
+    for _name, _used, needle in check_demo.DRAWN_BY:
+        js = js.replace(needle, "")
+    demo = build_demo.parse_fixtures(original)
+    problems = check_demo.refusal_problems(demo, js)
+    assert any("use the route lead, but src/demo.js does not draw it" in p for p in problems), problems
+    assert any("use the side by side note, but src/demo.js does not draw it" in p for p in problems), problems
+    assert any("use the side by side outcome row, but src/demo.js does not draw it" in p for p in problems), problems
+
+
+@pytest.mark.parametrize("planted, message", [
+    pytest.param("stored", "ended with no reliable answer but stored facts in memory", id="refusal_stored_facts"),
+    pytest.param("first", "status is 'no_reliable_answer', not ok", id="first_question_refused"),
+])
+def test_a_refusal_that_breaks_its_role_fails_the_build(env: Env, capsys: pytest.CaptureFixture[str],
+                                                       planted: str, message: str) -> None:
+    """A refusal that still stored facts, or a first question that refused (the repeat
+    reads the fact it stores), fails the build. Mutations
+    build_demo_refusal_stored_facts_unchecked and build_demo_refusal_roles_widened."""
+    if planted == "stored":
+        to_refusal(env, AC_FIRST)
+        record = env.json(f"runs/{AC_FIRST}.json")
+        record["graph_edges"]["written"] = 2
+        env.write(f"runs/{AC_FIRST}.json", record)
+    else:
+        to_refusal(env, env.sel()["roles"]["hot_tub_code_first"])
+    assert env.build() == 1
+    assert message in capsys.readouterr().err
+    assert not env.out.exists()
+
+
+def test_repeat_may_quote_the_stored_fact_without_its_code_label(env: Env, capsys: pytest.CaptureFixture[str]) -> None:
+    """The repeat's brief may quote the stored fact with only its leading code label left
+    off, and the page says so; any other part of the stored words fails the build.
+    Mutations build_demo_repeat_quote_any_span and build_demo_repeat_quote_label_refused."""
+    rel = f"runs/{env.sel()['roles']['hot_tub_code_repeat']}.json"
+    record = env.json(rel)
+    stored = record["brief"]["candidates"][0]["evidence"]
+    assert stored.startswith("FLO | ")
+    record["brief"]["candidates"][0]["evidence"] = stored[len("FLO | "):]
+    env.write(rel, record)
+    assert env.build() == 0
+    fact = next(c for c in env.fixtures()["cases"] if c["role"] == "hot_tub_code_repeat")["memory"]["facts"][0]
+    assert (fact["brief_quote_relation"], fact["brief_quote_drops_code_label"]) == ("within", True)
+    assert fact["evidence"] == stored and fact["brief_quote"] == stored[len("FLO | "):]
+
+    record["brief"]["candidates"][0]["evidence"] = stored[:len(stored) - 10]
+    env.write(rel, record)
+    shutil.rmtree(env.out)
+    assert env.build() == 1
+    assert "not byte for byte equal" in capsys.readouterr().err
+
+
+def _with_coverage(env: Env, status: str | None = None) -> dict:
+    """Give the synthetic history run the coverage rows and line code computes from the seed."""
+    from agent.rules.coverage import coverage_rows, coverage_statement
+
+    seed = json.loads((ROOT / "seed" / "registry_seed.json").read_text(encoding="utf-8"))
+    appliance = next(a for a in seed["appliances"] if a["id"] == "appl-optima880")
+    rows = [dict(w, record_id=f"warranty:{w['id']}") for w in seed["warranty_coverage"]
+            if w["appliance_id"] == "appl-optima880"]
+    day = date(2026, 9, 20)
+    computed = coverage_rows(rows, appliance, day)
+    statement = coverage_statement(computed, day, terms_on_file=True)
+    record = env.json(f"runs/{HISTORY}.json")
+    shown = [dict(r) for r in computed]
+    if status:
+        shown[0]["status"] = status
+    record["brief"]["warranty"].update(coverage=shown, coverage_as_of=day.isoformat(), coverage_statement=statement)
+    env.write(f"runs/{HISTORY}.json", record)
+    brief = env.data / "briefs" / f"{HISTORY}.html"
+    from agent.render.brief_html import esc
+    brief.write_text(brief.read_text(encoding="utf-8").replace("</body>", f"<p>{esc(statement)}</p></body>"),
+                     encoding="utf-8")
+    return {"statement": statement, "rows": computed}
+
+
+def test_warranty_coverage_is_shown_and_checked_against_the_seed(env: Env,
+                                                                capsys: pytest.CaptureFixture[str]) -> None:
+    """The records case shows the brief's code written coverage line and rows (SC13) when
+    they are what agent/rules/coverage.py computes from the synthetic seed on the run's
+    coverage date, and the page's list says code works out the coverage; a row whose
+    status differs fails the build. Mutations build_demo_coverage_dropped and
+    build_demo_coverage_unchecked."""
+    want = _with_coverage(env)
+    assert env.build() == 0
+    records = next(c for c in env.fixtures()["cases"] if c["role"] == "hot_tub_with_history")["records"]
+    assert records["coverage"]["statement"] == want["statement"]
+    assert [r["record_id"] for r in records["coverage"]["rows"]] == [r["record_id"] for r in want["rows"]]
+    assert {r["status"] for r in records["coverage"]["rows"]} <= {"ended", "active"}
+    assert "Code also works out whether any warranty coverage on file is still active." in \
+        (env.out / "tool.html").read_text(encoding="utf-8")
+
+    _with_coverage(env, status="active" if want["rows"][0]["status"] != "active" else "ended")
+    shutil.rmtree(env.out)
+    assert env.build() == 1
+    assert "warranty rows are not what code computes from the seed" in capsys.readouterr().err
+
+
+def test_page_list_points_only_at_cases_that_show_it(env: Env) -> None:
+    """The list under New in version 2 is filled from the cases: the safety line names the
+    first case with a safety check and every case where Jev added a flag, the memory line
+    the cases that show a stored fact, the limit line cases whose trail shows a blocked
+    call; a placeholder left unfilled fails the build. Mutations
+    build_demo_safety_examples_fixed and build_demo_placeholder_left_in."""
+    assert env.build() == 0
+    cases = env.fixtures()["cases"]
+    text = " ".join((env.out / "tool.html").read_text(encoding="utf-8").split())
+    first = next(c for c in cases if (c.get("safety") or {}).get("steps"))
+    assert f'<a href="#{first["id"]}">See case {first["id"][1:]}</a>, ' in text
+    jev = [c for c in cases if (c.get("safety") or {}).get("jev_added")]
+    for c in jev:
+        assert f'case {c["id"][1:]}</a>, with the one flag Jev added that the writer left off' in text
+    others = [c for c in cases if (c.get("safety") or {}).get("steps") and c is not first and c not in jev]
+    for c in others:
+        assert f'<a href="#{c["id"]}">case {c["id"][1:]}</a>, where' not in text, c["id"]
+    assert "{{" not in text
+    with pytest.raises(build_demo.BuildError, match="placeholders nothing filled: NOPE"):
+        build_demo.stamp_page("<p>{{NOPE}}</p>", False, BUILD, build_demo.ROLES, {})

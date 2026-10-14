@@ -143,7 +143,9 @@ def find_first_lookups(keys: set[str], build: str | None = None) -> list[dict[st
             record = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if record.get("mode") not in config.LIVE_MODES:
+        # A brief run's record has no "kind"; a lifecycle lookup's and a product recall
+        # run's do, and neither is a question about a model, so neither is a first lookup.
+        if record.get("kind") is not None or record.get("mode") not in config.LIVE_MODES:
             continue
         if str(record.get("run_id")) in skip:
             continue

@@ -61,13 +61,18 @@ def build_middleware(limits: dict[str, int], ctx: RunContext,
 
 
 def build_research_agent(model: Any, tools: Sequence[BaseTool], limits: dict[str, int], ctx: RunContext,
-                         trail: list[dict[str, Any]] | None = None) -> ResearchAgent:
-    """create_agent(model, tools) with the research prompt and middleware for these limits."""
+                         trail: list[dict[str, Any]] | None = None, *,
+                         system_prompt: str = RESEARCH_PROMPT) -> ResearchAgent:
+    """create_agent(model, tools) with the research prompt and middleware for these limits.
+
+    The lifecycle lookups of the replacement sweep (agent/lifecycle.py) pass
+    their own system prompt; everything else about the agent is the same.
+    """
     middleware = build_middleware(limits, ctx, trail)
     graph = create_agent(
         model,
         list(tools),
-        system_prompt=RESEARCH_PROMPT,
+        system_prompt=system_prompt,
         middleware=middleware,
         checkpointer=False,
     )

@@ -41,6 +41,39 @@ A safety_check answer is one recorded Jev call (agent/safety_judge.py):
 "output_tokens", "request_id", "error"}. It names the step by hash only and
 holds no step or page text; exactly one of noul and error is set. A cassette
 without the key replays with the check not recorded, which is not a failure.
+
+Claude Haiku 5.5 recordings (decision 69) add four optional shapes; a cassette
+recorded on Haiku 4.5 uses none of them and loads and replays as before:
+
+- Content blocks. A reply the API returned as a list of blocks keeps that
+  list as message.content: {"type": "text", "text"}, {"type": "tool_use",
+  "id", "name", "input"} (which must repeat the message's tool_calls, in
+  order, with their ids) and the thinking markers below. A reply that was one
+  string stays a string.
+- Thinking markers. A thinking block is kept as {"type": "thinking",
+  "thinking": ""} and a redacted one as {"type": "redacted_thinking", "data":
+  ""}: where it stood, never what it held. Replay never sends a request, so
+  nothing needs the signature or the thinking text, and neither is kept (the
+  signature is an opaque encrypted value; summarized thinking may quote a
+  page). Their tokens are in the usage, where output_tokens counts them and
+  output_token_details.reasoning breaks them out. The one reader that sees
+  the missing characters is a replayed research turn's input estimate, which
+  counts each block's characters; it comes out lower than the live turn's
+  by the signatures' length. A structured reply (classifier, read_plate,
+  synthesize) carries its markers in an optional "thinking" list.
+- A recorded decline: {"stop_reason": "refusal", "stop_details": null |
+  {"type": "refusal", "category": null | token}, "usage"} in place of a
+  response (read_plate's object, or a synthesize attempt with its
+  "attempt"). It is the last response of its node, and no later node has
+  any, since a declined call ends the run. Nothing the model wrote with it is
+  kept, and neither is the stop_details explanation.
+- "recorded" (optional): {"mode": "cheap" | "full", "models": {node: model
+  ID}}, the live mode and the model each node's replies named. Replay serves
+  the replies whatever it says, and holds the run to that mode
+  (ledger.price_basis): each call is reserved and charged at the card of the
+  model its node names, with that mode's output budgets, estimate settings
+  and run cap, so a replay spends and stops as the live run did. A cassette
+  without it replays on the frozen Haiku 4.5 settings (config.REPLAY_PRICES).
 """
 
 from __future__ import annotations
@@ -53,6 +86,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
+
+from agent import config
 
 CASSETTE_VERSION = 1
 NODES = ("read_plate", "classifier", "research", "synthesize")
@@ -71,7 +106,7 @@ REQUIRED_KEYS = (
     "caps",
     "expect",
 )
-OPTIONAL_KEYS = ("classifier", "safety_check")
+OPTIONAL_KEYS = ("classifier", "safety_check", "recorded")
 PROVENANCE_REQUIRED = ("derived_from", "copied_fields", "synthetic_fields", "built_by", "reviewed")
 PROVENANCE_OPTIONAL = ("public_already",)
 IDENTITY_FIELDS = ("manufacturer", "model", "serial", "manufacture_date")
@@ -91,6 +126,20 @@ SAFETY_CHECK_ERRORS = (
     "reservation_refused", "timeout", "rate_limited", "api_error", "unparseable", "model_mismatch",
     "missing_key", "other",
 )
+
+# Claude Haiku 5.5 reply shapes (decision 69): content blocks, thinking
+# markers, a recorded decline and the recorded models.
+TEXT_BLOCK = "text"
+TOOL_USE_BLOCK = "tool_use"
+THINKING_MARKERS = {"thinking": {"type": "thinking", "thinking": ""},
+                    "redacted_thinking": {"type": "redacted_thinking", "data": ""}}
+BLOCK_TYPES = (TEXT_BLOCK, TOOL_USE_BLOCK, *THINKING_MARKERS)
+REFUSAL_STOP_REASON = "refusal"
+REFUSAL_KEYS = ("stop_reason", "stop_details", "usage")
+STOP_DETAILS_KEYS = ("type", "category")
+REFUSAL_CATEGORY_RE = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
+RECORDED_KEYS = ("mode", "models")
+RECORDED_MODES = config.LIVE_MODES
 
 CASE_RE = re.compile(r"^[a-z0-9_]+$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -206,27 +255,160 @@ def _check_identity(c: _Checker, identity: Any, path: str) -> None:
 
 def _check_response(c: _Checker, response: Any, path: str) -> None:
     response = c.dict_(response, path)
+    if "stop_reason" in response:
+        _check_refusal(c, response, path)
+        return
     has_message = "message" in response
     has_structured = "structured" in response
     if has_message == has_structured:
         c.fail(path, "needs exactly one of message or structured")
     if has_structured:
-        c.keys(response, path, ("structured", "usage"))
+        c.keys(response, path, ("structured", "usage"), ("thinking",))
         c.dict_(response["structured"], f"{path}.structured")
         _check_usage(c, response["usage"], f"{path}.usage")
+        _check_thinking(c, response, path)
         return
     c.keys(response, path, ("message",))
     message = c.dict_(response["message"], f"{path}.message")
     c.keys(message, f"{path}.message", ("content", "tool_calls", "usage"))
-    c.str_(message["content"], f"{path}.message.content")
     _check_usage(c, message["usage"], f"{path}.message.usage")
-    for i, call in enumerate(c.list_(message["tool_calls"], f"{path}.message.tool_calls")):
+    calls = c.list_(message["tool_calls"], f"{path}.message.tool_calls")
+    for i, call in enumerate(calls):
         cpath = f"{path}.message.tool_calls[{i}]"
         call = c.dict_(call, cpath)
         c.keys(call, cpath, ("name", "args"), ("id",))
         if call["name"] not in TOOLS:
             c.fail(f"{cpath}.name", f"must be one of {', '.join(TOOLS)}, got {call['name']!r}")
         c.dict_(call["args"], f"{cpath}.args")
+    if isinstance(message["content"], list):
+        _check_blocks(c, message["content"], calls, f"{path}.message.content")
+    else:
+        c.str_(message["content"], f"{path}.message.content")
+
+
+def _check_blocks(c: _Checker, blocks: list, calls: list, path: str) -> None:
+    """A reply recorded as content blocks: text, tool_use (repeating tool_calls) and thinking markers."""
+    uses = []
+    for i, block in enumerate(blocks):
+        bpath = f"{path}[{i}]"
+        block = c.dict_(block, bpath)
+        kind = block.get("type")
+        if kind not in BLOCK_TYPES:
+            c.fail(f"{bpath}.type", f"must be one of {', '.join(BLOCK_TYPES)}, got {kind!r}")
+        if kind == TEXT_BLOCK:
+            c.keys(block, bpath, ("type", "text"))
+            c.str_(block["text"], f"{bpath}.text")
+        elif kind == TOOL_USE_BLOCK:
+            c.keys(block, bpath, ("type", "id", "name", "input"))
+            c.str_(block["id"], f"{bpath}.id", empty_ok=False)
+            c.dict_(block["input"], f"{bpath}.input")
+            uses.append((i, block))
+        else:
+            _check_marker(c, block, bpath)
+    if len(uses) != len(calls):
+        c.fail(path, f"holds {len(uses)} tool_use block(s) for {len(calls)} tool call(s)")
+    for (i, block), call in zip(uses, calls):
+        if (block["id"], block["name"], block["input"]) != (call.get("id"), call["name"], call["args"]):
+            c.fail(f"{path}[{i}]", "does not repeat its tool call (id, name and args, in order)")
+
+
+def _check_marker(c: _Checker, block: Any, path: str) -> None:
+    """A thinking marker: where a thinking block stood, never its text or signature."""
+    block = c.dict_(block, path)
+    marker = THINKING_MARKERS.get(block.get("type"))
+    if marker is None:
+        c.fail(f"{path}.type", f"must be one of {', '.join(THINKING_MARKERS)}, got {block.get('type')!r}")
+    elif block != marker:
+        c.fail(path, f"a thinking marker is exactly {marker}; its text and signature are never kept")
+
+
+def _check_thinking(c: _Checker, response: dict, path: str) -> None:
+    if "thinking" in response:
+        for i, block in enumerate(c.list_(response["thinking"], f"{path}.thinking")):
+            _check_marker(c, block, f"{path}.thinking[{i}]")
+
+
+def _check_refusal(c: _Checker, response: dict, path: str, extra: tuple[str, ...] = ()) -> None:
+    """A recorded decline: stop_reason "refusal", its category at most, and the billed usage."""
+    c.keys(response, path, (*extra, *REFUSAL_KEYS))
+    if response["stop_reason"] != REFUSAL_STOP_REASON:
+        c.fail(f"{path}.stop_reason", f"must be {REFUSAL_STOP_REASON!r}, got {response['stop_reason']!r}")
+    details = response["stop_details"]
+    if details is not None:
+        details = c.dict_(details, f"{path}.stop_details")
+        c.keys(details, f"{path}.stop_details", STOP_DETAILS_KEYS)
+        if details["type"] != REFUSAL_STOP_REASON:
+            c.fail(f"{path}.stop_details.type", f"must be {REFUSAL_STOP_REASON!r}, got {details['type']!r}")
+        category = details["category"]
+        if category is not None and (not isinstance(category, str) or not REFUSAL_CATEGORY_RE.match(category)):
+            c.fail(f"{path}.stop_details.category", "must be null or one lower case token")
+    _check_usage(c, response["usage"], f"{path}.usage")
+
+
+def is_refusal(response: Any) -> bool:
+    """True for a recorded decline (in any node's shape)."""
+    return isinstance(response, dict) and response.get("stop_reason") == REFUSAL_STOP_REASON
+
+
+def _refusal_response(response: dict) -> dict[str, Any]:
+    """A recorded decline in the ReplayChatModel format."""
+    return {key: copy.deepcopy(response[key]) for key in REFUSAL_KEYS}
+
+
+def _closes_a_pass(response: Any) -> bool:
+    """True for a research turn that ends a pass: a reply that is not a decline and calls no tool."""
+    message = response.get("message") if isinstance(response, dict) else None
+    return isinstance(message, dict) and not is_refusal(response) and not message.get("tool_calls")
+
+
+def _synthesized_before_the_retry(data: dict) -> bool:
+    """True when a research decline came in the retry pass, after one synthesize attempt.
+
+    The nodes are listed in a fixed order, not the order the calls were made:
+    a run that declines in the retry pass (retry_gate, then research with the
+    retry limits) made its one synthesize attempt between the passes. So that
+    attempt is allowed when it is the only one, is not itself a decline, and
+    an earlier research turn closed the first pass.
+    """
+    script, drafts = data["research"]["script"], data["synthesize"]
+    return (len(drafts) == 1 and not is_refusal(drafts[0])
+            and any(_closes_a_pass(response) for response in script[:-1]))
+
+
+def _check_declines_end_the_run(c: _Checker, data: dict) -> None:
+    """A decline is the last response of its node, and no node after it has any (decision 69), except
+    the one synthesize attempt made before a retry pass that declined in research."""
+    lists = [
+        ("read_plate", [] if data["read_plate"] is None else [data["read_plate"]]),
+        ("classifier", data.get("classifier", [])),
+        ("research.script", data["research"]["script"]),
+        ("synthesize", data["synthesize"]),
+    ]
+    declined_at = None
+    for name, responses in lists:
+        retry_pass = declined_at == "research.script" and name == "synthesize" and _synthesized_before_the_retry(data)
+        if declined_at is not None and responses and not retry_pass:
+            c.fail(name, f"holds responses after the decline in {declined_at}, which ended the run")
+        for i, response in enumerate(responses):
+            if is_refusal(response):
+                if i != len(responses) - 1:
+                    c.fail(f"{name}[{i}]", "a decline must be the last response of its node")
+                declined_at = name
+
+
+def _check_recorded(c: _Checker, recorded: Any) -> None:
+    recorded = c.dict_(recorded, "recorded")
+    c.keys(recorded, "recorded", RECORDED_KEYS)
+    if recorded["mode"] not in RECORDED_MODES:
+        c.fail("recorded.mode", f"must be one of {', '.join(RECORDED_MODES)}, got {recorded['mode']!r}")
+    for node, model in c.dict_(recorded["models"], "recorded.models").items():
+        if node not in NODES:
+            c.fail(f"recorded.models.{node}", f"must name one of {', '.join(NODES)}")
+        if not isinstance(model, str) or not MODEL_NAME_RE.match(model):
+            c.fail(f"recorded.models.{node}", "must be a model name with no spaces")
+        elif model not in config.PRICES_PER_MTOK:
+            c.fail(f"recorded.models.{node}", f"names {model!r}, which has no price in config.PRICES_PER_MTOK, "
+                   "so a replay could not charge it")
 
 
 def _check_tool_result(c: _Checker, entry: Any, path: str) -> None:
@@ -396,9 +578,13 @@ def validate_cassette(data: Any, source: str = "<cassette>") -> None:
 
     if data["read_plate"] is not None:
         rp = c.dict_(data["read_plate"], "read_plate")
-        c.keys(rp, "read_plate", ("extraction", "usage"))
-        c.dict_(rp["extraction"], "read_plate.extraction")
-        _check_usage(c, rp["usage"], "read_plate.usage")
+        if "stop_reason" in rp:
+            _check_refusal(c, rp, "read_plate")
+        else:
+            c.keys(rp, "read_plate", ("extraction", "usage"), ("thinking",))
+            c.dict_(rp["extraction"], "read_plate.extraction")
+            _check_usage(c, rp["usage"], "read_plate.usage")
+            _check_thinking(c, rp, "read_plate")
     for i, response in enumerate(c.list_(data.get("classifier", []), "classifier")):
         _check_response(c, response, f"classifier[{i}]")
 
@@ -424,11 +610,15 @@ def validate_cassette(data: Any, source: str = "<cassette>") -> None:
     for i, attempt in enumerate(c.list_(data["synthesize"], "synthesize")):
         path = f"synthesize[{i}]"
         attempt = c.dict_(attempt, path)
-        c.keys(attempt, path, ("attempt", "draft", "usage"))
+        if "stop_reason" in attempt:
+            _check_refusal(c, attempt, path, ("attempt",))
+        else:
+            c.keys(attempt, path, ("attempt", "draft", "usage"), ("thinking",))
+            c.dict_(attempt["draft"], f"{path}.draft")
+            _check_usage(c, attempt["usage"], f"{path}.usage")
+            _check_thinking(c, attempt, path)
         if attempt["attempt"] != i + 1:
             c.fail(f"{path}.attempt", f"must be {i + 1}, got {attempt['attempt']!r}")
-        c.dict_(attempt["draft"], f"{path}.draft")
-        _check_usage(c, attempt["usage"], f"{path}.usage")
 
     for url, text in c.dict_(data["page_texts"], "page_texts").items():
         if not is_example_url(url):
@@ -448,6 +638,9 @@ def validate_cassette(data: Any, source: str = "<cassette>") -> None:
 
     if "safety_check" in data:
         _check_safety_check(c, data["safety_check"])
+    if "recorded" in data:
+        _check_recorded(c, data["recorded"])
+    _check_declines_end_the_run(c, data)
 
 
 # ---------------------------------------------------------------------------
@@ -502,17 +695,23 @@ class Cassette:
         entries = self.data.get("safety_check")
         return None if entries is None else copy.deepcopy(entries)
 
+    @property
+    def recorded(self) -> dict[str, Any] | None:
+        """The live mode and the model each node's replies named, or None (every Haiku 4.5 cassette)."""
+        value = self.data.get("recorded")
+        return None if value is None else copy.deepcopy(value)
+
     def responses_for(self, node: str) -> list[dict[str, Any]]:
         """Scripted responses for one node, in the ReplayChatModel format."""
         if node == "read_plate":
             rp = self.data["read_plate"]
-            out = [] if rp is None else [{"structured": rp["extraction"], "usage": rp["usage"]}]
+            out = [] if rp is None else [_structured_response(rp, "extraction")]
         elif node == "classifier":
             out = self.data.get("classifier", [])
         elif node == "research":
             out = self.data["research"]["script"]
         elif node == "synthesize":
-            out = [{"structured": a["draft"], "usage": a["usage"]} for a in self.data["synthesize"]]
+            out = [_structured_response(a, "draft") for a in self.data["synthesize"]]
         else:
             raise ValueError(f"unknown node {node!r}; expected one of {', '.join(NODES)}")
         return copy.deepcopy(out)
@@ -530,6 +729,51 @@ class Cassette:
     def registry_urls(self) -> list[str]:
         """The source registry code builds from this cassette's tool results."""
         return registry_urls(self.data["research"]["tool_results"])
+
+
+def _structured_response(entry: dict[str, Any], key: str) -> dict[str, Any]:
+    """read_plate's extraction or a synthesize draft as a ReplayChatModel response (or its decline)."""
+    if is_refusal(entry):
+        return _refusal_response(entry)
+    out = {"structured": entry[key], "usage": entry["usage"]}
+    if "thinking" in entry:
+        out["thinking"] = entry["thinking"]
+    return out
+
+
+# A lifecycle cassette's symptom line: a lookup has no symptom, and the loader requires one.
+LIFECYCLE_SYMPTOM = "lifecycle lookup: is this model discontinued, and which models succeed it"
+LIFECYCLE_DECLINED_STATUS = "model_declined"
+
+
+def lookup_recording_state(identity: dict[str, Any], result: dict[str, Any], *,
+                           research_limits: str) -> dict[str, Any]:
+    """What the live recorder reads from one lifecycle lookup (agent/lifecycle.py), in a run state's keys.
+
+    The recording it makes is a lifecycle cassette: the unit's typed identity
+    (which `lifecycle.cassette_for` matches in a replay sweep), the research
+    turns and the one structured extraction, filed under research and
+    synthesize as the sweep's cassettes are, and the lookup's status.
+    """
+    status = result.get("status")
+    return {
+        "photo": None,
+        "identity": dict(identity),
+        "symptom": LIFECYCLE_SYMPTOM,
+        "status": status,
+        "stop_reason": result.get("stop_reason"),
+        "refusal_origin": LIFECYCLE_DECLINED_STATUS if status == LIFECYCLE_DECLINED_STATUS else None,
+        "route": [],
+        "search_trail": list(result.get("search_trail") or []),
+        "research_limits": research_limits,
+    }
+
+
+def response_usage(response: dict[str, Any]) -> dict[str, Any]:
+    """The recorded usage of one ReplayChatModel response, whatever its shape."""
+    if "message" in response:
+        return response["message"]["usage"]
+    return response["usage"]
 
 
 def cassette_from_dict(data: dict[str, Any], source: str = "<cassette>") -> Cassette:

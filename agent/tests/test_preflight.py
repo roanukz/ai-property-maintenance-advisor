@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from agent import cli, config
-from agent.ledger import Ledger
+from agent.ledger import Ledger, price_usage
 from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
     NRA_DRAFT,
     CheckedChat,
@@ -30,6 +30,7 @@ from agent.tests.test_live_path import (  # noqa: F401  (live_env is a fixture)
 )
 
 # PLAN section 9, table B: "Total, research route (read_plate, research, synthesize)", typical.
+# It was worked out on Claude Haiku 4.5's card (now the replay card) with the counts as counted.
 SECTION_9_TYPICAL_RESEARCH_ROUTE = 0.083
 
 
@@ -37,9 +38,18 @@ def usd(amount: float) -> str:
     return f"{amount:.4f} USD"
 
 
-def price(model: str, tokens_in: float, tokens_out: float) -> float:
-    prices = config.PRICES_PER_MTOK[model]
-    return (tokens_in * prices["input"] + tokens_out * prices["output"]) / 1_000_000
+def card_price(model: str, tokens_in: float, tokens_out: float) -> float:
+    """Token counts as they are, on the card they select."""
+    return price_usage(model, {"input_tokens": tokens_in, "output_tokens": tokens_out})
+
+
+def price(model: str, tokens_in: float, tokens_out: float, *, recorded_card: bool = False) -> float:
+    """A typical call as the preflight prices it: the older tokenizer's counts scaled for the model
+    (decision 69), on the card they select; or, recorded_card, as counted on Claude Haiku 4.5's card."""
+    if recorded_card:
+        card = config.REPLAY_PRICES
+        return (tokens_in * card["input"] + tokens_out * card["output"]) / 1_000_000
+    return card_price(model, config.typical_tokens(model, tokens_in), config.typical_tokens(model, tokens_out))
 
 
 def expected_jev_calls(passes: int) -> int:
@@ -47,20 +57,20 @@ def expected_jev_calls(passes: int) -> int:
     return passes * config.JEV_PLAN_STEPS_PER_PASS if config.JEV_SAFETY_ENABLED else 0
 
 
-def expected_typical(mode: str, *, read_plate: bool, jev: bool = True) -> float:
+def expected_typical(mode: str, *, read_plate: bool, jev: bool = True, recorded_card: bool = False) -> float:
     """Section 9 table B, typical column, from config, plus one draft's Jev calls (input only)."""
     models = config.MODEL_FOR[mode]
     searches = config.RESEARCH_LIMITS["main"]["search"]
     research_in = sum(config.RESEARCH_CALL_BASE_TOKENS + k * config.RESEARCH_TOKENS_PER_SEARCH
                       for k in range(searches + 1))
     research_out = (searches + 1) * config.RESEARCH_OUTPUT_TOKENS
-    total = price(models["research"], research_in, research_out)
+    total = price(models["research"], research_in, research_out, recorded_card=recorded_card)
     total += searches * config.TAVILY_CREDITS["search_basic"] * config.tavily_credit_usd()
     total += price(models["synthesize"], config.SYNTH_EXCERPT_TOKENS_TYPICAL + config.SYNTH_PROMPT_TOKENS_ESTIMATE,
-                   config.SYNTH_OUTPUT_TOKENS_TYPICAL)
+                   config.SYNTH_OUTPUT_TOKENS_TYPICAL, recorded_card=recorded_card)
     if read_plate:
         tokens = config.READ_PLATE_TOKENS_TYPICAL
-        total += price(models["read_plate"], tokens["input"], tokens["output"])
+        total += price(models["read_plate"], tokens["input"], tokens["output"], recorded_card=recorded_card)
     if jev:
         total += price(config.JEV_MODEL, expected_jev_calls(1) * config.JEV_EST_INPUT_TOKENS, 0)
     return total
@@ -89,7 +99,8 @@ def test_preflight_prints_planned_calls_and_costs_from_config(live_env: Path, mo
     code, out, err = live_ask(monkeypatch, capsys, typed="no\n")
     assert code == cli.EXIT_REFUSED
     typical = expected_typical("cheap", read_plate=True)
-    assert abs(expected_typical("cheap", read_plate=True, jev=False) - SECTION_9_TYPICAL_RESEARCH_ROUTE) < 0.0005
+    assert abs(expected_typical("cheap", read_plate=True, jev=False, recorded_card=True)
+               - SECTION_9_TYPICAL_RESEARCH_ROUTE) < 0.0005
     searches = config.RESEARCH_LIMITS["main"]["search"]
     expected = [
         "advisor ask: preflight, mode cheap, LIVE (real money)",
@@ -151,8 +162,9 @@ def test_check_schema_preflight_shows_one_call_and_its_reservation(
     assert code == cli.EXIT_OK, out + err
     reserve = next(r for r in Ledger(config.LEDGER_PATH).rows() if r["kind"] == "reserve")
     model = config.MODEL_FOR["cheap"]["synthesize"]
-    worst = price(model, reserve["input_tokens"], config.SCHEMA_CHECK_MAX_TOKENS)
-    typical = price(model, reserve["input_tokens"], config.SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL)
+    worst = card_price(model, reserve["input_tokens"], config.SCHEMA_CHECK_MAX_TOKENS)
+    typical = card_price(model, reserve["input_tokens"],
+                         config.typical_tokens(model, config.SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL))
     assert reserve["usd"] == pytest.approx(worst)  # the worst case printed is exactly the reservation
     assert "planned: 1 minimal synthesize call on " + model in out
     assert "  model calls: typical 1, at most 1" in out and "  Tavily credits: typical 0, at most 0" in out

@@ -37,6 +37,20 @@ Rules this file keeps:
   including a memory fact stored by a run that is not on the current build.
 * It shows no cost estimate: no run records the planner's estimate, and one
   computed here would come from this build's config, not from the run.
+* Every cost line, model name and token count comes from the run's ledger
+  rows, which the live run charged on the card of the model that answered.
+  So a run recorded on Claude Haiku 5.5 (decision 69) shows that model and
+  its prices, and the published demo, recorded on Haiku 4.5, keeps its own;
+  nothing here reprices a call from config. Output tokens are the reply's
+  output_tokens, which count its thinking tokens. When a recording names the
+  models it was recorded on ("recorded" in the cassette), each node's ledger
+  model must be that one: a disagreement between records.
+* A run that ended with no reliable answer is shown as exactly that (builder
+  version 5): the vague question and both air conditioner questions may refuse
+  (REFUSAL_ROLES), their takeaways say how the run got there and that it ended
+  with no reliable answer, a side by side table beside a refusal says how each
+  run ended, and the page template's case references are worked out from the
+  cases (page_fills), so no line points at a case that does not show it.
 * It writes into a fresh folder next to --out, runs the privacy scanner's key
   and pattern checks (agent.replay.privacy_diff), the dash rule and the
   network checks there, and moves the files into --out only when all pass.
@@ -66,7 +80,7 @@ from urllib.parse import urlsplit
 from agent import build_info, config
 from agent.replay import privacy_diff
 
-BUILDER_VERSION = "build_demo.py 4"
+BUILDER_VERSION = "build_demo.py 5"
 STAND_IN_LABEL = "STAND-IN DATA FROM A SUPERSEDED BUILD, DO NOT PUBLISH"
 REPLAY_LABEL = "Replay of synthetic property records, no live call"
 # Builds already known to be superseded. The current build check below would
@@ -94,6 +108,14 @@ SYNTHETIC_RECORDS_ROLES = ("hot_tub_with_history",)
 REGISTRY_SEED = Path("seed") / "registry_seed.json"
 HOT_TUB_ROLES = ("hot_tub_code_first", "hot_tub_code_repeat", "hot_tub_vague")
 AC_ROLES = ("ac_first", "ac_new_symptom")
+# Roles whose run may end with no reliable answer, and is then shown as exactly that
+# (builder version 5). A refusal is the tool's success state when the pages it found
+# do not document the unit, so the case keeps its place on the page, and every line
+# the builder writes for it says the run ended with no reliable answer and never that
+# it answered. The other roles still need an ok brief: the first question must store
+# the fact the repeat reads, and the repeat and the records case must answer from it.
+REFUSAL_ROLES = ("hot_tub_vague", "ac_first", "ac_new_symptom")
+NRA = "no_reliable_answer"
 # Cases whose page shows what memory could and could not answer.
 MEMORY_ROLES = ("hot_tub_code_repeat", "hot_tub_vague", "ac_first", "ac_new_symptom", "hot_tub_with_history")
 
@@ -364,6 +386,16 @@ def ledger_numbers(rows: list[sqlite3.Row]) -> dict[str, Any]:
             "modes": sorted({r["mode"] for r in rows})}
 
 
+def check_recorded_models(role: str, rf: RunFiles, by_node: list[dict[str, Any]], notes: Notes) -> None:
+    """Each node's ledger model is the one its recording names, when the recording names one."""
+    recorded = (((rf.cassette or {}).get("recorded") or {}).get("models") or {})
+    for row in by_node:
+        want = recorded.get(row["node"])
+        if row["provider"] == "anthropic" and want and row["model"] != want:
+            notes.disagree(f"{role}: {rf.run_id}'s ledger charged {row['node']} on {row['model']}, "
+                           f"but its recording names {want}")
+
+
 # ---------------------------------------------------------------------------
 # Building the parts of one case
 # ---------------------------------------------------------------------------
@@ -544,7 +576,12 @@ def memory_facts(role: str, rf: RunFiles, graph: dict[str, Any], runs_by_id: dic
                     else "prefix" if quoted and stored.startswith(quoted)
                     else "within" if quoted and quoted in stored
                     else "differs")
-        if exact and relation != "equal":
+        # A quote that is the stored words with only the leading code label left off
+        # ("FLO | Flow Switch Error: ..." quoted from "Flow Switch Error") is still the
+        # stored text word for word; the page says which part was quoted.
+        drops_label = (relation == "within" and stored.endswith(quoted) and bool(re.fullmatch(
+            rf"\s*{re.escape(str(cand.get('code') or ''))}\s*\|\s*", stored[:len(stored) - len(quoted)])))
+        if exact and relation != "equal" and not drops_label:
             notes.disagree(f"{role}: the brief's evidence and the stored fact's evidence are not byte for byte equal "
                            f"(run {rf.run_id})")
         elif relation == "differs":
@@ -562,6 +599,7 @@ def memory_facts(role: str, rf: RunFiles, graph: dict[str, Any], runs_by_id: dic
             "evidence_ends_mid_text": bool(stored) and not re.search(r"[.!?)\]\"'\u201d]\s*$", stored),
             "brief_quote": quoted if relation != "equal" else None,
             "brief_quote_relation": relation,
+            "brief_quote_drops_code_label": drops_label,
             "source_title": source_node.get("title") or src.get("title"),
             "source_url": https_only(edge.get("source_url"), f"{rf.run_id} edge"),
             "host": host_of(edge.get("source_url") or ""),
@@ -1023,10 +1061,24 @@ def check_role(role: str, rf: RunFiles, notes: Notes, ledger: Ledger) -> None:
         notes.fail(f"{role}: {rf.run_id} route {route} does not include research")
     if role == "hot_tub_code_repeat" and (route != ["graph"] or run.get("searches") != 0):
         notes.fail(f"{role}: {rf.run_id} route {route} with {run.get('searches')} searches is not a repeat from memory")
-    if role == "no_such_model" and run.get("status") != "no_reliable_answer":
+    if role == "no_such_model" and run.get("status") != NRA:
         notes.fail(f"{role}: {rf.run_id} status is {run.get('status')!r}")
-    if role != "no_such_model" and run.get("status") != "ok":
+    if role in REFUSAL_ROLES:
+        if run.get("status") not in ("ok", NRA):
+            notes.fail(f"{role}: {rf.run_id} status is {run.get('status')!r}, neither ok nor no_reliable_answer")
+    elif role != "no_such_model" and run.get("status") != "ok":
         notes.fail(f"{role}: {rf.run_id} status is {run.get('status')!r}, not ok")
+    if run.get("status") == NRA:
+        # The page says who refused, and that a refusal stored nothing; hold the record to both.
+        if run.get("refusal_origin") not in ("model", "rules"):
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but names no refusal origin")
+        brief = run.get("brief") or {}
+        if not brief.get("no_reliable_answer"):
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but its brief has no refusal section")
+        if brief.get("candidates") or brief.get("try_first"):
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but its brief lists causes or steps")
+        if (run.get("graph_edges") or {}).get("written"):
+            notes.fail(f"{role}: {rf.run_id} ended with no reliable answer but stored facts in memory")
     if role == "hot_tub_code_first" and not ((rf.cassette or {}).get("resume") or {}).get("observed_code"):
         notes.fail(f"{role}: {rf.run_id} has no confirmed code")
     if role == "hot_tub_with_history":
@@ -1051,10 +1103,12 @@ def load_seed(repo_root: Path) -> dict[str, dict[str, dict[str, Any]]]:
     return {
         "appliance": {f"appliance:{a['id']}": a for a in seed.get("appliances") or []},
         "service": {f"service:{s['id']}": s for s in seed.get("service_records") or []},
+        "warranty": {f"warranty:{w['id']}": w for w in seed.get("warranty_coverage") or []},
     }
 
 
-def property_records(role: str, rf: RunFiles, repo_root: Path, notes: Notes) -> dict[str, Any]:
+def property_records(role: str, rf: RunFiles, repo_root: Path, notes: Notes,
+                     brief_bytes: bytes | None = None) -> dict[str, Any]:
     """What the brief took from the property's records, checked against the synthetic seed.
 
     Copies the brief's own words (the prior record's summary, the code written age
@@ -1071,7 +1125,7 @@ def property_records(role: str, rf: RunFiles, repo_root: Path, notes: Notes) -> 
     before = brief.get("happened_before") or {}
     warranty = brief.get("warranty") or {}
     out: dict[str, Any] = {"label": SYNTHETIC_RECORDS_LABEL, "happened_before": None, "age": None,
-                           "warranty_terms": None}
+                           "warranty_terms": None, "coverage": None}
     service = seed["service"].get(str(before.get("record_id")))
     if not before.get("matches") or service is None:
         notes.fail(f"{role}: {rf.run_id} cites service record {before.get('record_id')!r}, which is not in the seed")
@@ -1102,7 +1156,65 @@ def property_records(role: str, rf: RunFiles, repo_root: Path, notes: Notes) -> 
         notes.fail(f"{role}: {rf.run_id}'s warranty terms differ from the seed's")
     elif warranty.get("terms"):
         out["warranty_terms"] = {"record_id": warranty["record_id"], "terms": warranty["terms"]}
+    if warranty.get("coverage_statement") or warranty.get("coverage"):
+        out["coverage"] = coverage_shown(role, rf, warranty, appliance, seed, notes)
+        from agent.render.brief_html import esc
+
+        if out["coverage"] and brief_bytes is not None \
+                and esc(out["coverage"]["statement"]) not in brief_bytes.decode("utf-8"):
+            notes.fail(f"{role}: {rf.run_id}'s brief file does not carry its warranty coverage line")
+            out["coverage"] = None
     return out
+
+
+def coverage_shown(role: str, rf: RunFiles, warranty: dict[str, Any], appliance: dict[str, Any],
+                   seed: dict[str, dict[str, dict[str, Any]]], notes: Notes) -> dict[str, Any] | None:
+    """The brief's code written warranty coverage line and rows (SC13), checked against the seed.
+
+    Every row must be a synthetic seed row for the run's appliance, and the rows and the
+    line must be exactly what agent/rules/coverage.py computes from the seed on the run's
+    coverage date, or the build fails. Copies the line and, per row, the component, end
+    date and status, and the record id it cites."""
+    from agent.rules.coverage import coverage_rows, coverage_statement
+
+    where = f"{role}: {rf.run_id}"
+    errors_before = len(notes.errors)
+    as_of = warranty.get("coverage_as_of")
+    try:
+        day = date.fromisoformat(str(as_of))
+    except ValueError:
+        notes.fail(f"{where}'s warranty coverage has no date it was computed for")
+        return None
+    shown = [r for r in warranty.get("coverage") or [] if isinstance(r, dict)]
+    seeded = {}
+    for row in shown:
+        rid = str(row.get("record_id"))
+        source = seed["warranty"].get(rid)
+        if source is None:
+            notes.fail(f"{where} cites warranty record {rid}, which is not in the seed")
+        elif source.get("synthetic") is not True or row.get("synthetic") is not True:
+            notes.fail(f"{where} cites warranty record {rid}, which is not marked synthetic")
+        elif f"appliance:{source.get('appliance_id')}" != warranty.get("record_id"):
+            notes.fail(f"{where} cites warranty record {rid}, which belongs to another appliance")
+        else:
+            seeded[rid] = {**source, "record_id": rid}
+    on_file = {rid for rid, w in seed["warranty"].items()
+               if f"appliance:{w.get('appliance_id')}" == warranty.get("record_id")}
+    if set(seeded) != on_file and len(seeded) == len(shown):
+        notes.fail(f"{where}'s brief lists warranty records {sorted(seeded)}, the seed holds {sorted(on_file)}")
+    if len(notes.errors) > errors_before:
+        return None
+    computed = coverage_rows([seeded[str(r.get("record_id"))] for r in shown], appliance, day)
+    keys = ("record_id", "component", "term_months", "start_event", "start_date", "end_date", "status", "synthetic")
+    if [{k: r.get(k) for k in keys} for r in shown] != [{k: r.get(k) for k in keys} for r in computed]:
+        notes.fail(f"{where}'s warranty rows are not what code computes from the seed on {day.isoformat()}")
+        return None
+    statement = coverage_statement(computed, day, terms_on_file=bool(appliance.get("warranty_terms")))
+    if warranty.get("coverage_statement") != statement:
+        notes.fail(f"{where}'s warranty coverage line is not the one code writes from the seed")
+        return None
+    return {"as_of": day.isoformat(), "statement": statement,
+            "rows": [{k: r[k] for k in ("record_id", "component", "end_date", "status")} for r in computed]}
 
 
 def confirmed_identity(rf: RunFiles) -> dict[str, Any] | None:
@@ -1128,6 +1240,7 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
     led = ledger_numbers(rows)
     if not rows:
         notes.fail(f"{role}: the ledger has no charges for {rf.run_id}")
+    check_recorded_models(role, rf, led["by_node"], notes)
 
     # --- what the owner sent -------------------------------------------------
     inp = cassette.get("input") or {}
@@ -1187,7 +1300,12 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
         verdicts = [((c.get("structured") or {}).get("verdict")) for c in cassette.get("classifier") or []]
         route = {"steps": list(run.get("route") or []), "limits": run.get("research_limits"),
                  "reason": run.get("route_reason"),
-                 "classifier_verdict": verdicts[-1] if verdicts else None}
+                 "classifier_verdict": verdicts[-1] if verdicts else None,
+                 # Whether the symptom check ran at all: the recording's classifier calls.
+                 "classifier_called": bool(cassette.get("classifier")),
+                 # The route step's plain first sentence, when the page's own wording
+                 # would not fit this run (route_lead below); else the page words it.
+                 "lead": None}
         for field in ("route", "route_reason", "research_limits"):
             if ev and ev.get(field) != run.get(field):
                 notes.disagree(f"{role}: {field} differs between the run record and the eval record")
@@ -1282,7 +1400,8 @@ def build_case(index: int, role: str, rf: RunFiles, ctx: dict[str, Any], notes: 
         "kind": "live",
         "kind_label": f"Live run {rf.run_id}",
         "records_label": SYNTHETIC_RECORDS_LABEL if synthetic_records else None,
-        "records": property_records(role, rf, repo_root, notes) if synthetic_records else None,
+        "records": (property_records(role, rf, repo_root, notes, ctx["briefs"].get(rf.run_id))
+                    if synthetic_records else None),
         "run_id": rf.run_id,
         "recorded": recorded_label(recorded, ctx.get("recorded_on"), MODE_LABELS.get(mode, mode + " mode"),
                                    f"{role}: {rf.run_id}", notes),
@@ -1375,8 +1494,51 @@ def compare_rows(case: dict[str, Any], other: dict[str, Any]) -> dict[str, Any]:
                 "route": " then ".join(c["route"]["steps"]) if c["route"] else None,
                 "searches": n["searches"], "fetches": n["fetches"], "tavily_credits": n["tavily_credits"],
                 "cost_usd": n["cost_usd"], "processing_s": n["processing_s"],
-                "try_first_steps": (c["outcome"] or {}).get("try_first_steps")}
-    return {"with": other["id"], "columns": [col(other), col(case)]}
+                "try_first_steps": (c["outcome"] or {}).get("try_first_steps"),
+                "outcome_text": outcome_text(c)}
+    return {"with": other["id"], "columns": [col(other), col(case)], "note": compare_note(case, other)}
+
+
+def outcome_text(c: dict[str, Any]) -> str:
+    """How the run ended, in the words the brief's verdict chip uses."""
+    o = c["outcome"] or {}
+    if o.get("status") == NRA:
+        return "No reliable answer"
+    if o.get("confirmed_candidates"):
+        return count(o["confirmed_candidates"], "confirmed cause", "confirmed causes")
+    return count(o.get("candidates"), "documented possibility", "documented possibilities")
+
+
+def is_refusal(c: dict[str, Any]) -> bool:
+    return (c.get("outcome") or {}).get("status") == NRA
+
+
+def compare_note(case: dict[str, Any], other: dict[str, Any]) -> str | None:
+    """The line above a side by side table when either run ended with no reliable answer.
+
+    The page's own lines assume both runs answered; this one says how each ended.
+    None when both answered, so the page keeps its own line.
+    """
+    if not (is_refusal(case) or is_refusal(other)):
+        return None
+    steps = (case["route"] or {}).get("steps") or []
+    other_steps = (other["route"] or {}).get("steps") or []
+    both_searched = "research" in steps and "research" in other_steps
+    if is_refusal(case) and is_refusal(other):
+        line = "Both runs ended with no reliable answer."
+        if both_searched and not (other.get("graph_edges") or {}).get("written"):
+            line += (" A run that ends that way saves nothing to memory, so the first left nothing for the "
+                     "second to reuse, and both had to search.")
+        return line + " The table compares what the searching cost; neither run gave an answer."
+    answered, refused = (other, case) if is_refusal(case) else (case, other)
+    line = (f"The two runs ended differently: case {answered['id'][1:]} returned "
+            f"{outcome_phrase(answered)}, and case {refused['id'][1:]} ended with no reliable answer.")
+    if refused is case and "graph" in steps and "research" in steps and (case["route"] or {}).get("limits") == "top_up":
+        line += (" This run checked memory first, and what memory held for the unit sent it to the short top up "
+                 "search instead of the full one.")
+    if refused["numbers"]["cost_usd"] < answered["numbers"]["cost_usd"]:
+        line += " The refusal cost less, but it bought no answer, so the difference is not a saving."
+    return line
 
 
 def add_prior(case: dict[str, Any], other: dict[str, Any]) -> None:
@@ -1397,6 +1559,158 @@ def outcome_phrase(c: dict[str, Any]) -> str:
     if o.get("confirmed_candidates"):
         return "a brief with " + count(o["confirmed_candidates"], "confirmed cause", "confirmed causes")
     return "a brief with " + count(o.get("candidates"), "documented possibility", "documented possibilities")
+
+
+def refusal_takeaway(c: dict[str, Any], other: dict[str, Any] | None) -> str:
+    """The takeaway for a case whose run ended with no reliable answer (other than the
+    invented model, which has its own): how it got there, from the route and the trail,
+    then who refused and the numbers. It never says the run answered, and says nothing
+    of the refusal's reason but that the reason is quoted on the page."""
+    n = c["numbers"]
+    route = c["route"] or {}
+    steps = route.get("steps") or []
+    searched = (f"{count(n['searches'], 'search', 'searches')} and "
+                f"{count(n['fetches'], 'fetched page', 'fetched pages')}")
+    prior = (c.get("memory") or {}).get("prior") or {}
+    if "graph" in steps and "research" in steps and route.get("limits") == "top_up":
+        held = "facts"
+        if prior.get("written"):
+            held = f"{count(prior['written'], 'fact', 'facts')} for this unit, stored by case {prior['case_id'][1:]},"
+        else:
+            held += " for this unit,"
+        lead = (f"Memory held {held} but not enough to answer this question on its own, so a short top up search "
+                f"ran instead of a full one: {searched}.")
+    elif "research" in steps and other is not None and is_refusal(other) \
+            and not (other.get("graph_edges") or {}).get("written"):
+        lead = (f"The first question on this unit (case {other['id'][1:]}) also ended with no reliable answer and "
+                f"saved nothing to memory, so this new symptom needed a full search too: {searched}.")
+    elif "research" in steps:
+        lead = f"Memory had nothing verified for this unit, so the tool searched: {searched}."
+    else:
+        lead = f"The run's route was {' then '.join(steps) or 'not recorded'}, with {searched}."
+    who = ("the model declined to write a brief from what it found"
+           if (c["outcome"] or {}).get("refusal_origin") == "model"
+           else "the tool's rules refused the draft")
+    return (f"{lead} It ended with no reliable answer: {who}, and its reason is quoted below. "
+            f"It spent {n['cost_text']} of its {n['cap_text']}, in {seconds(n['processing_s'])}. The brief lists what "
+            "was searched and what was found, and nothing was saved to memory.")
+
+
+def route_lead(case: dict[str, Any]) -> str | None:
+    """The route step's first sentence when the page's own wording would not fit the run.
+
+    The page words a top up as memory holding facts the symptom check could not match;
+    when the symptom check was never called, no code was confirmed and memory offered
+    nothing, that would be wrong, so the builder says what the record shows instead.
+    """
+    r = case.get("route") or {}
+    steps = r.get("steps") or []
+    k = case.get("confirmation") or {}
+    mem = case.get("memory") or {}
+    if "graph" in steps and "research" in steps and r.get("limits") == "top_up" \
+            and not r.get("classifier_called") and not mem.get("offered_from_memory") \
+            and not k.get("confirmed_code"):
+        return ("Memory is checked first. It held facts for this unit, but none that could answer this question on "
+                "its own: the owner confirmed no code, and a stored code never answers a question without one. So a "
+                "short top up search ran with the smaller search limit, and the symptom check was not called.")
+    return None
+
+
+NUMBER_WORDS = ("zero one two three four five six seven eight nine ten").split()
+
+
+def number_word(n: int) -> str:
+    return NUMBER_WORDS[n] if 0 <= n < len(NUMBER_WORDS) else str(n)
+
+
+def _case_link(c: dict[str, Any], text: str) -> str:
+    return f'<a href="#{c["id"]}">{text}</a>'
+
+
+def _and_list(parts: list[str]) -> str:
+    if len(parts) <= 2:
+        return ", and ".join(parts)
+    return ", ".join(parts[:-1]) + ", and " + parts[-1]
+
+
+def page_fills(cases: list[dict[str, Any]]) -> dict[str, str]:
+    """The page template's case references, worked out from the cases themselves, so the
+    list under the lede never points at a case that does not show what it says.
+
+    Each value is markup made only from case ids (c followed by a digit) and fixed words."""
+    for c in cases:
+        if not re.fullmatch(r"c\d+", str(c.get("id"))):
+            raise BuildError(f"case id {c.get('id')!r} is not c followed by a number")
+    # It remembers what it has verified: the cases (other than the records case, which has
+    # its own line) whose page shows a fact from memory.
+    remembered = [c for c in cases if c["role"] not in SYNTHETIC_RECORDS_ROLES
+                  and (c.get("memory") or {}).get("facts")]
+    memory = ", ".join(_case_link(c, f"{'See case' if i == 0 else 'case'} {c['id'][1:]}")
+                       for i, c in enumerate(remembered))
+    memory = memory + "." if memory else ""
+    # The safety check: the first case that shows it, and every case where Jev added a flag.
+    checked = [c for c in cases if (c.get("safety") or {}).get("steps")]
+    picks = checked[:1] + [c for c in checked[1:] if c["safety"].get("jev_added")]
+    parts = []
+    for i, c in enumerate(picks):
+        sf = c["safety"]
+        added = sf.get("jev_added") or []
+        writer = [x for x in sf.get("steps") or [] if x.get("raised_by") == "writer"]
+        if added:
+            what = (f"with the {number_word(len(added))} {'flag' if len(added) == 1 else 'flags'} Jev added that "
+                    "the writer left off")
+        elif writer and all(x.get("jev_probability") is not None and x["jev_probability"] >= sf["threshold"]
+                            for x in writer):
+            what = "where Jev agrees with " + ("the writer's flag" if len(writer) == 1
+                                               else "both of the writer's flags" if len(writer) == 2
+                                               else f"all {number_word(len(writer))} of the writer's flags")
+        elif writer:
+            what = "where the writer's flags stay even on steps Jev scored lower"
+        else:
+            what = "where no step carries a flag"
+        parts.append(f"{_case_link(c, ('See case' if i == 0 else 'case') + ' ' + c['id'][1:])}, {what}")
+    safety = _and_list(parts) + "." if parts else ""
+    if checked and not any(c["safety"].get("jev_added") for c in checked):
+        safety += " On this recording Jev added no flag of its own."
+    # The search and fetch limit: the first two cases whose trail shows a call the limit
+    # blocked, else the first case that searched.
+    limited = ([c for c in cases if any(t.get("status") == "blocked" for t in c.get("trail") or [])]
+               or [c for c in cases if c.get("trail")])[:2]
+    limits = ", ".join(_case_link(c, f"{'See case' if i == 0 else 'case'} {c['id'][1:]}")
+                       for i, c in enumerate(limited))
+    limits = limits + "." if limits else ""
+    # The refusals, said once at the top, so a reader does not take them for failures.
+    refused = [c for c in cases if is_refusal(c)]
+    note = ""
+    if refused:
+        nums = [_case_link(c, c["id"][1:]) for c in refused]
+        links = nums[0] if len(nums) == 1 else ", ".join(nums[:-1]) + " and " + nums[-1]
+        one = len(refused) == 1
+        # The refusals about real units (every role but the invented model) also count against
+        # the answer bars the teardown scores, so the note says so rather than calling them wins.
+        real = [c for c in refused if c["role"] != "no_such_model"]
+        cost = ""
+        if real:
+            real_nums = [c["id"][1:] for c in real]
+            real_list = real_nums[0] if len(real_nums) == 1 else ", ".join(real_nums[:-1]) + " and " + real_nums[-1]
+            single = len(real) == 1
+            cost = (f" {'Case' if single else 'Cases'} {real_list} {'asks' if single else 'ask'} about "
+                    f"{'a real unit' if single else 'real units'}, so {'that refusal also counts' if single else 'those refusals also count'} "
+                    "against the tool's own answer bars, as Part 8 of the "
+                    "<a href=\"index.html#results\">teardown</a> reports.")
+        note = (f"<p>In this recording, {number_word(len(refused))} of the {number_word(len(cases))} cases "
+                f"{'ends' if one else 'end'} with no reliable answer: {'case' if one else 'cases'} {links}. "
+                "Declining is the tool's success state when its sources do not support an answer, so "
+                f"{'this is an honest result' if one else 'these are honest results'}: the writing step is told to "
+                "say so when its sources are not enough or it cannot match the model to documentation, never to fall "
+                f"back on general knowledge of the equipment, and {'that run says' if one else 'each of these runs says'} "
+                f"in its own words why what it found was not enough.{cost}</p>")
+    # The records case: its brief's code written warranty coverage line, when it has one.
+    records = next((c for c in cases if c["role"] in SYNTHETIC_RECORDS_ROLES), None)
+    coverage = (" Code also works out whether any warranty coverage on file is still active."
+                if records and (records.get("records") or {}).get("coverage") else "")
+    return {"MEMORY_EXAMPLES": memory, "SAFETY_EXAMPLES": safety, "LIMIT_EXAMPLES": limits, "REFUSAL_NOTE": note,
+            "RECORDS_COVERAGE": coverage}
 
 
 def blocked_count(c: dict[str, Any]) -> int:
@@ -1439,6 +1753,8 @@ def takeaway(c: dict[str, Any], by_role: dict[str, dict[str, Any]]) -> str:
         if ac:
             line += (f" {ac['no_reliable_answer']} of {ac['total']} live runs of this question ended the same way.")
         return line
+    if is_refusal(c):
+        return refusal_takeaway(c, other)
     if other is not None and steps and "research" not in steps:
         on = other["numbers"]
         lead = "Answered from memory" if searches == 0 else f"Memory answered part, and {count(searches, 'search', 'searches')} topped it up"
@@ -1523,10 +1839,12 @@ def takeaway(c: dict[str, Any], by_role: dict[str, dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def stamp_page(template: str, stand_in: bool, build_id: str, roles: tuple[str, ...] = ROLES) -> str:
+def stamp_page(template: str, stand_in: bool, build_id: str, roles: tuple[str, ...] = ROLES,
+               fills: dict[str, str] | None = None) -> str:
     """Keep the stand-in or the rerun blocks of the page template, keep each
     `if:role:<role>` block only when that role is on the page, and fill in the
-    build ID and the case count."""
+    build ID, the case count and the case references (page_fills). A placeholder
+    left unfilled is a build failure."""
     keep, drop = ("stand_in", "rerun") if stand_in else ("rerun", "stand_in")
     page = re.sub(rf"[ \t]*<!-- if:{drop} -->.*?<!-- /if:{drop} -->\n?", "", template, flags=re.S)
     page = re.sub(rf"[ \t]*<!-- /?if:{keep} -->\n?", "", page)
@@ -1539,8 +1857,14 @@ def stamp_page(template: str, stand_in: bool, build_id: str, roles: tuple[str, .
         raise BuildError("the page template has an unbalanced or unknown if block")
     words = ("zero one two three four five six seven eight nine ten").split()
     count = words[len(roles)] if len(roles) < len(words) else str(len(roles))
-    return (page.replace("{{BUILD_ID}}", build_id).replace("{{STAND_IN_LABEL}}", STAND_IN_LABEL)
+    page = (page.replace("{{BUILD_ID}}", build_id).replace("{{STAND_IN_LABEL}}", STAND_IN_LABEL)
             .replace("{{CASE_COUNT}}", count).replace("{{CASE_COUNT_TITLE}}", count.capitalize()))
+    for key, value in (fills or {}).items():
+        page = page.replace("{{" + key + "}}", value)
+    left = sorted(set(re.findall(r"\{\{([A-Z_]+)\}\}", page)))
+    if left:
+        raise BuildError(f"the page template has placeholders nothing filled: {', '.join(left)}")
+    return page
 
 
 def fixtures_text(demo: dict[str, Any], stand_in: bool, sel_sha: str) -> str:
@@ -1877,6 +2201,8 @@ def build(args: argparse.Namespace) -> int:
         nsm["also_count"] = {"runs": rows, "no_reliable_answer": nra_count, "total": len(rows)}
 
     for case in cases:
+        if case["route"] is not None:
+            case["route"]["lead"] = route_lead(case)
         case["takeaway"] = takeaway(case, by_role) + safety_takeaway(case)
 
     if notes.errors:
@@ -1932,7 +2258,7 @@ def build(args: argparse.Namespace) -> int:
         put("src/fixtures.js", fixtures.encode("utf-8"), "install")
         if args.page:
             page = stamp_page(Path(args.page).read_text(encoding="utf-8"), stand_in, builds[0] if builds else "",
-                              selected_roles(sel))
+                              selected_roles(sel), page_fills(cases))
             put("tool.html", page.encode("utf-8"), "install")
         src_dir = Path(args.src_dir) if args.src_dir else None
         if args.preview:

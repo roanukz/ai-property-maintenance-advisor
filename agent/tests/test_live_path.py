@@ -325,7 +325,8 @@ def test_sc11_miss_is_reported_not_hidden(live_env: Path, monkeypatch: pytest.Mo
     """Mutation: live_sc11_always_pass (the post condition ignores the total)."""
     data = flo_data()
     heavy = copy.deepcopy(data["synthesize"][0])
-    heavy["usage"] = {"input_tokens": 13_000, "output_tokens": 40_000, "total_tokens": 53_000}
+    # A prompt over the long prompt line, billed on Claude Haiku 5.5's long card (decision 69).
+    heavy["usage"] = {"input_tokens": 200_000, "output_tokens": 40_000, "total_tokens": 240_000}
     data["synthesize"] = [heavy]
     fakes = LiveFakes(data).install(monkeypatch)
     thread_id, out = run_flo_live(monkeypatch, capsys, fakes)
@@ -432,8 +433,9 @@ def test_live_requests_built_by_the_real_clients(live_env: Path, monkeypatch: py
         assert req["url"].endswith("/v1/messages") and req["reserved"], req["node"]
         assert body["model"] == config.MODEL_FOR["cheap"][node]
         assert body["max_tokens"] == models.max_tokens_for(node, "cheap")
-        assert not {"temperature", "top_p", "top_k", "thinking"} & set(body), sorted(body)
-        assert "effort" not in (body.get("output_config") or {})  # never sent to Haiku
+        assert not {"temperature", "top_p", "top_k", "thinking", "fallbacks"} & set(body), sorted(body)
+        # Claude Haiku 5.5: the node's effort (decision 69), adaptive thinking by default.
+        assert (body.get("output_config") or {}).get("effort") == config.HAIKU_EFFORT[node]
         assert req["headers"]["x-api-key"] == FAKE_ANTHROPIC  # read from the environment the .env filled
         assert req["headers"]["x-stainless-retry-count"] == "0"
         assert req["timeout"]["read"] == config.model_timeout_s(body["max_tokens"])

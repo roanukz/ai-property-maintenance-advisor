@@ -1431,6 +1431,28 @@
         }
       }
     },
+    "2b4d43f5b022868c8dcf4e06e68badc42a922bd1f991e4e0d07f692d690c6604": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
+        }
+      }
+    },
     "2b6b226faaed73aa5482951093e8a72bc509b1e123703422f8a7eb9d7321fb63": {
       "contradictory_votes": 0,
       "hazard": "electrical",
@@ -1692,6 +1714,28 @@
         "reader-3": {
           "hazard": "none",
           "safety": "no"
+        }
+      }
+    },
+    "33acb54158a87bfa35e25ce8e2835055f3af4d9b8f3d9a42b1f68b652157aaef": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
         }
       }
     },
@@ -2465,6 +2509,28 @@
         }
       }
     },
+    "4dcb9410014f93c5163d3526d9776cb112fde2e38674d19a774161e1b3ba2abe": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
+        }
+      }
+    },
     "4e03f8b707c6eeeaac4911a4442f4822db3944ce4bf0e2f7aa2fa595d826bc98": {
       "contradictory_votes": 0,
       "hazard": "none",
@@ -2836,6 +2902,28 @@
         "reader-3": {
           "hazard": "none",
           "safety": "no"
+        }
+      }
+    },
+    "5a1a23eca3f3f05d71a615e88de4d63e6f3447acaca84aa0dda006138678d3a4": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
         }
       }
     },
@@ -3543,6 +3631,28 @@
         }
       }
     },
+    "699300ae0cadad05059091e06361f9ac8d36ade71865a8c74cf84077d8147fe2": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": true,
+      "unanimous_with_hazard": false,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-3": {
+          "hazard": "other",
+          "safety": "no"
+        }
+      }
+    },
     "6a09fdea119038a63c11f9b0e3dd32201c48a326139721223d3869cbabe05618": {
       "contradictory_votes": 0,
       "hazard": "none",
@@ -3605,6 +3715,28 @@
         },
         "reader-3": {
           "hazard": "other",
+          "safety": "no"
+        }
+      }
+    },
+    "6ae257d37a9a97da5d9abf3a29219c28aa27d6119d323a02294bbe57ec908b16": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": false,
+      "unanimous_with_hazard": false,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "none",
           "safety": "no"
         }
       }
@@ -3720,6 +3852,28 @@
       }
     },
     "6e44ddfe60293b609b604622b8ff1870253f1525a4890c4fa5f249a070ac6947": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
+        }
+      }
+    },
+    "6f2012d573e49c5096e229149b57e526a6cce75a78027f27b913440573eaccb7": {
       "contradictory_votes": 0,
       "hazard": "electrical",
       "label": "yes",
@@ -4247,6 +4401,28 @@
         }
       }
     },
+    "867971c63666cadef3512bdcb6a7f8a3e2a38d39a228de7444078c4c37c25b4e": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-3": {
+          "hazard": "none",
+          "safety": "no"
+        }
+      }
+    },
     "86fd1901c6b613af5dc2975dbb28eb06a1bbbf722c24efb8dee03b62940607e9": {
       "contradictory_votes": 0,
       "hazard": "heat",
@@ -4270,6 +4446,28 @@
       }
     },
     "873e0b1bc419a12cddfe96afc3757b7b47f84f74c6e2b79999e31e07d06c44d8": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
+        }
+      }
+    },
+    "877cf7aa411ccd32f6e77fc406127bedf156c02e8282d9d72b62e7fc40332828": {
       "contradictory_votes": 0,
       "hazard": "electrical",
       "label": "yes",
@@ -5347,6 +5545,28 @@
         }
       }
     },
+    "ae0592e0eaac90a07bcf9772920d0a79a2433d8add7bd72401c7cb7397650f86": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": true,
+      "unanimous_with_hazard": false,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-3": {
+          "hazard": "other",
+          "safety": "no"
+        }
+      }
+    },
     "af2c119715a9ea10a91a9683c9350f004a8e93b857edee94dcf1aecda1a0c6f4": {
       "contradictory_votes": 0,
       "hazard": "none",
@@ -5608,6 +5828,28 @@
         "reader-3": {
           "hazard": "none",
           "safety": "no"
+        }
+      }
+    },
+    "b5717478cea7b64d79077e1a97f19e20b01bb4e6e1d84e0d59ad88a44032537b": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
         }
       }
     },
@@ -6026,6 +6268,28 @@
         "reader-3": {
           "hazard": "none",
           "safety": "no"
+        }
+      }
+    },
+    "bf6156bc01a4b6fed5aac9a73fa2d1e6f6a1fc22217316ca5fa032d33bb9a9e0": {
+      "contradictory_votes": 0,
+      "hazard": "electrical",
+      "label": "yes",
+      "positive": true,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-2": {
+          "hazard": "electrical",
+          "safety": "yes"
+        },
+        "reader-3": {
+          "hazard": "electrical",
+          "safety": "yes"
         }
       }
     },
@@ -6664,6 +6928,28 @@
         "reader-3": {
           "hazard": "electrical",
           "safety": "yes"
+        }
+      }
+    },
+    "d61e2b940cce9aa8d8f45d7c2b5b87c08de2f8625b631fe3116e55db81a85b4d": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": true,
+      "unanimous_with_hazard": false,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-3": {
+          "hazard": "other",
+          "safety": "no"
         }
       }
     },
@@ -7877,6 +8163,28 @@
         }
       }
     },
+    "fa50cbce7c2c6e8a78f0eba80d0664d42e8b00865adf2ec010ef1e310c3156fc": {
+      "contradictory_votes": 0,
+      "hazard": "none",
+      "label": "no",
+      "positive": false,
+      "unanimous": true,
+      "unanimous_with_hazard": true,
+      "votes": {
+        "reader-1": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-2": {
+          "hazard": "none",
+          "safety": "no"
+        },
+        "reader-3": {
+          "hazard": "none",
+          "safety": "no"
+        }
+      }
+    },
     "faf09490470fdbae4d900429d1ec8d91c6a8a52422d48eef086dfba3b755ae53": {
       "contradictory_votes": 0,
       "hazard": "none",
@@ -8039,10 +8347,10 @@
     "reader-3"
   ],
   "unanimity": {
-    "items": 365,
-    "rate": 0.9780821917808219,
-    "rate_with_hazard": 0.915068493150685,
-    "unanimous": 357,
-    "unanimous_with_hazard": 334
+    "items": 379,
+    "rate": 0.9762532981530343,
+    "rate_with_hazard": 0.9076517150395779,
+    "unanimous": 370,
+    "unanimous_with_hazard": 344
   }
 }

@@ -18,6 +18,7 @@ shows up as a failing test until the golden is regenerated and reviewed again.
 | `v2_upgrade_options.html` | synthetic brief with one graph derived upgrade option | through validate on the "upgrade" pass (rules 9 and 10), with synthetic page text for the authorship quote and the evidence quote; the option must survive |
 | `v2_maintenance_due.html` | synthetic brief with one maintenance item | through validate (rules 9 and 10), with a synthetic maintenance_log row. As on a live run, the item carries no `last_done_record_id`: code finds the log row by its task, copies its date into `last_done_on` and computes the due date. Rendered with the run context the render node builds (history_hits only), so the page shows what production shows |
 | `v2_all_forum.html` | synthetic brief whose sources are all forum hosts | through validate |
+| `v2_warranty_coverage.html` | synthetic brief with three synthetic warranty coverage rows (SC13): one active, one ended, one whose start is a purchase year only | through validate, with the rows as the registry's warranty_coverage; code writes the coverage line as of 2026-08-18 |
 
 The recorded briefs are public (`fixtures/v1_fixtures.js`, which was v1's
 published `src/fixtures.js`, and `briefs/`). Everything else
@@ -73,6 +74,7 @@ byte. No approved differences file is written until Roanuk approves.
 | 19 | A budget stop page never shows the all forum warning (its sources were never graded, so forum is a default, not a finding) | new, needs approval | `v2_budget_stopped.html` (its one source carries the default forum tier and no warning) |
 | 20 | Extra CSS rules for the new pieces (`.host`, `.retrieved`, `.note`, `.items`, `.quote`) appended after v1's CSS | new, needs approval | every golden |
 | 21 | Budget stop sources show the default FORUM badge (refuse.py gives ungraded sources forum; a "not graded" badge would be a further difference) | new, needs a decision (open issue) | `v2_budget_stopped.html` |
+| 22 | The warranty coverage line code writes in validate (SC13), after the age statement and terms: active coverage with each component, end date and `warranty:<id>`, each synthetic row labeled "synthetic", then "Check with the maker before paying for a repair"; rows not yet started or with an unknown end date named with the same check; the terms only line when the record holds terms text but no rows; "No warranty on file." when the registry holds neither (every recorded brief, which has no registry appliance) | new, needs approval (13 October 2026 PRD, SC13) | `v2_warranty_coverage.html`; "No warranty on file." in `v2_flo.html`, `v2_hvac.html`, `v2_notheating.html`, `v2_happened_before.html`, `v2_upgrade_options.html`, `v2_maintenance_due.html`, `v2_all_forum.html` |
 
 Withdrawn: an earlier build moved the candidates table's horizontal scroll
 from v1's `div.tablewrap` to the whole section, so the heading and code note

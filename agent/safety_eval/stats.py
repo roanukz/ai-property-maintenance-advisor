@@ -204,3 +204,43 @@ def reliability(items: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             "observed_rate": (positives / len(members)) if members else None,
         })
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Agreement between two raters (SC12c, decision 70)
+# ---------------------------------------------------------------------------
+
+
+def agreement_table(pairs: Sequence[tuple[str, str]], categories: Sequence[str]) -> list[list[int]]:
+    """The square table of (first rater, second rater) answers: rows the first rater, columns the second."""
+    index = {c: n for n, c in enumerate(categories)}
+    table = [[0] * len(categories) for _ in categories]
+    for first, second in pairs:
+        if first not in index or second not in index:
+            raise ValueError(f"answer outside {tuple(categories)}: {first!r}, {second!r}")
+        table[index[first]][index[second]] += 1
+    return table
+
+
+def cohen_kappa(table: Sequence[Sequence[int]]) -> Fraction | None:
+    """Cohen's kappa from a square agreement table, exactly.
+
+    (observed agreement - chance agreement) / (1 - chance agreement), where
+    chance agreement sums, over the categories, the product of each rater's
+    own share of that category. None when the table is empty, or when chance
+    agreement is 1 (both raters gave every item the same one category), where
+    kappa is undefined.
+    """
+    k = len(table)
+    if any(len(row) != k for row in table) or any(cell < 0 for row in table for cell in row):
+        raise ValueError("an agreement table is square with counts of zero or more")
+    n = sum(sum(row) for row in table)
+    if n == 0:
+        return None
+    observed = Fraction(sum(table[i][i] for i in range(k)), n)
+    rows = [sum(table[i]) for i in range(k)]
+    cols = [sum(table[i][j] for i in range(k)) for j in range(k)]
+    chance = sum((Fraction(rows[i] * cols[i], n * n) for i in range(k)), Fraction(0))
+    if chance == 1:
+        return None
+    return (observed - chance) / (1 - chance)

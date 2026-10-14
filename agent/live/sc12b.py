@@ -4,7 +4,11 @@ Cheap mode, after the lock (Gate 2) and after arm A (the revised writer
 instruction) is in. config.SC12B_RUNS_PER_INPUT runs with the input of each
 run in config.SC12B_INPUT_RUNS, read from its live recording
 (data/recordings/live_t_<id>.json: input and resume answer; the photo is the
-demo asset whose sha256 is the recorded plate hash). Each run is a first
+demo asset whose sha256 is the recorded plate hash). A superseded build's
+recordings are filed under data/superseded/<build>/recordings/ (decision
+67, which moved both inputs there), so a recording not in data/recordings/
+is read from the one superseded folder that holds it; none, or more than
+one, refuses before anything is spent. The preflight names each folder read. Each run is a first
 lookup: that model's nodes and edges leave data/graph.json before the run,
 and the file is restored afterward, checked by hash.
 
@@ -63,16 +67,34 @@ from agent.safety_eval import sc12b as offline
 SUITE = offline.SUITE
 
 
+def input_recordings_dir(source: str) -> Path:
+    """The folder holding the recording of `source`: config.RECORDINGS_DIR when it is there, else the one
+    superseded build folder's recordings/ that holds it (data/superseded/<build>/recordings/)."""
+    recording = offline.recording_path(source)
+    if recording.is_file():
+        return recording.parent
+    superseded = Path(config.RECORDINGS_DIR).parent / "superseded"
+    found = sorted(superseded.glob(f"*/recordings/{recording.name}"))
+    if not found:
+        raise CliRefusal(f"the recording of {source}, SC12b's input, is not at {recording} and no superseded "
+                         f"build's recordings under {superseded} hold it. Nothing was spent.")
+    if len(found) > 1:
+        raise CliRefusal(f"the recording of {source}, SC12b's input, is not at {recording}, and more than one "
+                         f"superseded build holds it ({', '.join(str(p) for p in found)}), so which input to use "
+                         "is not clear. Nothing was spent.")
+    return found[0].parent
+
+
+def input_recordings() -> dict[str, Path]:
+    """Each input run's recording folder, in config order."""
+    return {source: input_recordings_dir(source) for source in config.SC12B_INPUT_RUNS}
+
+
 def sc12b_specs() -> list[tuple[RunSpec, str]]:
     """(run spec, graph scope) for every planned run, inputs in config order."""
     out = []
-    for source in config.SC12B_INPUT_RUNS:
-        recording = offline.recording_path(source)
-        if not recording.is_file():
-            # A superseded build's runs are filed under data/superseded/, recordings included.
-            raise CliRefusal(f"the recording of {source}, SC12b's input, is not at {recording} (a superseded "
-                             "build's recordings are filed under data/superseded/). Nothing was spent.")
-        given = offline.read_input(source)
+    for source, folder in input_recordings().items():
+        given = offline.read_input(source, folder)
         photo = offline.resolve_photo(given["plate_sha256"])
         identity = given["answer_identity"] or given["identity"]
         if not identity or not identity.get("model"):
@@ -157,7 +179,8 @@ def credit_plan(specs: list[tuple[RunSpec, str]], ledger: Any) -> dict[str, int]
             "left": config.BUILD_CREDIT_CAP - ledger.build_credits()}
 
 
-def gate3_extra(specs: list[tuple[RunSpec, str]], spent: float, credits: Mapping[str, int]) -> list[str]:
+def gate3_extra(specs: list[tuple[RunSpec, str]], spent: float, credits: Mapping[str, int],
+                inputs: Mapping[str, Path] | None = None) -> list[str]:
     """Gate 3's lines; the Jev calls and their cost are in the preflight's own lines."""
     runs = len(specs)
     scopes = sorted({scope for _, scope in specs})
@@ -165,6 +188,8 @@ def gate3_extra(specs: list[tuple[RunSpec, str]], spent: float, credits: Mapping
         f"Gate 3: {runs} first lookups; Tavily credits planned on first passes {credits['planned']}, ceiling "
         f"{credits['ceiling']} at the per run cap; the build has {credits['left']} left",
     ]
+    for source, folder in (inputs or {}).items():
+        lines.append(f"input of {source}: read from {offline.recording_path(source, folder)}")
     if credits["left"] < credits["planned"]:
         lines.append(f"the {credits['left']} credits left cannot cover the planned {credits['planned']}: stop and "
                      "ask Roanuk (decision 1: BUILD_CREDIT_CAP stays unless he changes it)")
@@ -196,7 +221,7 @@ def cmd_eval_sc12b(args: argparse.Namespace, environ: MutableMapping[str, str], 
     rerun = check_rerun(SUITE, build, (getattr(args, "fix", None) or "").strip() or None)
     credits = credit_plan(specs, ledger)
     lines = preflight_lines(SUITE, [s for s, _ in specs], ledger,
-                            extra=[*gate3_extra(specs, spent, credits), *rerun.lines(SUITE)])
+                            extra=[*gate3_extra(specs, spent, credits, input_recordings()), *rerun.lines(SUITE)])
     if credits["left"] < credits["planned"]:
         # Gate 3: the plan is printed against what is left, then the command stops and asks.
         for line in lines[:-1]:
@@ -204,7 +229,8 @@ def cmd_eval_sc12b(args: argparse.Namespace, environ: MutableMapping[str, str], 
         sys.stdout.flush()
         raise CliRefusal(f"Gate 3: the build has {credits['left']} Tavily credits left, below the planned "
                          f"{credits['planned']}; stop and ask Roanuk (decision 1). Nothing was spent.")
-    session = cli.LiveSession(f"eval {SUITE}", mode, ledger, need=tuple(config.LIVE_KEY_NAMES), environ=environ)
+    session = cli.LiveSession(f"eval {SUITE}", mode, ledger, need=tuple(config.LIVE_KEY_NAMES), environ=environ,
+                              uses_registry=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     records: list[dict[str, Any]] = []
     code = cli.EXIT_OK

@@ -1,5 +1,5 @@
 {
-  "_about": "Synthetic registry seed for Property Maintenance Advisor v2 (PLAN section 8.12). Every row is synthetic: property labels, serials, dates, warranty terms, service records and maintenance entries are invented for testing. Manufacturer and model names are real only where a row's notes say so; everything else about those rows is synthetic. Citation ids (appliance:<id>, service:<id>, maintenance:<id>) are derived by agent/registry.py at load time.",
+  "_about": "Synthetic registry seed for Property Maintenance Advisor v2 (PLAN section 8.12). Every row is synthetic: property labels, serials, dates, warranty terms, service records and maintenance entries are invented for testing. Manufacturer and model names are real only where a row's notes say so; everything else about those rows is synthetic. An appliance's model_number is set only where the record already holds the exact model number: the Trane unit's is the model number part of its model on record, and the Rheem unit's model on record is its model number. The Optima 880 is a model name with no model number on record, and the invented models have none, so theirs are left out (null). Warranty coverage rows encode the synthetic warranty terms one component at a time, with terms in months. Citation ids (appliance:<id>, service:<id>, maintenance:<id>, warranty:<id>) are derived by agent/registry.py at load time.",
   "properties": [
     {
       "id": "prop-a",
@@ -34,13 +34,14 @@
       "category": "air_conditioner",
       "manufacturer": "Trane",
       "model": "XR16 4TTR6036",
+      "model_number": "4TTR6036",
       "serial": "SYN-TRN-000002",
       "purchase_date": "2019-04-02",
       "install_date": "2019-04-15",
       "warranty_terms": null,
       "warranty_source": null,
       "status": "active",
-      "notes": "Real model name (split system AC outdoor unit); serial and dates are synthetic.",
+      "notes": "Real model name (split system AC outdoor unit); serial and dates are synthetic. The model on record joins the product line (XR16) and the model number (4TTR6036); model_number is the model number part of that name, nothing more, and the product recall check compares it exactly.",
       "synthetic": true
     },
     {
@@ -49,13 +50,14 @@
       "category": "water_heater",
       "manufacturer": "Rheem",
       "model": "PRO+E50 M2 RH92 CL",
+      "model_number": "PRO+E50 M2 RH92 CL",
       "serial": "SYN-RHM-000003",
       "purchase_date": "2023-08-20",
       "install_date": "2023-09-01",
       "warranty_terms": null,
       "warranty_source": null,
       "status": "active",
-      "notes": "Third real model, confirmed on 18 September 2026 (decision 13; Roanuk delegated the choice). Rheem Professional Classic Plus with LeakSense, 50 gallon electric, model PRO+E50 M2 RH92 CL. Checked on 18 September 2026: the maker's product page https://www.rheem.com/product/rheem-professional-classic-plus-with-leaksense-pro-e50-m2-rh92-cl/ lists this model number, capacity and fuel type. Serial and dates are synthetic.",
+      "notes": "Third real model, confirmed on 18 September 2026 (decision 13; Roanuk delegated the choice). Rheem Professional Classic Plus with LeakSense, 50 gallon electric, model PRO+E50 M2 RH92 CL. Checked on 18 September 2026: the maker's product page https://www.rheem.com/product/rheem-professional-classic-plus-with-leaksense-pro-e50-m2-rh92-cl/ lists this model number, capacity and fuel type. Serial and dates are synthetic. The model on record is already the model number, so model_number repeats it.",
       "pending_owner_choice": false,
       "synthetic": true
     },
@@ -103,6 +105,21 @@
       "status": "active",
       "notes": "Invented maker and model.",
       "synthetic": true
+    },
+    {
+      "id": "appl-softener",
+      "property_id": "prop-b",
+      "category": "water_softener",
+      "manufacturer": "Synthetic Water Co.",
+      "model": "WS-400 (synthetic)",
+      "serial": "SYN-WS-000007",
+      "purchase_date": "2026-04-20",
+      "install_date": "2026-05-04",
+      "warranty_terms": "Synthetic warranty terms for testing: control valve 5 years and resin tank 10 years from the install date; labor 1 year from the purchase date.",
+      "warranty_source": "synthetic seed entry",
+      "status": "active",
+      "notes": "Invented maker and model, installed recently so its warranty coverage is active (SC13; every other seeded term has ended).",
+      "synthetic": true
     }
   ],
   "service_records": [
@@ -130,6 +147,62 @@
       "appliance_id": "appl-washer",
       "task": "Ran the tub clean cycle",
       "done_on": "2026-02-15",
+      "synthetic": true
+    }
+  ],
+  "warranty_coverage": [
+    {
+      "id": "warr-optima-shell",
+      "appliance_id": "appl-optima880",
+      "component": "shell",
+      "term_months": 60,
+      "start_event": "install",
+      "source_text": "shell 5 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-optima-equipment",
+      "appliance_id": "appl-optima880",
+      "component": "equipment",
+      "term_months": 24,
+      "start_event": "install",
+      "source_text": "equipment 2 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-optima-labor",
+      "appliance_id": "appl-optima880",
+      "component": "labor",
+      "term_months": 12,
+      "start_event": "install",
+      "source_text": "labor 1 year",
+      "synthetic": true
+    },
+    {
+      "id": "warr-softener-valve",
+      "appliance_id": "appl-softener",
+      "component": "control valve",
+      "term_months": 60,
+      "start_event": "install",
+      "source_text": "control valve 5 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-softener-tank",
+      "appliance_id": "appl-softener",
+      "component": "resin tank",
+      "term_months": 120,
+      "start_event": "install",
+      "source_text": "resin tank 10 years",
+      "synthetic": true
+    },
+    {
+      "id": "warr-softener-labor",
+      "appliance_id": "appl-softener",
+      "component": "labor",
+      "term_months": 12,
+      "start_event": "purchase",
+      "source_text": "labor 1 year from the purchase date",
       "synthetic": true
     }
   ]

@@ -84,10 +84,11 @@ def estimate_tokens(mode: str) -> int:
 
 def typical_and_worst_usd(mode: str) -> tuple[float, float]:
     """(typical, worst case): the reservation with a typical reply, and the full reservation."""
-    prices = config.PRICES_PER_MTOK[model_id(mode)]
+    model = model_id(mode)
     tokens = estimate_tokens(mode)
-    typical = price_usage(prices, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL})
-    worst = price_usage(prices, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})
+    typical_out = config.typical_tokens(model, config.SCHEMA_CHECK_OUTPUT_TOKENS_TYPICAL)
+    typical = price_usage(model, {"input_tokens": tokens, "output_tokens": typical_out})
+    worst = price_usage(model, {"input_tokens": tokens, "output_tokens": config.SCHEMA_CHECK_MAX_TOKENS})
     return typical, worst
 
 

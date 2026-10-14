@@ -348,7 +348,11 @@
           add(row, chip("chip-quiet", "Symptom check: " + (VERDICT_NAMES[r.classifier_verdict] || r.classifier_verdict)));
         }
         var lead = add(s, el("p", "lead-note step-note"));
-        if (records && fromMemory && searches === 0) {
+        /* The builder words the lead itself when the wording below would not fit
+           the run (for example a top up where the symptom check never ran). */
+        if (r.lead) {
+          txt(lead, r.lead);
+        } else if (records && fromMemory && searches === 0) {
           txt(lead, "The tool read this unit's property records first. Memory then held " + factNoun(m) + " that fits, so it answered without a single search.");
         } else if (topUp && m && m.offered_from_memory) {
           txt(lead, "Memory is checked first. It held " + factNoun(m) + " for this unit, but that alone cannot settle a vague symptom, so a short top up search ran with the smaller search limit.");
@@ -410,7 +414,8 @@
           if (f.brief_quote_relation === "prefix" && f.brief_quote && f.brief_quote.length < f.evidence.length) {
             add(card, el("p", "step-note", "The brief quotes the first " + f.brief_quote.length + " of the " + f.evidence.length + " stored characters."));
           } else if (f.brief_quote_relation === "within" && f.brief_quote) {
-            add(card, el("p", "step-note", "The brief quotes " + f.brief_quote.length + " of the " + f.evidence.length + " stored characters, word for word, leaving out the code label at the start."));
+            add(card, el("p", "step-note", "The brief quotes " + f.brief_quote.length + " of the " + f.evidence.length + " stored characters, word for word" +
+              (f.brief_quote_drops_code_label === false ? "." : ", leaving out the code label at the start.")));
           }
           var dl = add(card, el("dl", "facts"));
           add(dl, el("dt", null, "Source"));
@@ -480,6 +485,30 @@
           add(s, el("h4", "sub", "Warranty terms on file"));
           verbatim(s, "Quoted from property record " + w.record_id, w.terms);
           add(s, el("p", "step-note", "Copied by code from the record, not paraphrased by the model. These terms are synthetic test data, as the record itself says."));
+        }
+        var cov = r.coverage;
+        if (cov) {
+          add(s, el("h4", "sub", "Warranty coverage, worked out by code"));
+          verbatim(s, "The brief's coverage line", cov.statement);
+          var table = add(s, el("table", "compare coverage-table"));
+          add(table, el("caption", "sr-only", "Each synthetic warranty row, with its end date and status on the day of the run"));
+          var hr = add(add(table, el("thead")), el("tr"));
+          ["Component", "Ends", "Status on " + longDate(cov.as_of), "Record"].forEach(function (h) {
+            var th = add(hr, el("th", null, h)); th.scope = "col";
+          });
+          var tb = add(table, el("tbody"));
+          cov.rows.forEach(function (row) {
+            var tr = add(tb, el("tr"));
+            var th = add(tr, el("th", null, row.component)); th.scope = "row";
+            [["Ends", row.end_date ? longDate(row.end_date) : "end date unknown"],
+             ["Status on " + longDate(cov.as_of), row.status === "end_date_unknown" ? "end date unknown"
+               : row.status === "not_started" ? "not started" : row.status],
+             ["Record", row.record_id + ", synthetic"]].forEach(function (p) {
+              var td = add(tr, el("td", null, p[1]));
+              td.setAttribute("data-label", p[0]);
+            });
+          });
+          add(s, el("p", "step-note", "Each end date is the row's start date, the install or purchase date it names, plus its term, and each status is as of the day of the run. Code computes both from the synthetic coverage rows; the model never writes a warranty date. The tool does not say which coverage, if any, applies to a repair."));
         }
       }
     };
@@ -576,11 +605,18 @@
       ["Processing time", "processing_s", secs],
       ["Steps to try first in the brief", "try_first_steps", function (v) { return v == null ? "not recorded" : String(v); }]
     ];
+    /* How each run ended, first, whenever the builder recorded it: a refusal next
+       to an answer must never read as the same result for less money. */
+    if (cols.every(function (col) { return col.outcome_text; })) {
+      rows.unshift(["How it ended", "outcome_text", String]);
+    }
     return {
       title: "Side by side",
       body: function (s) {
         var usedMemory = (c.route && c.route.steps.indexOf("graph") >= 0);
-        if (bothResearched && usedMemory) {
+        if (cw.note) {
+          add(s, el("p", "step-note lead-note", cw.note));
+        } else if (bothResearched && usedMemory) {
           add(s, el("p", "step-note lead-note", "Both runs searched. This one checked what memory held for the unit first, and what it found sent the run to the short top up search instead of the full one. Each source in the brief below is marked as from memory or found by search."));
         } else if (bothResearched) {
           add(s, el("p", "step-note lead-note", "Both runs had to search, so memory saved nothing here. A run that searches costs more or less depending on how many searches and pages it needs."));

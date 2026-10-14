@@ -9,6 +9,11 @@ synthesize, with max_tokens from config.MAX_TOKENS["classifier"].
 A reply that does not parse counts as unsure, and so does a call the budget
 cannot afford: unsure sends the run to the top up, which is the safe side
 (research then meets the same budget and stops the run if it must).
+
+A declined call (agent.declined.ModelDeclined, decision 69) is not unsure: it
+is charged and leaves classify_symptom as raised, so the caller ends the run
+on the decline brief. Counting it as unsure would send the same request on to
+research, which is a retry.
 """
 
 from __future__ import annotations

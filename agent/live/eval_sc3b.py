@@ -118,10 +118,10 @@ def model_key(model: str | None) -> str:
 
 
 def _price(node: str, input_tokens: int, output_tokens: int) -> float:
-    from agent.ledger import price_usage
+    """A typical call: the older tokenizer's counts scaled for the node's model, on the card they select."""
+    from agent.live.preflight import _price as typical_price
 
-    model = config.MODEL_FOR[EVAL_MODE][node]
-    return price_usage(config.PRICES_PER_MTOK[model], {"input_tokens": input_tokens, "output_tokens": output_tokens})
+    return typical_price(config.MODEL_FOR[EVAL_MODE][node], input_tokens, output_tokens)
 
 
 def research_typical(kind: str) -> dict[str, float]:
@@ -587,7 +587,7 @@ def run_batch(batch: Batch, args: argparse.Namespace, environ: MutableMapping[st
     need = (cli.ANTHROPIC_KEY_NAME,) if all(s.stop_at_pause for s in batch.specs) else tuple(config.LIVE_KEY_NAMES)
     ledger = open_batch_ledger(mode, len(batch.specs), new_ledger=bool(getattr(args, "new_ledger", False)),
                                need=need, per_run_usd=batch.per_run_usd, environ=environ)
-    session = cli.LiveSession(f"eval {batch.suite}", mode, ledger, need=need, environ=environ)
+    session = cli.LiveSession(f"eval {batch.suite}", mode, ledger, need=need, environ=environ, uses_registry=True)
     build = build_id()
     rerun = check_rerun(batch.suite, build, (getattr(args, "fix", None) or "").strip() or None)
     fix = rerun.fix

@@ -1292,3 +1292,389 @@ future recording carries it. The replay goldens and the legacy render did not
 change.
 
 **Cost:** $0.
+
+---
+
+## A second PRD: human labels, warranty status, a replacement sweep and a product recall check, 13 October 2026
+
+Roanuk's second PRD adds a human check on the safety step labels (SC12c),
+warranty status computed in code (SC13), a "plan a replacement" sweep (SC14),
+a product recall check against the U.S. Consumer Product Safety Commission
+(CPSC, SC15), and the teardown and README updates for them. A read only pass
+checked it against the repo, the data and the outside services first, and a
+second reader checked every conflict it raised; none was refuted.
+
+**What held:** the 175 held out items and the three AI readers' labels are
+complete and local; every new label can be scored from the recorded Jev
+answers at no cost; files under `agent/safety_eval/` stay outside the build
+fingerprint; CPSC's recall service answered with no key; Anthropic lists
+Claude Haiku 4.5 as active, retirement not sooner than 15 October 2026, with
+at least 60 days' notice promised.
+
+**What conflicted, and the decisions:**
+- **69. Cheap mode moves to Claude Haiku 5.5** (`claude-haiku-5-5`),
+  amending decision 14. The code refuses every Haiku 4.5 live run from 15
+  October, which would block the sweep's lookups and any re-record. Roanuk
+  chose the newer model over moving the date. Every published live number
+  is re-measured on it in one live batch, after the code for this PRD is
+  built and replay tested.
+- **70. Roanuk labels with what the AI readers had.** The PRD named both the
+  lock's criteria and "the same criteria the AI readers had"; they are
+  different texts, because the lock holds Jev's tuned wording, which added
+  two boundary cases chosen on the tune half. He labels all 175 held out
+  items with the label protocol and its six worked examples, verbatim, and
+  the same five hazard choices. The labeling page shows third party page
+  sentences, so it stays local and is never committed; only item ids and his
+  answers are. A local server saves each answer as he goes. The blind answers
+  are sealed by hash before scoring, and any later change is kept separately.
+- **71. CPSC's 2018 programmer's guide governs.** CPSC's API page still links
+  the 2017 guide, which lists a product model parameter; the 2018 guide, the
+  newest, drops it, as the PRD describes. Only the 2018 guide's documented
+  parameters are sent, never a model parameter.
+- **72. The sweep's lookups get their own research mode,** asking only about
+  discontinuation and successor models. The existing research looks for
+  error codes and troubleshooting, and the air conditioner would answer from
+  its stored causes without searching at all.
+- The PRD's own picks stand for its other questions: one synthetic appliance
+  with active coverage is added, since every seeded term has expired; serial
+  ranges in product recalls are not parsed; the demo re-record is decided
+  after the product recall check is built.
+
+**Worth recording:** about 70 offline tests read the real date, and the
+Haiku date gate would have failed them from 15 October. The tests now run on
+a fixed date; tests that need the real clock set it on purpose.
+
+**Cost:** $0. One free, keyless request reached CPSC to confirm the service.
+
+---
+
+## The label check and warranty status, built on replay, 13 October 2026
+
+Phase 0 (the label check, SC12c) and Phase A (warranty status in code, SC13)
+are built and pass the full suite offline, in normal and gate mode. Six
+reviewers read the build and a second reader checked each finding; nine of
+ten were fixed and one was declined (decision 75). Build `1f79e25e8155f393`
+(it was `b5b6504d37823e60`; Phase 0 alone left it unchanged, decision 65).
+
+**Decided:**
+- **73. One run date.** Each run takes one UTC date when it starts and keeps
+  it, even when it resumes on a later day. The model's "today", the age
+  statement, every coverage status and the brief footer all read it. The
+  property page takes its date once per page. "(UTC)" is printed on the
+  coverage line and the property page only, so no other recorded text
+  changes. Run record and source timestamps still use the clock, because they
+  are timestamps, not dates the reader acts on.
+- **74. Code computes every warranty end date and status.** The end date is
+  the start (the appliance's install or purchase date) plus the term in
+  months, clamped to the end of the month, so a 29 February start plus 12
+  months ends on 28 February. A row is "not started" before its start date,
+  "active" while the run date is before its end date, then "ended". A start
+  date held only as a year or a month gives "end date unknown", never
+  "ended". The model is not shown the coverage rows, only the terms text it
+  already saw.
+- **75. What the brief says.** Active coverage is listed with each
+  component, its end date and its record, then "Check with the maker before
+  paying for a repair; this brief does not say which coverage, if any,
+  applies to it." With rows but none active, it says none is active as of the
+  run date and gives the latest end date. With no rows it says "No warranty on
+  file.", never "out of warranty". With terms text but no rows it says the
+  terms are not broken into components, so nothing is computed from them.
+  The check sentence goes only with coverage that is or may be active
+  (active, not started, end date unknown, or terms only), never after "No
+  warranty on file." or when every row has ended; a reviewer asked whether it
+  should always print, and it was declined because telling the owner to
+  check coverage that has ended invites a wasted call. Every synthetic row is
+  labeled "synthetic".
+- **76. The model may not write a date in warranty text.** Rule 13 rejects
+  any date in the warranty cautions or verify items, with a retry: numeric
+  dates in any order, month names with a day or year, words such as "until"
+  or "expires" followed by a date, and any standalone year from 1900 to
+  2099. The last is a trade-off: a model number such as "2000 series" fails
+  too, and the retry asks for the text without it. Prices and model numbers
+  joined to letters or a dollar sign pass, and so does "May" alone. Unlike a
+  price, a date quoted from a source is not allowed, because code holds the
+  dates.
+- **77. One synthetic appliance with active coverage.** A water softener
+  (Synthetic Water Co. WS-400, on the second property) was added, bought
+  20 April 2026 and installed 4 May 2026, with three rows: valve 60 months and
+  tank 120 months from install, labor 12 months from purchase. The Optima
+  880's terms text maps to three rows (shell 60, equipment 24 and labor 12
+  months from install), all ended by October 2026.
+- **78. The blind labels are protected by the code, not by care.** Once the
+  labels are sealed, the page's answers are refused and the server will not
+  start; sealing is refused once any score exists; the scorer reports
+  whether the answer log still matches the seal. A revision's reason may
+  quote a step, so the reason stays in the local data folder and the
+  committed file holds only the item id, the time and the two labels. A lost
+  order file can be rebuilt from the original seed, and a new order is never
+  drawn over saved answers.
+
+**Worth recording:** the local registry predates the coverage table. Read
+against a fresh seed, it differs only by the softener and the nine lookups
+recorded on 1 October, and reloading the seed keeps lookups, so it is
+reloaded before the next live run. Every recorded brief now ends its warranty
+section with "No warranty on file.", because none has a registry appliance;
+this is rendered difference 22, which joins the list awaiting approval.
+
+**Cost:** $0.
+
+---
+
+## The sweep, the product recall check and Haiku 5.5, built on replay, 13 October 2026
+
+Phases B (the replacement sweep, SC14) and C (the product recall check,
+SC15) and the move to Claude Haiku 5.5 (decision 69) are built and pass
+offline. Two rounds of three builders each were reviewed, and every finding
+was checked by a second reader: 16 of 17 findings survived in the first round
+and 12 of 12 in the second, and all were fixed. Build `ad11e6e15a55d30a`.
+
+**Decided:**
+- **79. Haiku 5.5 settings.** Every Haiku step calls `claude-haiku-5-5`.
+  Effort is low for the plate read and the classifier and medium for research
+  and the cheap brief; thinking is left adaptive, and no thinking budget,
+  sampling setting or fallback is ever sent. Output budgets rose so thinking
+  has room (plate 2,048, classifier 1,024, research 4,096, cheap brief 16,000
+  tokens); a cheap run's worst case still reserves about $0.114, under its
+  $0.15 cap. Calls are priced on two rate cards chosen by prompt length,
+  counting cache reads and writes. Anthropic's pages, checked on 13 October,
+  give the prices, a tool overhead of 406 tokens, image input for all current
+  models, and retirement not sooner than 7 October 2027. Replay stays on the
+  recorded model's prices and budgets, so the goldens, the published demo and
+  every recorded number are unchanged.
+- **80. A declined call ends the run honestly.** When Haiku 5.5's safety
+  classifiers decline a call, it is charged, never retried on another model,
+  recorded as `model_declined` with its category, and the run ends on a code
+  written brief. Recordings can now hold Haiku 5.5 replies, thinking included,
+  and a declined call, so a live run can be replayed.
+- **81. The first live step checks the model.** One small call per Haiku step
+  at its exact settings, including a plate photo, must pass and must be
+  answered by `claude-haiku-5-5`, or the batch stops. A refused photo turns
+  plate reading off rather than switching models.
+- **82. The sweep reads only verified facts.** Offline, it shows each
+  appliance's age from its install date and any successor whose verified
+  quote names it; with nothing found it says "No discontinuation documented
+  in what this tool has verified." A discontinued part whose quote names no
+  successor is shown with "No successor is named in this evidence." The
+  lifecycle lookup is its own small path through research, one structured
+  extraction, the validation rules and the graph save. It refuses invented
+  makers and makers without a reviewed domain before any call, and it saves a
+  lifecycle fact, from a lookup or a brief, only when its quote names the
+  unit's full model.
+- **83. One $0.15 cap for the whole sweep** (Roanuk's choice). A lookup starts
+  only while what is left covers its worst case ($0.033 in cheap mode); a
+  unit left out saves nothing.
+- **84. The product recall check.** Only the 2018 guide's parameters are
+  sent, and only the maker's name: Manufacturer, Importer and Distributor are
+  asked separately and merged by recall number. A recall counts only when it
+  prints the model exactly, in its model field, product name, description or
+  title; the printing may join the model's parts but never split them. A
+  series printing ("4TTR6036*") is shown with its own sentence, and a match
+  found only in the text says so. A match lists the recall number, title,
+  hazard, remedy and link, then "Check whether your serial number is in the
+  affected range." It never says the unit is affected; with no match it says
+  no recall names this exact model, with the date checked; a failed request
+  says the check did not run. Invented makers are never queried. Responses are
+  stored with their date and never overwritten.
+- **85. Appliances carry a model number** (Roanuk's choice). The Trane is
+  checked as "4TTR6036" as well as "XR16 4TTR6036", each exactly; the product
+  line alone never matches. An older registry gains the field without losing
+  a row, and live steps that read the registry refuse one that differs from
+  the seed.
+- **86. A date that is not on the calendar is not a date,** so no age or end
+  date is computed from it, and the brief says the date could not be read.
+- **87. The stricter test gate now covers this PRD:** phase 6 requires 370
+  named tests.
+- **88. Phase 0 is deferred** (Roanuk's choice). He has no time to label, so
+  the human label check is not done; the labeling page and scorer stay built.
+  The pages keep saying the safety result was scored against three model
+  readers. Filling in the labels for him was declined: it would be a fourth
+  model reader recorded under his name.
+
+**Measured:** 3,422 tests pass offline, in normal mode and both gate phases;
+all 1,515 planted bugs are caught.
+
+**Worth recording:** the live batch that re-measures every published live
+number on Haiku 5.5 is planned from the code's own estimates at about $0.20
+typical and about 90 search credits, with the run caps holding the worst
+case near $2.41 against the $3.67 left. It waits for Roanuk's "proceed". It
+needs the earlier runs filed under `data/superseded/` and the registry
+reloaded from the seed first.
+
+**Cost:** $0.
+
+---
+
+## The live batch on Claude Haiku 5.5, 13 and 14 October 2026
+
+The live batch re-measured every published live number in cheap mode on
+Claude Haiku 5.5 (decision 69), on build `d24ed7c475dcd813` unless noted. The
+SC12b runs were made on the evening of 13 October, US Eastern, which is early
+on 14 October in UTC, the clock the run records use; the demo's cases were
+made on the morning of 14 October.
+
+**Decided:**
+- **89. Research effort is high, amending decision 79.** The first SC12b pass
+  at medium effort (build `ad11e6e15a55d30a`) ended with no reliable answer
+  on 4 of 10 first lookups; three of the four fetched one page or none, so the
+  model stopped researching early. Before the rerun a bar was set: at least 9
+  of 10 must answer. At high effort 7 of 10 answered, so the bar was not met.
+  The refusals moved to the writing step: Haiku 5.5 declined when its only
+  sources were the maker's general pages or a dealer table cut off before the
+  action.
+- **90. Haiku 5.5 ships at 7 of 10, and prompt rule 6 stays as written**
+  (both Roanuk's choices). Rule 6 asks for documentation of this exact model
+  or its documented family and forbids general knowledge of the equipment
+  category. Haiku 4.5's Trane answers cited Trane's maker wide troubleshooting
+  pages (such as "AC Fan Not Working?"), which the rule does not allow: both
+  Trane briefs on build `da738a1559ced359` and all five of its SC12b air
+  conditioner runs (build `9a64835e86a5a6c8`). So its 10 of 10 includes
+  answers the rule does not allow. Haiku 5.5 is not consistent either: its
+  three answered air conditioner runs cite the same pages, and two refused on
+  similar sources. No code check enforces rule 6; only the model applies it.
+  The pages report 7 of 10 as measured.
+- **91. The earlier runs are filed under `data/superseded/`, by moves only.**
+  Before the batch, build `da738a1559ced359`'s run, evaluation, recording,
+  brief and lookup files, the SC12b runs of build `9a64835e86a5a6c8` and the
+  live graph (182 files) moved to
+  `data/superseded/2026-10-13-build-da738a1559ced359/`. Before the rerun,
+  build `ad11e6e15a55d30a`'s capabilities check and medium effort SC12b runs
+  (93 files) moved to `data/superseded/2026-10-13-build-ad11e6e15a55d30a/`; a
+  changed setting's results are not a finding, so they appear here and never
+  on the pages. Nothing was deleted, each folder's MOVED.txt lists every
+  move, and the ledger still counts the spend. The registry stayed in place
+  and was reloaded from the seed. The product recall check is kept from build
+  `ad11e6e15a55d30a`: it sends only the maker's name to CPSC and reads no
+  model or effort setting, so the change could not alter it.
+- **92. The demo is re-recorded from these runs and shown as measured,
+  refusals included** (Roanuk's choice). Its eight cases finished on 14
+  October between 06:37 and 06:56 Eastern. Four of them end with no reliable
+  answer (the vague hot tub question, both air conditioner questions and the
+  invented model), and the demo says so. The demo builder, now version 5,
+  accepts a refusal on the vague question and both air conditioner
+  questions, and fails the build if a refusal claims an answer, lists steps or
+  saves anything to memory. Case 8 shows the warranty coverage line. The new
+  demo passes check_demo in a preview with 0 problems. (Written before the
+  install: installing it was to wait, with the commit and the publish, for
+  Roanuk's "proceed". It has since been installed into the working tree; see
+  "Installed" below.)
+
+**Measured** (every number the pages may use, from the file named):
+- Capabilities check passed, all 4 calls answered by `claude-haiku-5-5`
+  (`data/eval/capabilities/capabilities.json`); the schema check was
+  accepted.
+- SC12b, 10 first lookups (`data/eval/sc12b-t-*.json`; `advisor eval sc12b
+  --score`): 7 of 10 answered, 4 of 5 on the hot tub and 3 of 5 on the air
+  conditioner. Of 18 steps, 11 are in scope safety steps. The final flags
+  caught 11 of 11 at precision 11 of 14; Jev 10 of 11 at 10 of 11; the writer
+  10 of 11 at 10 of 13; the tuned word rule, not shipped, 11 of 11 at 11 of
+  14. The ten runs cost $0.0750 and 35 credits, a median of $0.0076 and 41.3
+  seconds a run. Haiku 4.5's ten SC12b runs (build `9a64835e86a5a6c8`) all
+  answered, for $0.4662 and 47 credits, a median of $0.0476 and 24.9 seconds
+  (archived run records).
+- Repeat questions (SC7b, `data/eval/sc7b-t-*.json`): MISS, repeats used 0 to
+  4 searches against a limit of 2. FLO first lookup t-88d15d19cba943ec: ok, 2
+  searches, 4 credits, $0.0075, 40.1 seconds. FLO repeat t-d644c199cbd74532:
+  ok from memory, 0 searches, $0.0015, 9.8 seconds by its run record (9.9 by
+  its evaluation record; the demo and pages use 9.8), with no steps to try
+  first. Vague repeat t-d077f82722f24d5f: no reliable answer, 2 searches,
+  $0.0040. Trane first lookup t-5cb8a33347ab4425: no reliable answer, 4
+  searches, $0.0086, 37.6 seconds. Trane repeat t-22e572e8a78146c1: no
+  reliable answer, a full research pass of 4 searches because the first
+  lookup saved nothing, $0.0089. On Haiku 4.5 (build `da738a1559ced359`) the
+  same check passed with 0 to 2 searches; its FLO first lookup cost $0.0435
+  in 28.7 seconds and its repeat $0.0082 in 4.3 seconds.
+- Invented model (SC3b, `data/eval/sc3b-t-*.json`): 3 of 3 refused by the
+  model, PASS, for $0.0045, $0.0051 and $0.0068, taking 25.6, 21.6 and 27.2
+  seconds by their run records (21.6 to 27.2 s on the pages).
+- Plates (`data/eval/plates-t-*.json`): the clear plate read exactly and the
+  blurry one marked unreadable, PASS, for $0.0005 and $0.0006, taking 4.0 and
+  3.7 seconds by their evaluation records (these runs pause at the
+  confirmation and have no run record).
+- Claude Haiku 5.5 prices, as the pages quote them (`agent/config.py`
+  `PRICES_PER_MTOK`, `LONG_PROMPT_ABOVE_TOKENS` and
+  `LONG_PROMPT_PRICES_PER_MTOK`; decision 79): $0.10 per million input tokens
+  and $0.50 per million output tokens, and $0.50 and $2.50 for a call whose
+  prompt is longer than 100,000 tokens, checked on Anthropic's pricing page on
+  13 October 2026. Its retirement date, no sooner than 7 October 2027, is
+  `HAIKU_RETIREMENT_EARLIEST` in `agent/config.py`, checked on Anthropic's
+  model deprecations page the same day (decision 79).
+- Warranty status (SC13): the one synthetic water softener's rows are active
+  on 14 October 2026, labor to 2027-04-20, the control valve to 2031-05-04
+  and the resin tank to 2036-05-04 (`data/property/prop-b.html`, written by
+  the sweep run on 14 October); every other seeded term has ended.
+- Records run t-044cd20f9678498e: ok from the records and the graph, 0
+  searches, $0.0013, 7.7 seconds; it confirmed the FLO meaning with no steps
+  to try first, and its coverage line reads "No warranty coverage on file is
+  active as of 2026-10-14 (UTC)", over three synthetic rows, all ended.
+- Replacement sweep (`data/runs/lifecycle-*.json`): no successor verified for
+  any of the three real units; a Trane candidate was dropped as
+  `unit_not_in_span`; $0.0044 and 8 credits.
+- Product recall check (`data/runs/recalls-b37be1f2a56b49fd.json`, build
+  `ad11e6e15a55d30a`): 9 free requests; 12 distinct recalls returned for
+  Trane, 6 for Rheem and 1 for Sundance Spas; none names any of the three
+  models exactly.
+- Tests: on 14 October 2026, after the last page edit, all 3,451 offline
+  tests pass, with the network blocked, in normal mode and in gate mode
+  (`ADVISOR_GATE=6`), and a full run on the same code caught all 1,537
+  planted bugs.
+
+**Worth recording:**
+- Written before the install: the installed demo check
+  (`test_check_demo_passes_on_the_installed_site`) failed until the new demo
+  was installed, because the published site still named runs now filed under
+  `data/superseded/`. It passes now.
+- The graph keeps only a code's meaning, not its steps. After the batch it
+  holds one edge, FLO on the Optima 880 from a dealer page, and 0 documented
+  causes. The FLO repeat listed none of the first brief's 4 steps, and the
+  records run listed none either, where Haiku 4.5's records run listed 4.
+- The vague repeat's short research pass allows one fetch. The second fetch
+  it asked for, an 880 Series owner's manual, was blocked by that limit, and
+  its refusal names those manuals' troubleshooting sections as what was
+  missing.
+- `advisor graph stats` counts 4 dropped edges, all from SC12b runs whose
+  graph writes were rolled back afterward; the drop log is not rolled back
+  with the graph.
+- Another maker's page and a video page were cited under the dealer tier.
+- The four items above are runtime behavior, and runtime code stays frozen on
+  this build (decision 65), so none was fixed.
+- Two invented model recordings fail the privacy scan, because the research
+  notes quote a maker's contact details; they are not promoted, and the demo
+  reads only their run ids and statuses.
+- The new demo selection's note said its runs were made on 13 and 14
+  October; every demo case is from 14 October. It was corrected at install.
+
+**Installed** (14 October 2026, into the working tree only; nothing is
+committed or published, which waits for Roanuk's "proceed" after he sees the
+diff):
+- The re-recorded demo is installed: `tool.html`, `src/demo.js` and
+  `src/fixtures.js` are replaced from the builder's output, and the seven 30
+  September briefs in `briefs/v2/` are replaced by the seven new runs' briefs.
+  `agent/replay/demo_selection.json`'s note now says the runs were made on 14
+  October 2026.
+- Four planted bugs for the new demo drawing code were added
+  (`installed_demo_js_route_lead_not_drawn`,
+  `installed_demo_js_compare_note_not_drawn`,
+  `installed_demo_js_outcome_row_not_drawn`,
+  `installed_demo_js_coverage_not_drawn`), and two were changed to fit the
+  new data (`installed_demo_safety_dropped`,
+  `demo_selection_recorded_on_moved`).
+- After review, the demo's note on its refusals no longer calls them simply a
+  success: it says that declining is the tool's success state when its
+  sources do not support an answer, and that cases 3, 4 and 5, which ask
+  about real units, also count against the answer bars in the teardown's
+  Part 8. The builder computes those cases from the selection; a test checks
+  the sentence and planted bug `build_demo_refusal_note_cost_dropped` checks
+  the test. The teardown's Part 7 says the same.
+- check_demo finds 0 problems on the repo root, and
+  `test_check_demo_passes_on_the_installed_site` passes. `build_info.build_id()`
+  is still `d24ed7c475dcd813`: the builder and its checker sit outside the
+  fingerprint.
+- Still waiting on Roanuk: promoting the seven recording candidates into
+  `agent/tests/cassettes/` and the privacy diff addendum that would allow it.
+  The two invented model recordings the privacy scan blocked are never
+  promoted. The demo builds and passes its tests without them.
+
+**Cost:** $0.1953 and 101 Tavily credits for the batch, including $0.0652
+and 30 credits for the filed medium effort runs; the product recall check was
+free. The build has spent $1.5275 of its $5 cap and 242 of its 300 Tavily
+credits.

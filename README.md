@@ -30,7 +30,7 @@ in validation code rather than requested in a prompt.
 | Path | What it is |
 | --- | --- |
 | `index.html` | The **product teardown**, the essay documenting the job, the evidence, what v1 proved, why v2 is built on LangGraph and LangChain, how it splits the work between Claude and Tavily, what v2 lets owners and technicians do, how it was tested, and what I cut. This is the front door. |
-| `tool.html` | The **recorded v2 demo**. Eight cases replayed from live runs of v2 on 30 September 2026, on the build with the safety step check. It replaces the v1 demo. |
+| `tool.html` | The **recorded v2 demo**. Eight cases replayed from live runs of v2 on 14 October 2026, on Claude Haiku 5.5 (build `d24ed7c475dcd813`). Four of the eight end with no reliable answer, and the page says so. It replaces the v1 demo. |
 
 Live: **[the teardown](https://roanukz.github.io/ai-property-maintenance-advisor/)** and **[the demo](https://roanukz.github.io/ai-property-maintenance-advisor/tool.html)**. Both pages
 share `src/tokens.css`, so the essay and the thing it describes read as one
@@ -38,12 +38,15 @@ product.
 
 ## The demo makes no API call
 
-Every result on `tool.html` is verbatim output from a live run of v2 on 30
-September 2026 (build `da738a1559ced359`), captured into `src/fixtures.js` and
-replayed. Each case names its run ID. The demo was re-recorded on that build,
-the one with the safety step check described below, so its briefs carry the
-flags after Jev's check, and each case shows which flag the writer set and which
-Jev raised (Jev raised one, in case 3). Three reasons:
+Every result on `tool.html` is verbatim output from a live run of v2 on 14
+October 2026 (build `d24ed7c475dcd813`, on Claude Haiku 5.5), captured into
+`src/fixtures.js` and replayed. Each case names its run ID. The demo was
+re-recorded on that build, which carries the safety step check, warranty status
+and the replacement sweep described below, so its briefs carry the flags after
+Jev's check, and each case shows which flag the writer set and which Jev
+raised. Only case 1 has steps to try first: the writer flagged 3 of its 4, and
+Jev agreed with all three and raised none of its own. It is replayed rather than
+live for three reasons:
 
 1. **It costs nothing to visit and nothing to host.** The working build calls
    Claude and Tavily on every question it has not seen before, and TypeSafe's
@@ -56,11 +59,13 @@ Jev raised (Jev raised one, in case 3). Three reasons:
    staying up is a demo that eventually embarrasses you.
 
 The briefs under `briefs/v2/` are the real generated artifacts of those runs,
-unedited, and the four under `briefs/` are v1's, kept as published. One v2
-brief, `briefs/v2/t-bbad96be657444a5.html`, was written against synthetic
-property records: its "this has happened before" service record, its install
-date and age, and its warranty terms are all synthetic test data, although only
-the warranty text says so inside the file, which is kept byte for byte. Each one is
+unedited, and the four under `briefs/` are v1's, kept as published. The
+blurry plate case stops before a brief, so there are seven. One v2 brief,
+`briefs/v2/t-044cd20f9678498e.html`, was written against synthetic property
+records: its "this has happened before" service record, its install date and
+age, its warranty terms and its warranty coverage rows are all synthetic test
+data, although inside the file only the warranty text and the coverage line
+say so, and the file is kept byte for byte. Each one is
 self contained with no external dependencies. That is not a demo convenience: it
 is the product requirement, since a technician has to open one with no app and
 no login.
@@ -84,7 +89,10 @@ inside a 540px wide center column and survives that crop. Same rule as
 v1 answered each question from scratch: every brief paid for seven or eight
 live searches, even for a model it had researched the week before, and it knew
 nothing about the property. v2 rebuilds it in Python as a LangGraph agent that
-remembers. Its source is in `agent/`.
+remembers. Its source is in `agent/`. In cheap mode, the lower cost model
+setting every live number below was measured on, each Claude step calls Claude
+Haiku 5.5. It moved from Claude Haiku 4.5, which the code stops using on 15
+October 2026.
 
 - **A graph of how the steps connect.** Read the plate, pause for the owner to
   confirm the unit, route, research or reuse, write the brief, check it, and
@@ -98,6 +106,29 @@ remembers. Its source is in `agent/`.
 - **Property records.** Appliances, service history, install and warranty
   dates, and a maintenance schedule taken only from the maker's own intervals.
   The seed records are synthetic.
+- **Warranty status in code.** Coverage is stored as rows (component, term,
+  and whether it starts at install or purchase), and code works out each
+  row's end date and whether it is active on the run's date. The model never
+  writes a warranty date, and a validation rule rejects one. The brief lists
+  active coverage and tells the owner to check with the maker before paying
+  for a repair; code never decides which coverage applies to a repair. With no
+  rows, it says "No warranty on file.", never "out of warranty". Shown on a
+  live run on build `d24ed7c475dcd813`, with synthetic rows.
+- **A "plan a replacement" sweep.** `advisor property sweep` lists each unit's
+  age and any successor model or discontinued part the graph has verified,
+  with the quote that names it. Where the graph has nothing, it says "No
+  discontinuation documented in what this tool has verified.", never "not
+  discontinued". An optional lookup fills in units with no such facts, through
+  the same validation and graph rules. Shown live on build
+  `d24ed7c475dcd813`.
+- **A product recall check.** `advisor property recalls` asks the U.S.
+  Consumer Product Safety Commission (CPSC), whose recall service is free and
+  needs no key, for each maker's product recalls, and counts a product recall
+  only when it prints the unit's model exactly. A match lists the product
+  recall and says to check whether the unit's serial number is in the affected
+  range; it never says the unit itself is affected, and with no match it says
+  no product recall names this exact model, with the date checked. Shown live on build
+  `ad11e6e15a55d30a`.
 - **The same guarantees, still in code.** Citations must point to pages that
   were actually retrieved, tier labels can be lowered but never raised, a panel
   code narrows the answer, a refusal clears every candidate, and a price appears
@@ -109,91 +140,112 @@ remembers. Its source is in `agent/`.
   described below) can still flag that step, and the brief says in one line
   that the check did not run.
 - **Spend capped in code.** Every paid call is reserved in a ledger before it is
-  made: $0.15 per brief and $5 for the whole build, and every paid command shows
-  its planned calls and cost and waits for a typed "proceed".
+  made: $0.15 per brief, $0.15 for a whole replacement sweep and $5 for the
+  whole build, and every paid command shows its planned calls and cost and
+  waits for a typed "proceed".
 
 ### Results
 
-Each criterion was set before the build. "Replay" means the whole graph ran on
-recorded model replies at no cost: it proves the rules, routing, ledger and
-renderer, and says nothing about the model. "Live" means real calls to Claude
-Haiku 4.5, Tavily and TypeSafe's Jev. The live evaluation and the demo were
-re-recorded on 30 September 2026 (US Eastern time; in UTC, the clock the run
-records and the demo's timestamps use, the runs fall early on 1 October) on the
-build with the safety check (`da738a1559ced359`), and every live row comes from
-that build except the two safety step rows: SC12a's Jev calls trace to a locked
-settings file and model `jev-1.13.0`, not to a build, and SC12b's ten live
-lookups ran about ten hours earlier on build `9a64835e86a5a6c8`, which has the
-same agent graph code under an older fingerprint. Recall is the share of
-real safety steps a check flagged; precision is the share of its flags that
-were real safety steps.
+Each criterion was set before the build, and each carries the success
+criterion ID that `DECISION-LOG.md` uses (SC12b and so on). "Replay" means the
+whole graph ran on recorded model replies at no cost: it proves the rules,
+routing, ledger and renderer, and says nothing about the model. "Live" means
+real calls to Claude Haiku 5.5 in cheap mode, Tavily, TypeSafe's Jev and, for
+the product recall check, CPSC's free recall service. A build is named by a
+fingerprint of the runtime code, so any change to that code makes a new build,
+and every row names the build it was measured on. The live evaluation and the
+demo were re-measured on 13 and 14 October 2026 (US Eastern time; in UTC, the
+clock the run records and the demo's timestamps use, the SC12b runs of the
+evening of 13 October fall early on 14 October) on build `d24ed7c475dcd813`.
+The batch opened with a check that every Claude step is answered by Claude
+Haiku 5.5 at its exact settings, and it passed. Two live rows come from elsewhere:
+SC12a's Jev calls trace to a locked settings file and model `jev-1.13.0`, not
+to a build, and the product recall check ran once on build
+`ad11e6e15a55d30a`, the build just before a research setting was raised; it
+sends only the maker's name and reads no model setting, so that change could
+not alter it. Where a row compares with Claude Haiku 4.5, it names that build
+too. Recall is the share of real safety steps a check flagged; precision is
+the share of its flags that were real safety steps.
 
-| Criterion | Result | How it was measured |
-| --- | --- | --- |
-| The offline suite passes with no key and no network | Pass | 2,649 tests; all 2,649 pass with the network blocked on the build machine (30 September 2026, on the code of build `da738a1559ced359`). A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. |
-| v1's and v2's validators agree | Pass | 180 payloads through v1's own TypeScript validator and v2's Python port; every accept and reject decision matches. Last run against v1's private source on 30 September 2026, on the code of build `da738a1559ced359`. |
-| The five v1 cases give v1's outcome | Pass, replay | One confirmed candidate for a panel code, several for a vague symptom, no invented codes, NO RELIABLE ANSWER for an invented model, a halt on a blurry plate. |
-| A refusal never carries candidates | Pass | Unit and property tests. |
-| The invented model is refused 3 of 3 times | Pass, live | 3 of 3 refused by the model itself; none forced by validation. Each cost $0.0270 to $0.0451 and took 15.0 to 19.1 s. |
-| A blurry plate halts before any search | Pass, replay; the plate reading also live | The halt is shown in replay. Live, the plate reader read the clear plate exactly and marked the blurry plate's model, serial and date unreadable rather than guessing, with no search. |
-| A paused run can be finished by another process | Pass, replay | A run stopped at the confirmation is resumed by a new process without repeating the plate reading. |
-| Citations and graph evidence are real | Pass, replay | Every citation resolves to a page retrieved in that run or, on the graph route, to a page an earlier run retrieved and the graph recorded; every graph fact carries a verbatim quote from its page, or is dropped. |
-| The graph answers what it already knows | Pass, live | The hot tub's first FLO lookup used 3 searches, cost $0.0435 and took 28.7 s. The repeat was answered from the graph with no search for $0.0082 in 4.3 s, about a fifth of the first lookup's cost and a seventh of its time. Its answer was thinner: the one documented code and its meaning, with no steps to try first. |
-| A repeat question uses 2 searches or fewer | Pass, live | Repeats used 0, 2 and 2 searches, against 3, 3 and 5 on their first lookups (the two hot tub repeats share one first lookup). Two of the three passes are held to 2 by the top up limit itself: in both the model asked for more searches, and the limit blocked them. The air conditioner's first lookup ($0.0431, 25.8 s) stored 6 documented causes; for a new symptom on it the symptom check could not tell whether any of them fit, so it was routed to a short top up of 2 searches instead of a full search ($0.0207, 15.6 s), and the brief used none of the stored causes. A vague hot tub question found no stored causes, so it topped up with 2 searches ($0.0226, 15.7 s), but the brief still listed only the stored FLO code, unconfirmed, and the limit blocked 1 more search and 1 fetch. |
-| Service history is cited | Pass, replay and live | Live, with the synthetic property records attached, the hot tub brief cited the prior synthetic service record under "this has happened before", stated the unit's age as worked out in code from its install date, and quoted the synthetic warranty terms: 0 searches, $0.0067, 5.5 s. |
-| Upgrade options are cited or absent | Pass, replay | A discontinued model lists only successors that a fetched page names. |
-| The brief is self contained and escaped | Pass | Nothing loads from outside the page, all model text is escaped, and a legacy mode reproduces the four published v1 briefs byte for byte. |
-| Spend stays under the caps | Pass, live | All 11 live runs of the re-recorded evaluation stayed under $0.15 (the highest was $0.0451, a refusal), and so did the ten SC12b lookups (the highest was $0.0589). The 11 re-recorded runs cost $0.2536 and 31 Tavily credits. The safety step work of 29 and 30 September cost $0.4878. The whole build, counting every live run on every build, stands at $1.3321 of $5 and 141 of its 300 Tavily credits. |
-| Safety steps are flagged, on a fixed labeled set (SC12a) | Measured, live: the choice rule picked Jev, which flagged 30 of 31 held out safety steps | 345 steps, labeled before any scoring: sentences from maker and dealer documentation and steps the tool wrote in earlier briefs. Three model readers, not people, labeled each one blind; they agreed on 338 of 345. The set was split into a tune half (170) and a held out half (175, with 31 safety steps); each check's settings were chosen on the tune half and locked in a file before the held out half was scored, once. Held out, against the 31 safety steps: the word rule as published (breaker, power, heat) flagged 20 (recall 0.645, precision 0.714); the word rule tuned on the tune half (it drops the bare word heat and adds wire, panel, door, disconnect, electrical, jumper and box), 22 (0.710, 0.647); Jev flagging when its answer, a probability from 0 to 1, is 0.51 or higher, 30 (0.968, 0.732); the tuned word rule plus Jev, 30 (0.968, 0.600). The held out half has no steps the tool wrote, so the writing model is measured by SC12b below. The choice rule, written before any result, drops a candidate (tuned word rule, Jev, or the tuned word rule plus Jev) below precision 0.60, then takes the highest recall, then the higher precision: all three stayed, Jev and the tuned word rule plus Jev tied on recall, and Jev had the higher precision, so Jev ships at 0.51. The tuned word list did not hold up: precision 0.955 on its tune half, 0.647 held out. 855 Jev calls, $0.0216. |
-| Every safety step in new live briefs is flagged (SC12b) | Pass, live: 14 of 14 | Ten first lookups in cheap mode on 30 September 2026 (build `9a64835e86a5a6c8`), five with the hot tub FLO question (the clear plate photo and "panel shows FLO") and five with the air conditioner's fan question ("outdoor unit runs but the fan does not spin"). Their briefs held 31 steps; the same three model readers called 14 of them safety steps, and all 14 were flagged, with 2 false flags (16 flagged). The writing model, under the revised instruction that spells out which steps count, flagged all 14 by itself with no false flag. Jev flagged the same 14 and added the two false flags, both fan blade steps, so it caught nothing the writer missed. The tuned word rule, which now ships only as the backup for a failed Jev call, also flagged all 14, with 2 false flags on other steps (14 of 16). There is no clean comparator for the writer before the revised instruction, so no before and after comparison is reported. The sample is small: 14 safety steps from two inputs, mostly breaker steps, so the lower end of recall's 95% interval is 0.78; SC12a's held out half is the stronger evidence for Jev itself. $0.4662 and 47 Tavily credits. |
+| Criterion | Result | How it was measured | Build |
+| --- | --- | --- | --- |
+| The offline suite passes with no key and no network | Pass | 3,451 tests, run with the network blocked on the build machine on 14 October 2026: all 3,451 pass. A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. | The code of `d24ed7c475dcd813` |
+| v1's and v2's validators agree | Pass | 180 payloads through v1's own TypeScript validator and v2's Python port; every accept and reject decision matches. Last run against v1's private source on 14 October 2026. | The code of `d24ed7c475dcd813` |
+| The five v1 cases give v1's outcome | Pass, replay | One confirmed candidate for a panel code, several for a vague symptom, no invented codes, NO RELIABLE ANSWER for an invented model, a halt on a blurry plate. | The code of `d24ed7c475dcd813` |
+| A refusal never carries candidates | Pass | Unit and property tests. | The code of `d24ed7c475dcd813` |
+| The invented model is refused 3 of 3 times (SC3b) | Pass, live | 3 of 3 refused by the model itself; none forced by validation. Each cost $0.0045 to $0.0068 and took 21.6 to 27.2 s. On Claude Haiku 4.5 (build `da738a1559ced359`) its three refusals cost $0.0270 to $0.0451 each. | `d24ed7c475dcd813` |
+| A blurry plate halts before any search | Pass, replay; the plate reading also live | The halt is shown in replay. Live, the plate reader read the clear plate exactly and marked the blurry plate unreadable rather than guessing, with no search, for $0.0005 and $0.0006. | `d24ed7c475dcd813` |
+| A paused run can be finished by another process | Pass, replay | A run stopped at the confirmation is resumed by a new process without repeating the plate reading. | The code of `d24ed7c475dcd813` |
+| Citations and graph evidence are real | Pass, replay | Every citation resolves to a page retrieved in that run or, on the graph route, to a page an earlier run retrieved and the graph recorded; every graph fact carries a verbatim quote from its page, or is dropped. | The code of `d24ed7c475dcd813` |
+| The graph answers what it already knows | Pass, live | The hot tub's first FLO lookup used 2 searches, cost $0.0075, took 40.1 s and saved 1 fact. The repeat was answered from the graph with no search for $0.0015 in 9.8 s, about a fifth of the first lookup's cost and a quarter of its time. Its answer was thinner: the one stored code and its meaning, with none of the first brief's 4 steps to try first, because the graph keeps a code's meaning, not its steps. On Claude Haiku 4.5 (build `da738a1559ced359`) the first lookup cost $0.0435 in 28.7 s and the repeat $0.0082 in 4.3 s. | `d24ed7c475dcd813` |
+| A repeat question uses 2 searches or fewer (SC7b) | Miss, live | Repeats used 0, 2 and 4 searches. The FLO repeat used 0. A vague hot tub question found the stored FLO fact but not enough to answer, so it ran a short top up of 2 searches and 1 fetched page, and ended with no reliable answer ($0.0040, 26.5 s); the top up allows one fetch, and the second it asked for, an owner's manual for the hot tub's series, was blocked, which is what its refusal names as missing. The air conditioner's first lookup ended with no reliable answer and saved nothing (4 searches, $0.0086, 37.6 s), so its new symptom question had nothing to start from and ran a full search of 4 ($0.0089, 43.5 s), also ending with no reliable answer. That 4 is the miss: the limit of 2 applies only when the graph holds something to start from. On Claude Haiku 4.5 (build `da738a1559ced359`) the same check passed with 0, 2 and 2. | `d24ed7c475dcd813` |
+| Service history is cited | Pass, replay and live | Live, with the synthetic property records attached, the hot tub brief cited the prior synthetic service record under "this has happened before", stated the unit's age as worked out in code from its install date, quoted the synthetic warranty terms and printed the warranty coverage line that code writes: 0 searches, $0.0013, 7.7 s. It confirmed the FLO meaning but listed no steps to try first, where Claude Haiku 4.5's records run (build `da738a1559ced359`) listed 4. | `d24ed7c475dcd813` |
+| Upgrade options are cited or absent | Pass, replay | A discontinued model lists only successors that a fetched page names. | The code of `d24ed7c475dcd813` |
+| Warranty status is computed in code (SC13) | Pass, replay and live | Code works out each coverage row's end date as its start plus its term in months, held to the last day of a short month, so a 29 February start plus 12 months ends on 28 February, and whether the row is active on the run's date. Tests that try many generated dates check the date math, a validation test rejects any warranty date the model writes, a page with no rows says "No warranty on file.", never "out of warranty", and every row is labeled synthetic. Live, the records run printed "No warranty coverage on file is active as of 2026-10-14 (UTC)" over the hot tub's three synthetic rows (labor ended 10 June 2022, equipment 10 June 2023, shell 10 June 2026). One synthetic water softener was added because every seeded term had ended; its property page, written on 14 October, shows labor active to 20 April 2027, the control valve to 4 May 2031 and the resin tank to 4 May 2036. | `d24ed7c475dcd813` |
+| The replacement sweep shows only a cited successor (SC14) | Pass, replay; live: no successor verified for any of the 3 real units | Offline, the sweep reads only the graph's verified facts, with the network blocked and $0 spent. Replay tests cover a unit with a verified successor, a unit with nothing documented, and an invented model (refused, nothing saved), and no successor appears without a quote that names it. Live, the optional lookup ran for the three real units under one $0.15 cap for the whole sweep: none found a successor whose quote names the unit's model, one candidate for the air conditioner was dropped because its quote did not name this unit, and nothing was saved. The four synthetic units were refused before any call. $0.0044 and 8 Tavily credits. | `d24ed7c475dcd813` |
+| The product recall check names only exact model matches (SC15) | Pass, replay; live: no product recall names any of the 3 models | It asks CPSC by maker name only, using only parameter names from CPSC's 2018 guide to its recall service (a test checks every request), then matches each product recall's text against the unit's model exactly, in code; a near match is never shown as a match. Live, 9 requests, three per real maker (as manufacturer, importer and distributor), returned 12 distinct product recalls for Trane, the air conditioner's maker, 6 for Rheem, the water heater's, and 1 for Sundance Spas, the hot tub's. None names any of the three models exactly, so each unit shows that no product recall names its exact model, with the date checked. Invented makers are never queried. Free, so no ledger charge; each response is stored with its date. | `ad11e6e15a55d30a` |
+| Spend stays under the caps | Pass, live | Every question run on this build stayed under its $0.15 cap (the highest was $0.0098, an SC12b first lookup), and the sweep's three lookups stayed under the sweep's one $0.15 cap. The 26 ledger entries on this build, 21 question runs (the two plate readings included), the sweep's 3 lookups, the model check and a check that the model accepts the brief's structure, cost $0.1301 and 71 Tavily credits. The whole build, counting every live run on every build, stands at $1.5275 of $5 and 242 of its 300 Tavily credits. | `d24ed7c475dcd813` |
+| Safety steps are flagged, on a fixed labeled set (SC12a) | Measured, live: the choice rule picked Jev, which flagged 30 of 31 held out safety steps | 345 steps, labeled before any scoring: sentences from maker and dealer documentation and steps the tool wrote in earlier briefs. Three model readers, not people, labeled each one blind; they agreed on 338 of 345. The set was split into a tune half (170) and a held out half (175, with 31 safety steps); each check's settings were chosen on the tune half and locked in a file before the held out half was scored, once. Held out, against the 31 safety steps: the word rule as published (breaker, power, heat) flagged 20 (recall 0.645, precision 0.714); the word rule tuned on the tune half (it drops the bare word heat and adds wire, panel, door, disconnect, electrical, jumper and box), 22 (0.710, 0.647); Jev flagging when its answer, a probability from 0 to 1, is 0.51 or higher, 30 (0.968, 0.732); the tuned word rule plus Jev, 30 (0.968, 0.600). The held out half has no steps the tool wrote, so the writing model is measured by SC12b below. The choice rule, written before any result, drops a candidate (tuned word rule, Jev, or the tuned word rule plus Jev) below precision 0.60, then takes the highest recall, then the higher precision: all three stayed, Jev and the tuned word rule plus Jev tied on recall, and Jev had the higher precision, so Jev ships at 0.51. The tuned word list did not hold up: precision 0.955 on its tune half, 0.647 held out. 855 Jev calls, $0.0216. | None: a locked settings file and model `jev-1.13.0` |
+| Ten new first lookups answer, at least 9 of 10, a bar set before the runs (SC12b) | Miss, live: 7 of 10 | Ten first lookups in cheap mode on the evening of 13 October 2026, five with the hot tub FLO question (the clear plate photo and "panel shows FLO") and five with the air conditioner's fan question ("outdoor unit runs but the fan does not spin"). 7 of 10 answered: 4 of 5 on the hot tub and 3 of 5 on the air conditioner; in the other 3 the model declined to write a brief from what it found. On Claude Haiku 4.5 (build `9a64835e86a5a6c8`) the same ten lookups all answered, for $0.4662 and 47 Tavily credits. That 10 of 10 is not a clean comparison: prompt rule 6 tells the writer to use documentation for this exact model or its documented family and never general knowledge of the equipment category, and Haiku 4.5's air conditioner answers cited Trane's general troubleshooting pages, which the rule does not allow. Haiku 5.5 is not consistent either: its three answered air conditioner lookups cite the same kind of pages, and two of its refusals declined on similar sources. No code check enforces rule 6; only the model applies it. The ten runs cost $0.0750 and 35 Tavily credits. | `d24ed7c475dcd813` |
+| Every safety step in new live briefs is flagged (SC12b) | Pass, live: 11 of 11 | The seven briefs from those ten first lookups held 18 steps; the same three model readers called 11 of them safety steps, 10 of them on the hot tub. As the briefs show them, all 11 were flagged, with 3 false flags (11 of 14). The writer flagged 10 of 11 by itself, with 3 false flags (10 of 13); Jev flagged 10 of 11 with 1 false flag (10 of 11), and every Jev call answered, so Jev added the one the writer missed. The tuned word rule, which ships only as the backup for a failed Jev call, flagged 11 of 11 with 3 false flags (11 of 14). The sample is small: the lower end of recall's 95% interval, the range the true rate plausibly falls in given so few steps (a Wilson interval), is 0.741. On Claude Haiku 4.5 (build `9a64835e86a5a6c8`) 14 of 14 safety steps in its ten briefs were flagged. | `d24ed7c475dcd813` |
+| A person checks the safety step labels (SC12c) | Deferred, not run | The safety rows above are scored against three model readers' labels. A labeling page that shows the 175 held out steps to a person one at a time, blind, and a scorer that would compare that person's labels with the model readers' (agreement, Cohen's kappa, which is agreement after removing what chance alone would give, and recall and precision with Wilson intervals) are built and pass offline. I have not labeled them yet, so no human labels exist and nothing was scored. Model written labels were not substituted, because they would be a fourth model reader recorded under a person's name. | None: the page and scorer sit outside the build fingerprint |
 
-Latency had no target. Live briefs that researched from scratch took 25.8 and
-28.7 s, and refusals 15.0 to 19.1 s. Briefs answered from the graph alone took 4.3
-and 5.5 s, and the two short top ups of 2 searches took 15.6 and 15.7 s.
+Latency had no target. Claude Haiku 5.5 is slower than Haiku 4.5 in every
+set of timed runs, while costing much less. The ten SC12b first lookups
+took a median of 41.3 s (27.1 to 45.5) at a median $0.0076, against 24.9 s
+(20.5 to 45.0) and $0.0476 for Haiku 4.5's ten on build `9a64835e86a5a6c8`:
+about a sixth of the cost per run. The FLO first lookup took 40.1 s and its
+repeat from the graph 9.8 s, the run record's processing time, as the demo
+shows; on Haiku 4.5 they took 28.7 and 4.3 s. Refusals of the invented model
+took 21.6 to 27.2 s, the records run 7.7 s, and the two plate readings 4.0
+and 3.7 s.
 
-In the re-recorded demo the writing model itself flagged all 5 steps that
-switch power at a breaker, and Jev scored each 0.95 or higher. Jev raised one
-flag the writer left off, on a step to run the spa for a few minutes with the
-filter out to see whether heating resumes (0.87): a step the three readers
-labeled not a safety step when it carried a different detail; this version,
-whose detail speaks of heating resuming, was not labeled.
+In the re-recorded demo, only case 1 has steps to try first. The writing model
+flagged 3 of its 4 steps, and Jev agreed with all three (0.98, 0.77 and 0.96)
+and raised no flag of its own. Cases 2 and 8 answered from memory with no
+steps, and cases 3 to 6 ended with no reliable answer, so the safety check had
+nothing to read.
 
-With Jev alone shipped, the tuned word rule now backs up any step whose Jev call
+With Jev alone shipped, the tuned word rule backs up any step whose Jev call
 fails: it can add a flag to that step, never remove one, and the brief still
 shows the notice line. Held out, the tuned word rule caught 22 of 31 safety
 steps (recall 0.710) at precision 0.647, against 30 of 31 (0.968) at 0.732 for
 Jev and 20 of 31 at 0.714 for the published list. The published list was not
 one of the choice rule's candidates; the tuned list was picked on 1 October,
 after the held out scores were known, in the rule's order: both have precision
-0.60 or higher, and the tuned list has the higher recall. The recorded demo
-replays build `da738a1559ced359`, and the fallback, added afterward, changes
-only what happens when a check fails; none of the demo's checks failed, so the
-demo is unaffected. No live run used the build with the backup, so it is shown
-working only by the offline tests.
+0.60 or higher, and the tuned list has the higher recall. Every live run of 13
+and 14 October was on a build with the backup, but every Jev call answered, so
+the backup never ran live; it is shown working only by the offline tests.
 
 Every test is paired with a planted bug in `agent/tests/mutations.toml` that it
-must catch, and all 1,136 are caught (30 September 2026, on the code of build
-`da738a1559ced359`). What was decided, what it cost, and what
-went wrong on the way is in `DECISION-LOG.md`.
+must catch. A full run on 14 October 2026, on the code of build
+`d24ed7c475dcd813`, caught all 1,537. What was decided, what it cost, and what went wrong on the way is
+in `DECISION-LOG.md`.
 
 ### The recorded v2 demo
 
-`tool.html` replays eight cases, each from one live run on 30 September 2026
-(build `da738a1559ced359`) and named by its run ID, and shows the brief file
-that run wrote, unedited:
+`tool.html` replays eight cases, each from one live run on 14 October 2026
+on Claude Haiku 5.5 (build `d24ed7c475dcd813`) and named by its run ID, and
+shows the brief file that run wrote, unedited. Four of them end with no
+reliable answer, as measured, and the page says so:
 
 1. A hot tub FLO code, first lookup: the plate read, the owner's confirmation,
-   3 searches, and 1 fact saved to memory.
-2. The same question again, answered from memory with no search.
-3. A vague hot tub symptom, topped up with 2 searches; Jev adds the one flag
-   the writer did not set.
-4. An air conditioner's first lookup, which saved 6 documented causes.
-5. A new question about that air conditioner, topped up with 2 searches.
+   2 searches, and 1 fact saved to memory; Jev agrees with all three of the
+   writer's safety flags.
+2. The same question again, answered from memory with no search, but with
+   none of the first brief's 4 steps to try first.
+3. A vague hot tub symptom: a short top up of 2 searches that ends with no
+   reliable answer, after the limit blocked the owner's manual its refusal
+   names as missing.
+4. An air conditioner's first lookup: 4 searches, no reliable answer, and
+   nothing saved to memory.
+5. A new question about that air conditioner: with nothing saved to start
+   from, a full search of 4, again with no reliable answer.
 6. An invented model, refused (3 of 3 live runs).
 7. A blurry plate, stopped at the confirmation before any search.
 8. A **live run against synthetic property records**: the prior service
-   record, the unit's age from its install date, and the warranty terms, with
-   no search.
+   record, the unit's age from its install date, the warranty terms and the
+   coverage line code writes from them, with no search.
 
 Every number on the page comes from the run named next to it; nothing is
 estimated. The page makes no network call. `agent/replay/build_demo.py`
@@ -221,6 +273,26 @@ command:
 uv run advisor ask --symptom "panel shows FLO" --appliance appl-optima880 --cassette agent/tests/cassettes/synthetic/optima_history.json
 ```
 
+The replacement sweep runs offline by default: it reads only what the graph
+has verified, spends nothing, and writes each property's page.
+
+```bash
+uv run advisor property sweep prop-a
+```
+
+`--all` sweeps every property. `--research` first looks up discontinuation and
+successor models for units with no such facts, in replay with one `--cassette`
+per unit, or live with `--live`, under one $0.15 cap for the whole sweep.
+
+The product recall check prints each appliance's latest stored check, offline:
+
+```bash
+uv run advisor property recalls prop-a
+```
+
+`--live` asks CPSC's recall service now. It is free and needs no key, and it
+still prints the planned requests and waits for "proceed".
+
 A live run needs `ANTHROPIC_API_KEY`, `TAVILY_API_KEY` and, while the safety
 check is on, `TYPESAFE_API_KEY` in a `.env` file (see
 `.env.example`; `.env` is never committed), `ADVISOR_MODE=cheap` set in the
@@ -235,7 +307,7 @@ index.html            the teardown essay, v1 and v2
 tool.html             the recorded v2 demo
 briefs/               four real generated v1 briefs, self contained
 briefs/v2/            the v2 briefs the demo shows, one per live run;
-                      t-bbad96be657444a5.html cites synthetic property records
+                      t-044cd20f9678498e.html cites synthetic property records
 demo-assets/          the plate photographs the demos show
 src/tokens.css        shared design tokens, dark mode included
 src/teardown.css      essay styles

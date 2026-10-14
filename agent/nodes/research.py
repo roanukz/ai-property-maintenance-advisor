@@ -5,7 +5,9 @@ from the successful tool artifacts this invocation added to the RunContext
 collector: never from model text and never from an error ToolMessage. A tool
 cap, the loop guard and the research sub budget end research with what was
 collected; only the ledger's dollar caps, the credit caps and Tavily's plan
-limit end the run as budget_stopped.
+limit end the run as budget_stopped. A declined model turn (decision 69)
+ends the run on the decline brief; the sources collected so far stay in state
+and are not shown.
 
 Sources follow the order the model issued its tool calls, not the order the
 calls finished: calls issued together run in parallel and finish in no fixed
@@ -26,6 +28,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 
 from agent import config
+from agent.declined import ModelDeclined, declined_update
 from agent.ledger import BudgetExceeded
 from agent.models import make_model, make_tools
 from agent.nodes.synthesize import open_ledger
@@ -167,6 +170,7 @@ def research(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any
     start = len(ctx.collector)
     out: dict[str, Any] = {}
     messages: list[Any] = []
+    declined: ModelDeclined | None = None
     try:
         # The agent has no checkpointer, but it inherits the parent's
         # durability="sync" through the runnable config, and langgraph 1.2.11
@@ -184,11 +188,18 @@ def research(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any
             out["stop_reason"] = exc.reason
         elif exc.reason != "research_budget":
             raise
+    except ModelDeclined as exc:
+        # SpendCap has charged the declined turn; the run ends on the decline brief (decision 69).
+        declined = exc
 
     known = {s["url"] for s in state.get("sources") or []}
     artifacts = in_call_order(ctx.collector[start:], messages)
     out["sources"] = build_sources(ctx, artifacts, trail, known, terms)
     out["search_trail"] = [{k: e[k] for k in TRAIL_KEYS} for e in trail]
+    if declined is not None:
+        # The brief lists the searches so far, this pass's included: state's trail holds only earlier passes.
+        so_far = [*(state.get("search_trail") or []), *out["search_trail"]]
+        out.update(declined_update({**state, "search_trail": so_far}, declined, NODE))
     out["cost_usd"] = ledger.run_total(ctx.run_id) - cost_before
     out["tavily_credits"] = ledger.run_credits(ctx.run_id) - credits_before
     out["research_attempts"] = attempt

@@ -30,6 +30,10 @@ with these branches:
   so safety_check asks Jev about the new draft, and the affordability test
   counts those calls; the upgrade pass skips synthesize and safety_check and
   reuses the signals, matched to steps by their text (decision 56).
+- a declined model call (decision 69) in read_plate, route's classifier,
+  research or synthesize ends the run: the node writes the code written
+  decline brief (agent.declined) and the edge after it goes straight to
+  render, so nothing the model wrote is validated, retried or shown.
 - persist runs after render on every path that reaches END, and writes the
   lookup row, the run record and the graph edges (decision 37).
 """
@@ -48,7 +52,8 @@ from langgraph.runtime import Runtime
 from langgraph.types import Command
 
 from agent import config
-from agent.ledger import Ledger, price_usage
+from agent.declined import is_declined
+from agent.ledger import Ledger, price_basis, price_usage
 from agent.models import max_tokens_for
 from agent.nodes.confirm_identity import confirm_identity, next_after_confirm
 from agent.nodes.gather import gather, next_after_gather
@@ -83,7 +88,8 @@ def synthesize_reservation_usd(mode: str) -> float:
     """The full synthesize reservation: the source budget plus prompt, with margin, plus max_tokens."""
     model = config.MODEL_FOR[mode]["synthesize"]
     prices = config.REPLAY_PRICES if mode == "replay" else config.PRICES_PER_MTOK[model]
-    margin = config.ESTIMATE_MARGIN.get(model, max(config.ESTIMATE_MARGIN.values()))
+    margin = config.REPLAY_ESTIMATE_MARGIN if mode == "replay" else config.ESTIMATE_MARGIN.get(
+        model, max(config.ESTIMATE_MARGIN.values()))
     input_tokens = math.ceil(
         (config.SYNTH_SOURCE_TOKEN_BUDGET + config.SYNTH_PROMPT_TOKENS_ESTIMATE) * margin
     )
@@ -116,9 +122,10 @@ def retry_need_usd(mode: str) -> float:
 def retry_affordable(ctx: RunContext) -> tuple[bool, float, float]:
     """(affordable, remaining run budget, need), read from the ledger, which is the truth."""
     ledger: Ledger = open_ledger(ctx)
-    cap = Ledger.run_cap(ctx.mode, (ctx.caps or {}).get("run_cap_usd"))
+    basis = price_basis(ctx.mode, ctx.cassette)  # a recording's live mode in replay, else the run's
+    cap = Ledger.run_cap(basis, (ctx.caps or {}).get("run_cap_usd"))
     remaining = cap - ledger.run_total(ctx.run_id)
-    need = retry_need_usd(ctx.mode)
+    need = retry_need_usd(basis)
     return remaining >= need, remaining, need
 
 
@@ -147,11 +154,15 @@ def retry_gate(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, A
 
 
 def after_read_plate(state: AdvisorState) -> str:
+    if is_declined(state):
+        return "render"
     return "validate" if state.get("status") == "budget_stopped" else "confirm_identity"
 
 
 def after_route(state: AdvisorState) -> list[str]:
     """The branch nodes route chose; returning several runs them in parallel."""
+    if is_declined(state):
+        return ["render"]
     route_list = list(state.get("route") or [])
     unknown = [b for b in route_list if b not in BRANCH_NODES]
     if unknown or not route_list:
@@ -174,6 +185,11 @@ def after_validate(state: AdvisorState) -> str:
 
 def after_retry_gate(state: AdvisorState) -> str:
     return "render" if state.get("status") == "budget_stopped" else "research"
+
+
+def after_synthesize(state: AdvisorState) -> str:
+    """A declined synthesize call ends the run on its brief; anything else goes to the safety check."""
+    return "render" if is_declined(state) else "safety_check"
 
 
 # ---------------------------------------------------------------------------
@@ -205,19 +221,19 @@ def build_graph(checkpointer: Any) -> Any:
 
     builder.add_edge(START, "intake")
     builder.add_edge("intake", "read_plate")
-    builder.add_conditional_edges("read_plate", after_read_plate, ["validate", "confirm_identity"])
+    builder.add_conditional_edges("read_plate", after_read_plate, ["validate", "confirm_identity", "render"])
     builder.add_conditional_edges(
         "confirm_identity", next_after_confirm, {"confirm_identity": "confirm_identity", "route": "route"}
     )
-    builder.add_conditional_edges("route", after_route, list(BRANCH_NODES.values()))
+    builder.add_conditional_edges("route", after_route, [*BRANCH_NODES.values(), "render"])
     # One plain edge per branch, never add_edge([...], "gather"): that form
     # waits for every listed node, and a route runs only some of them.
     for node in BRANCH_NODES.values():
         builder.add_edge(node, "gather")
     # A budget stop goes through validate, which writes the budget stop brief
     # and checks nothing, so every budget stop carries the same brief.
-    builder.add_conditional_edges("gather", next_after_gather, ["validate", "synthesize"])
-    builder.add_edge("synthesize", "safety_check")
+    builder.add_conditional_edges("gather", next_after_gather, ["validate", "synthesize", "render"])
+    builder.add_conditional_edges("synthesize", after_synthesize, ["safety_check", "render"])
     builder.add_edge("safety_check", "validate")
     builder.add_conditional_edges("validate", after_validate, ["render", "refuse", RETRY_GATE, UPGRADE_CHECK])
     builder.add_conditional_edges(RETRY_GATE, after_retry_gate, ["render", "research"])

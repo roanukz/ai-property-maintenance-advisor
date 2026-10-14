@@ -34,6 +34,10 @@ route writes `route` (branch names in the fixed order history, graph,
 research), `route_reason` (a plain sentence that names the row), and
 `research_limits`, the config.RESEARCH_LIMITS row research uses ("main",
 "top_up", or None when research is not routed).
+
+A declined classifier call (decision 69) routes nowhere: route writes the
+decline brief (agent.declined) with an empty route, and the graph goes
+straight to render.
 """
 
 from __future__ import annotations
@@ -44,9 +48,11 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from agent import config
+from agent.declined import ModelDeclined, declined_update
 from agent.nodes.classify import Classification, classify_symptom
 from agent.nodes.graph_lookup import Coverage, graph_coverage, open_knowledge_graph
 from agent.nodes.history import load_history
+from agent.nodes.synthesize import open_ledger
 from agent.state import AdvisorState, RunContext
 
 NODE = "route"
@@ -110,11 +116,25 @@ def route(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     code = state.get("observed_code") or None
     cov = graph_coverage(open_knowledge_graph(ctx.graph_path), state.get("identity"), code)
 
+    spent_before: list[float] = []
+
     def classify() -> Classification:
+        spent_before.append(open_ledger(ctx).run_total(ctx.run_id))
         return classify_symptom(ctx, identity=state.get("identity"), symptom=state.get("symptom") or "",
                                 documented=_documented(cov))
 
-    row, branches, limits, reason, verdict = decide(cov, code, classify)
+    try:
+        row, branches, limits, reason, verdict = decide(cov, code, classify)
+    except ModelDeclined as exc:
+        # Charged by paid_structured_call; the run ends on the decline brief, never on research.
+        return {
+            **declined_update(state, exc, "classifier"),
+            "route": [],
+            "route_reason": "the classifier model declined the request",
+            "research_limits": None,
+            "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - spent_before[0],
+            "latency": {NODE: time.perf_counter() - started},
+        }
     records = load_history(ctx.registry_path, state.get("appliance_id"))
     if records:
         branches = [HISTORY, *branches]

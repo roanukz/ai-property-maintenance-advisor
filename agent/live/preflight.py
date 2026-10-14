@@ -26,13 +26,23 @@ arithmetic; nothing is typed in:
 - worst case for a run: its per run cap (config.RUN_CAP_USD), which the ledger
   enforces before every call; for a resumed run, the cap less what the run
   already spent.
+- every typical token count above was counted with the older tokenizer, so a
+  call on Claude Haiku 5.5 scales it by config.TYPICAL_TOKENS_FACTOR
+  (config.typical_tokens), and each call is priced on the rate card its
+  prompt length selects (ledger.rate_card; decision 69).
+
+Two refusals come before any preflight prints: haiku_refusal (the date gate)
+and plate_refusal, once the capabilities check has recorded that Claude Haiku
+5.5 refused the plate photo, so plate reading never moves to another model.
 """
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
+from pathlib import Path
 from typing import IO, Any
 
 from agent import config
@@ -65,8 +75,11 @@ def _usd(amount: float) -> str:
 
 
 def _price(model: str, input_tokens: float, output_tokens: float) -> float:
-    prices = config.PRICES_PER_MTOK[model]
-    return (input_tokens * prices["input"] + output_tokens * prices["output"]) / 1_000_000
+    """A typical call's cost: the counts as this model's tokenizer makes them, on the card they select."""
+    from agent.ledger import price_usage
+
+    return price_usage(model, {"input_tokens": config.typical_tokens(model, input_tokens),
+                               "output_tokens": config.typical_tokens(model, output_tokens)})
 
 
 def read_plate_typical_usd(mode: str) -> float:
@@ -158,12 +171,58 @@ def haiku_mode(mode: str) -> bool:
 
 
 def haiku_refusal(mode: str, today: date) -> str | None:
-    """Why a Haiku mode may not start on this date, or None (decision 14)."""
+    """Why a Haiku mode may not start on this date, or None (decisions 14 and 69)."""
     if haiku_mode(mode) and today.isoformat() >= config.HAIKU_RETIREMENT_EARLIEST:
         return (
             f"{mode} mode uses {config.HAIKU}, which may be retired on or after "
             f"{config.HAIKU_RETIREMENT_EARLIEST}. Recheck the model list (config.MODEL_FOR and the "
             "Anthropic model deprecations page) before any live run."
+        )
+    return None
+
+
+IMAGE_ACCEPTED = "accepted"
+IMAGE_REFUSED = "refused"
+IMAGE_UNCHECKED = "unchecked"
+
+
+def capabilities_path() -> Path:
+    """Where the capabilities check records its result, under the eval folder of the moment."""
+    return Path(config.EVAL_DIR) / config.CAPABILITIES_FILE
+
+
+def image_input_status(path: Path | None = None) -> str:
+    """What the capabilities check recorded about the plate photo on config.HAIKU.
+
+    "unchecked" when no check has run, or its record is for another model or
+    cannot be read.
+    """
+    target = Path(path) if path is not None else capabilities_path()
+    try:
+        record = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return IMAGE_UNCHECKED
+    if not isinstance(record, dict) or record.get("model") != config.HAIKU:
+        return IMAGE_UNCHECKED
+    status = record.get("image_input")
+    return status if status in (IMAGE_ACCEPTED, IMAGE_REFUSED) else IMAGE_UNCHECKED
+
+
+def plate_refusal(mode: str, path: Path | None = None) -> str | None:
+    """Why a live plate read may not start, or None (decision 69).
+
+    Once the capabilities check records that the plate model refused the
+    photo, plate reading refuses with this message. It never moves the call
+    to another model.
+    """
+    if mode not in config.LIVE_MODES:
+        return None
+    model = config.MODEL_FOR[mode]["read_plate"]
+    if model == config.HAIKU and image_input_status(path) == IMAGE_REFUSED:
+        return (
+            f"{model} refused the plate photo in the capabilities check, so plate reading is off in {mode} "
+            "mode and no other model is used instead. Type the manufacturer and model rather than "
+            "sending a photo."
         )
     return None
 

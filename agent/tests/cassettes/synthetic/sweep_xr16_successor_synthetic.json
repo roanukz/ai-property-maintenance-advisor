@@ -1,0 +1,135 @@
+{
+  "cassette_version": 1,
+  "case": "sweep_xr16_successor_synthetic",
+  "provenance": {
+    "derived_from": null,
+    "copied_fields": [],
+    "synthetic_fields": [
+      "everything in this file is synthetic: the successor models XR99 (synthetic) and XR77 (synthetic), the example.com and example.org URLs, their page text, the query, the draft and the usage; only the unit's maker and model name are real (seed appliance appl-xr16), and no claim here is about the real product",
+      "SC14 replay case: a unit with a verified successor. One search finds a synthetic notice (index 0) whose sentence names XR99 (synthetic), and a synthetic dealer page (index 1). The draft proposes XR99 (synthetic) with that verbatim sentence, which rule 9 keeps and persist saves as a SUPERSEDED_BY edge, and XR77 (synthetic) with a quote that does not name it, which rule 9 drops"
+    ],
+    "built_by": "hand written for the SC14 replacement sweep tests (synthetic; agent/tests/cassettes/synthetic)",
+    "reviewed": null
+  },
+  "input": {
+    "identity": {
+      "manufacturer": "Trane",
+      "model": "XR16 4TTR6036",
+      "serial": "",
+      "manufacture_date": ""
+    },
+    "symptom": "lifecycle lookup (synthetic): is this model discontinued, and which models succeed it",
+    "plate_sha256": null
+  },
+  "read_plate": null,
+  "resume": null,
+  "research": {
+    "script": [
+      {
+        "message": {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "search",
+              "args": {
+                "query": "Trane XR16 4TTR6036 discontinued successor"
+              },
+              "id": "call_search_1"
+            }
+          ],
+          "usage": {
+            "input_tokens": 2000,
+            "output_tokens": 250,
+            "total_tokens": 2250
+          }
+        }
+      },
+      {
+        "message": {
+          "content": "Research done; the sources above are what was found.",
+          "tool_calls": [],
+          "usage": {
+            "input_tokens": 4150,
+            "output_tokens": 250,
+            "total_tokens": 4400
+          }
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool": "search",
+        "query": "Trane XR16 4TTR6036 discontinued successor",
+        "results": [
+          {
+            "url": "https://example.com/synthetic/xr16/lifecycle-notice",
+            "title": "Synthetic XR16 lifecycle notice",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/xr16/lifecycle-notice\n\nThis synthetic notice is about the XR16 4TTR6036 outdoor unit.\nThe XR16 4TTR6036 is discontinued and is replaced by the XR99 (synthetic) in this syntheti",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://example.com/synthetic/xr16/lifecycle-notice\n\nThis synthetic notice is about the XR16 4TTR6036 outdoor unit.\nThe XR16 4TTR6036 is discontinued and is replaced by the XR99 (synthetic) in this synthetic notice.\nParts remain available through dealers for now.\n",
+            "score": 0.9
+          },
+          {
+            "url": "https://dealer.example.org/synthetic/xr16/upgrade-notes",
+            "title": "Synthetic dealer upgrade notes",
+            "content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/xr16/upgrade-notes\n\nDealer notes: owners of the XR16 4TTR6036 ask about newer outdoor units.\n",
+            "raw_content": "SYNTHETIC PAGE TEXT for tests (not a real document, not written by any maker).\nServed only at https://dealer.example.org/synthetic/xr16/upgrade-notes\n\nDealer notes: owners of the XR16 4TTR6036 ask about newer outdoor units.\n",
+            "score": 0.9
+          }
+        ],
+        "credits": 1
+      }
+    ]
+  },
+  "synthesize": [
+    {
+      "attempt": 1,
+      "usage": {
+        "input_tokens": 6000,
+        "output_tokens": 400,
+        "total_tokens": 6400
+      },
+      "draft": {
+        "upgrade_options": [
+          {
+            "successor_manufacturer": "",
+            "successor_model": "XR99 (synthetic)",
+            "reason": "discontinued",
+            "summary": "The notice names a successor.",
+            "source_index": 0,
+            "evidence": "The XR16 4TTR6036 is discontinued and is replaced by the XR99 (synthetic) in this synthetic notice."
+          },
+          {
+            "successor_manufacturer": "",
+            "successor_model": "XR77 (synthetic)",
+            "reason": "discontinued",
+            "summary": "A dealer page is said to name another successor.",
+            "source_index": 1,
+            "evidence": "Dealer notes: owners of the XR16 4TTR6036 ask about newer outdoor units."
+          }
+        ],
+        "source_tiers": [
+          {
+            "source_index": 0,
+            "tier": "manufacturer",
+            "authorship_quote": ""
+          },
+          {
+            "source_index": 1,
+            "tier": "dealer",
+            "authorship_quote": ""
+          }
+        ]
+      }
+    }
+  ],
+  "page_texts": {},
+  "caps": null,
+  "expect": {
+    "status": "saved",
+    "edges_written": 1,
+    "successor": "XR99 (synthetic)",
+    "dropped": [
+      "XR77 (synthetic)"
+    ]
+  }
+}

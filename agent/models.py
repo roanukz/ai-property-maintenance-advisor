@@ -13,18 +13,23 @@ instead of starting it over, and tests can read the instances the graph used.
 make_safety_judge does the same for Jev (agent/safety_judge.py): replay serves
 the cassette's recorded "safety_check" answers and never imports typesafe_sdk;
 a live mode builds the TypeSafe judge on the run's ledger.
+
+A live model is DeclineAwareChatAnthropic: a reply with stop_reason "refusal"
+raises agent.declined.ModelDeclined at this boundary, before any reader sees
+its content, and nothing here retries it on another model (decision 69).
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from langchain_anthropic import ChatAnthropic
+from langchain_anthropic import ChatAnthropic as LangChainChatAnthropic
 from langchain_core.tools import BaseTool
 from langchain_tavily import TavilyExtract, TavilySearch
 
 from agent import config, prompts
-from agent.ledger import Ledger
+from agent.declined import declined_from
+from agent.ledger import Ledger, basis_model, price_basis
 from agent.replay.replay_model import ReplayChatModel
 from agent.replay.tool_stubs import make_stub_inners
 from agent.research.tools import make_research_tools
@@ -48,17 +53,25 @@ def _check(node: str | None, mode: str) -> None:
 
 
 def max_tokens_for(node: str, mode: str) -> int:
-    """Output budget for a node; synthesize has one per tier (replay uses cheap)."""
+    """Output budget for a node; synthesize has one per tier (replay uses cheap).
+
+    Replay keeps the budgets the cassettes were recorded under
+    (config.REPLAY_MAX_TOKENS), so its reservations stay as recorded.
+    """
+    budgets = config.REPLAY_MAX_TOKENS if mode == "replay" else config.MAX_TOKENS
     if node == "synthesize":
-        return config.MAX_TOKENS["synthesize_full" if mode == "full" else "synthesize_cheap"]
-    return config.MAX_TOKENS[node]
+        return budgets["synthesize_full" if mode == "full" else "synthesize_cheap"]
+    return budgets[node]
 
 
 def live_model_kwargs(node: str, mode: str) -> dict[str, Any]:
     """The exact ChatAnthropic constructor arguments for a live call.
 
-    Never temperature, top_p or top_k (Sonnet 5 returns 400 on them), and never
-    effort or thinking to Haiku, which does not support effort.
+    Never temperature, top_p or top_k (Sonnet 5 and Claude Haiku 5.5 return 400
+    on them). Claude Haiku 5.5 gets the node's effort (config.HAIKU_EFFORT),
+    and never a thinking setting or a fallbacks parameter
+    (config.NEVER_SEND_TO_HAIKU): adaptive thinking is its default. Sonnet 5
+    synthesize in full mode keeps its effort.
     """
     model = config.MODEL_FOR[mode][node]
     max_tokens = max_tokens_for(node, mode)
@@ -68,9 +81,45 @@ def live_model_kwargs(node: str, mode: str) -> dict[str, Any]:
         "timeout": config.model_timeout_s(max_tokens),
         "max_retries": config.CLIENT_MAX_RETRIES,
     }
-    if node == "synthesize" and mode == "full" and model != config.HAIKU:
+    if model == config.HAIKU:
+        kwargs["reasoning_effort"] = config.HAIKU_EFFORT[node]
+    elif node == "synthesize" and mode == "full":
         kwargs["reasoning_effort"] = config.FULL_SYNTH_EFFORT
     return kwargs
+
+
+class DeclineAwareChatAnthropic(LangChainChatAnthropic):
+    """ChatAnthropic that raises ModelDeclined on a reply with stop_reason "refusal".
+
+    The check runs on the reply before any parser or agent reads it, so a
+    decline never reaches a reader as an empty or partial answer. Streaming is
+    off: a streamed reply carries no stop_details, so its category would be
+    lost, and every call v2 makes is a single reply.
+    """
+
+    disable_streaming: bool | Literal["tool_calling"] = True
+
+    def _generate(self, messages: Any, stop: Any = None, run_manager: Any = None, **kwargs: Any) -> Any:
+        result = super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+        return _checked(result, self.model)
+
+    async def _agenerate(self, messages: Any, stop: Any = None, run_manager: Any = None, **kwargs: Any) -> Any:
+        result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **kwargs)
+        return _checked(result, self.model)
+
+
+def _checked(result: Any, model: str) -> Any:
+    """The ChatResult unchanged, or ModelDeclined raised with its billed message."""
+    declined = declined_from(result.generations[0].message, model, result.llm_output)
+    if declined is not None:
+        raise declined
+    return result
+
+
+# The class every live chat model is built from, looked up when it is built:
+# the decline aware class, under the name the live path tests replace with
+# their fakes.
+ChatAnthropic = DeclineAwareChatAnthropic
 
 
 def make_model(node: str, ctx: RunContext) -> Any:
@@ -81,10 +130,13 @@ def make_model(node: str, ctx: RunContext) -> Any:
             raise ValueError("replay mode needs a cassette on the RunContext")
         cache = ctx.replay.setdefault("models", {})
         if node not in cache:
+            # A recording that names its live mode replays under that mode's
+            # model names and output budgets (ledger.price_basis).
+            basis = price_basis(ctx.mode, ctx.cassette)
             cache[node] = ReplayChatModel(
                 responses=ctx.cassette.responses_for(node),
-                model=config.MODEL_FOR["replay"][node],
-                max_tokens=max_tokens_for(node, "replay"),
+                model=basis_model(basis, node, ctx.cassette),
+                max_tokens=max_tokens_for(node, basis),
             )
         return cache[node]
     return ChatAnthropic(**live_model_kwargs(node, ctx.mode))

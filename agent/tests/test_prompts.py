@@ -278,3 +278,11 @@ def test_prior_errors_shown_only_on_a_retry() -> None:
     research = prompts.build_research_user_prompt(identity=None, symptom="s", prior_errors=["x failed"])
     assert "- x failed" in research
     assert research.splitlines()[-1] == "Search first."
+
+
+def test_warranty_rule_says_code_writes_every_warranty_date() -> None:
+    """Mutation prompts_warranty_date_sentence_dropped: rule 8 loses the SC13 sentence."""
+    rule_8 = next(line for line in prompts.SYNTHESIS_SYSTEM.splitlines() if line.startswith("8. Warranty:"))
+    assert rule_8.endswith(
+        "Never assert that anything is or is not covered. Code writes every warranty date and whether any "
+        "coverage is active, so never write a date in a warranty caution or verify item.")

@@ -1,0 +1,32 @@
+[
+  {
+    "RecallID": 900101,
+    "RecallNumber": "SYN101",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. Models 4TTR6036A and 4TTR603 only.",
+    "URL": "https://example.com/synthetic-recall-101",
+    "Title": "Synthetic near miss: a suffix and a prefix of the model number",
+    "Products": [{"Name": "Synthetic outdoor unit", "Description": "", "Model": "4TTR6036A", "Type": "", "CategoryID": "", "NumberOfUnits": ""}],
+    "Hazards": [{"Name": "Synthetic hazard."}],
+    "Remedies": [{"Name": "Synthetic remedy."}]
+  },
+  {
+    "RecallID": 900102,
+    "RecallNumber": "SYN102",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. The XR16 series. 4TTR6036 parts sold separately. Listed models: XR16, 4TTR6036; also XR16 4TTR6036A and 4TTR6036 alone.",
+    "URL": "https://example.com/synthetic-recall-102",
+    "Title": "Synthetic near miss for a model on record: the family alone, a list and a sentence break; it also prints the model number alone",
+    "Products": [{"Name": "XR16", "Description": "4TTR6036", "Model": "XR16/4TTR6036", "Type": "", "CategoryID": "", "NumberOfUnits": ""}],
+    "Hazards": [{"Name": "Synthetic hazard."}],
+    "Remedies": [{"Name": "Synthetic remedy."}]
+  },
+  {
+    "RecallID": 900103,
+    "RecallNumber": "SYN103",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. Model PRO+E50 only, and PRO+E50 M2 RH92 CLX.",
+    "URL": "https://example.com/synthetic-recall-103",
+    "Title": "Synthetic near miss: a water heater series",
+    "Products": [{"Name": "Synthetic water heater", "Description": "", "Model": "PRO+E50", "Type": "", "CategoryID": "", "NumberOfUnits": ""}],
+    "Hazards": [{"Name": "Synthetic hazard."}],
+    "Remedies": [{"Name": "Synthetic remedy."}]
+  }
+]

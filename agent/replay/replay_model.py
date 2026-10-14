@@ -3,6 +3,13 @@
 None of the fake models in langchain_core override bind_tools, so none can drive
 create_agent with tools, and FakeMessagesListChatModel silently wraps around
 when its list runs out. This one fails loudly instead.
+
+It serves Claude Haiku 5.5's reply shapes too (decision 69): a scripted
+message whose content is a list of blocks (thinking blocks first, their text
+empty, as the API returns them), a structured reply with "thinking" blocks
+ahead of its JSON text, and a recorded refusal ("stop_reason": "refusal",
+with an optional "stop_details"), which raises ModelDeclined as a live reply
+does. The recorded cassettes use none of these, so they replay as before.
 """
 
 from __future__ import annotations
@@ -26,6 +33,8 @@ from pydantic import Field
 # it means replay binds exactly the schema a live call sends, which is the
 # anthropic transform_schema output that decision 22's limits are counted on.
 from langchain_anthropic.chat_models import _convert_to_anthropic_output_config_format
+
+from agent.declined import declined_from
 
 
 class ReplayExhausted(RuntimeError):
@@ -80,8 +89,13 @@ class ReplayChatModel(BaseChatModel):
             )
         response = self.responses[self.cursor]
         self.cursor += 1
+        content: str | list[Any]
         if "structured" in response:
             content = json.dumps(response["structured"])
+            thinking = list(response.get("thinking") or [])
+            if thinking:
+                # Thinking blocks first, then the JSON as a text block, as the API returns them.
+                content = [*thinking, {"type": "text", "text": content}]
             tool_calls: list[dict[str, Any]] = []
             usage = response.get("usage")
         elif "message" in response:
@@ -89,16 +103,26 @@ class ReplayChatModel(BaseChatModel):
             content = scripted.get("content", "")
             tool_calls = _tool_calls(scripted.get("tool_calls"))
             usage = scripted.get("usage", response.get("usage"))
+        elif response.get("stop_reason") == "refusal":
+            content, tool_calls, usage = [], [], response.get("usage")  # declined before any output
         else:
             raise ValueError(f"replay response {self.cursor - 1} has neither message nor structured")
+        metadata: dict[str, Any] = {"model_name": self.model, "model_provider": "replay"}
+        for key in ("stop_reason", "stop_details"):
+            if key in response:
+                metadata[key] = response[key]
         # A fresh id every time: add_messages silently overwrites a repeated id.
-        return AIMessage(
+        message = AIMessage(
             content=content,
             tool_calls=tool_calls,
             id=f"replay-{uuid.uuid4()}",
             usage_metadata=_usage_metadata(usage),
-            response_metadata={"model_name": self.model, "model_provider": "replay"},
+            response_metadata=metadata,
         )
+        declined = declined_from(message, self.model)
+        if declined is not None:
+            raise declined
+        return message
 
     def _generate(
         self,

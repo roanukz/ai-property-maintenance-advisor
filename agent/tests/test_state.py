@@ -19,6 +19,7 @@ def representative_state() -> dict:
     return {
         "run_id": "r1",
         "mode": "replay",
+        "run_date": "2026-10-01",
         "property_id": "p1",
         "appliance_id": None,
         "symptom": "Spa shows FLO",
@@ -75,7 +76,8 @@ def test_state_json_round_trips_and_excludes_run_context():
     assert json.loads(json.dumps(state)) == state
 
     context_fields = {f.name for f in fields(RunContext)}
-    assert not context_fields & (set(AdvisorState.__annotations__) - {"run_id", "mode"})
+    # run_date is the copy intake pins in state (SC13), so a resumed run keeps its first date.
+    assert not context_fields & (set(AdvisorState.__annotations__) - {"run_id", "mode", "run_date"})
     for bad in ({"route": ("a",)}, {"photo": {"path": Path("x")}}, {"latency": {1: 0.1}},
                 {"ctx": RunContext("r", "replay", Path(), Path(), Path(), Path())}):
         with pytest.raises(TypeError):

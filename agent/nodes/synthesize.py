@@ -8,7 +8,8 @@ validation with. Sources are truncated in code to
 config.SYNTH_SOURCE_TOKEN_BUDGET. The call goes through ledger.reserve and
 ledger.charge; include_raw keeps the raw message so a reply that fails the
 BriefDraft schema is still charged, and that failure is recorded as a
-validation error, never as an empty ok brief (v1 guardrail test 13).
+validation error, never as an empty ok brief (v1 guardrail test 13). A
+declined call (decision 69) is charged and ends the run on the decline brief.
 
 This module also holds the paid call helper read_plate uses.
 """
@@ -17,7 +18,6 @@ from __future__ import annotations
 
 import time
 from collections.abc import Sequence
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,12 +25,13 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
 from agent import config
-from agent.ledger import BudgetExceeded, Ledger, estimate_input_tokens
+from agent.declined import ModelDeclined, declined_update
+from agent.ledger import BudgetExceeded, Ledger, basis_model, estimate_input_tokens, price_basis
 from agent.models import make_model, max_tokens_for
 from agent.prompts import build_synthesis_user_prompt, synthesis_system_prompt
 from agent.redaction import scrub_exception
 from agent.schemas import BriefDraft
-from agent.state import AdvisorState, RunContext, latency_entry
+from agent.state import AdvisorState, RunContext, latency_entry, run_date
 
 NODE = "synthesize"
 APPLIANCE_KIND = "appliance"  # history_hits entry for the registry dates (agent/nodes/history.py)
@@ -96,8 +97,9 @@ def paid_structured_call(
     reservation, marked estimated). A reply that reports no usage is charged
     the same way, never at 0. Errors leave with the run's key values redacted.
     """
-    model_id = config.MODEL_FOR[ctx.mode][node]
-    est = estimate_input_tokens(list(estimate_messages or messages), model=model_id, images=images)
+    basis = price_basis(ctx.mode, ctx.cassette)  # a recording's live mode in replay, else the run's
+    model_id = basis_model(basis, node, ctx.cassette)
+    est = estimate_input_tokens(list(estimate_messages or messages), model=model_id, images=images, mode=basis)
     ledger = open_ledger(ctx)
     reservation = ledger.reserve(
         ctx.run_id,
@@ -105,9 +107,10 @@ def paid_structured_call(
         node=node,
         model=model_id,
         input_tokens_est=est,
-        max_tokens=max_tokens_for(node, ctx.mode),
+        max_tokens=max_tokens_for(node, basis),
         thread_id=_thread_id(),
         run_cap_usd=(ctx.caps or {}).get("run_cap_usd"),
+        price_mode=basis,
     )
     try:
         # Built after the reservation (a refused call never builds its model)
@@ -225,10 +228,6 @@ def build_sources_block(sources: Sequence[dict[str, Any]], pages_dir: Path | Non
 # ---------------------------------------------------------------------------
 
 
-def _today() -> str:
-    return datetime.now(UTC).date().isoformat()
-
-
 def split_history(history_hits: Sequence[dict[str, Any]] | None) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     """(service records, the appliance's registry entry) from history_hits.
 
@@ -258,7 +257,8 @@ def synthesis_messages(state: AdvisorState, ctx: RunContext) -> list[BaseMessage
         registry=appliance,
         observed_code=state.get("observed_code"),
     )
-    return [SystemMessage(synthesis_system_prompt(_today())), HumanMessage(user)]
+    # The run's one date (SC13), so the prompt's "today" is the day validate dates the brief.
+    return [SystemMessage(synthesis_system_prompt(run_date(state, ctx).isoformat())), HumanMessage(user)]
 
 
 def synthesize(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, Any]:
@@ -266,6 +266,7 @@ def synthesize(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, A
     started = time.perf_counter()
     ctx = runtime.context
     messages = synthesis_messages(state, ctx)
+    before = open_ledger(ctx).run_total(ctx.run_id)
     try:
         out, usd = paid_structured_call(ctx, NODE, BriefDraft, messages)
     except BudgetExceeded as exc:
@@ -275,6 +276,10 @@ def synthesize(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, A
             "draft": None,
             **latency_entry(state, NODE, time.perf_counter() - started),
         }
+    except ModelDeclined as exc:
+        # Charged from exc.ai_message by paid_structured_call; never retried (decision 69).
+        return {**declined_update(state, exc, NODE), "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - before,
+                **latency_entry(state, NODE, time.perf_counter() - started)}
     update: dict[str, Any] = {"cost_usd": usd, **latency_entry(state, NODE, time.perf_counter() - started)}
     parsed = out.get("parsed")
     if out.get("parsing_error") is not None or parsed is None:

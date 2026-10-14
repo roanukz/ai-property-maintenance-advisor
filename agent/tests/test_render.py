@@ -361,12 +361,41 @@ def fixture_maintenance_due() -> tuple[dict, dict]:
     return brief, {"records": []}
 
 
+# Synthetic coverage rows (SC13) on the synthetic SX-100: one active on TODAY,
+# one ended, and one whose start (a purchase year only) gives no end date.
+SYN_COVERAGE_REGISTRY = {**SYN_REGISTRY, "purchase_date": "2014"}
+SYN_COVERAGE = [
+    {"id": "syn-compressor", "record_id": "warranty:syn-compressor", "appliance_id": "appl-sx100",
+     "component": "compressor", "term_months": 180, "start_event": "install", "source_text": "synthetic",
+     "synthetic": True},
+    {"id": "syn-parts", "record_id": "warranty:syn-parts", "appliance_id": "appl-sx100", "component": "parts",
+     "term_months": 60, "start_event": "install", "source_text": "synthetic", "synthetic": True},
+    {"id": "syn-labor", "record_id": "warranty:syn-labor", "appliance_id": "appl-sx100", "component": "labor",
+     "term_months": 12, "start_event": "purchase", "source_text": "synthetic", "synthetic": True},
+]
+
+
+def fixture_warranty_coverage() -> tuple[dict, dict]:
+    draft, sources, _ = split_sc1b_payload(_syn_ok())
+    sources[0]["retrieved_at"] = RECORDED_DATE
+    result = run_rules(
+        draft, sources=sources, observed_code=None, history_hits=[], registry=SYN_COVERAGE_REGISTRY,
+        mode="replay", provenance=None, pass_kind="synthesize", identity=SYN_IDENTITY, search_trail=[],
+        page_texts={}, today=TODAY, warranty_coverage=SYN_COVERAGE,
+    )
+    assert result.errors == [], result.errors
+    statuses = [c["status"] for c in result.brief["warranty"]["coverage"]]
+    assert statuses == ["active", "ended", "end_date_unknown"], statuses
+    return result.brief, {"records": []}
+
+
 CONDITIONAL = {
     "budget_stopped": fixture_budget_stopped,
     "happened_before": fixture_happened_before,
     "upgrade_options": fixture_upgrade_options,
     "maintenance_due": fixture_maintenance_due,
     "all_forum": fixture_all_forum,
+    "warranty_coverage": fixture_warranty_coverage,
 }
 
 
@@ -468,11 +497,15 @@ BUDGET_PATHS = {("run", "stop_reason"), ("run", "search_trail"), ("budget_stop",
 # Fields a page need not show: enums shown only when valid, flags, a record ID
 # that no longer matches a loaded record, candidate evidence, source origin.
 NOT_SHOWN = {("status",), ("sources", 0, "tier"), ("sources", 0, "proposed_tier"), ("sources", 0, "origin"),
-             ("candidates", 0, "who"), ("candidates", 0, "evidence"), ("happened_before", "record_id")}
+             ("candidates", 0, "who"), ("candidates", 0, "evidence"), ("happened_before", "record_id"),
+             # SC13: the page shows the coverage line code wrote from these, never the rows themselves.
+             *[("warranty", "coverage", 0, k) for k in ("record_id", "component", "start_event", "start_date",
+                                                        "end_date", "status")],
+             ("warranty", "coverage_as_of")}
 # v2 only: legacy (v1) pages never showed these.
 LEGACY_UNSHOWN_PREFIXES = ("upgrade_options", "maintenance_due", "run")
 LEGACY_UNSHOWN = {("sources", 0, "host"), ("sources", 0, "retrieved_at"), ("warranty", "record_id"),
-                  ("warranty", "terms")}
+                  ("warranty", "terms"), ("warranty", "coverage_statement")}
 
 
 def test_walk_finds_every_model_string_field_used_below() -> None:
@@ -500,7 +533,11 @@ def full_brief() -> dict:
                              "reason": "discontinued", "summary": "summary", "source_index": 0,
                              "evidence": "evidence"}],
         "warranty": {"age_statement": "age", "cautions": [{"text": "warranty caution", "source_index": 0}],
-                     "verify": ["verify"], "record_id": "appliance:a1", "terms": "terms"},
+                     "verify": ["verify"], "record_id": "appliance:a1", "terms": "terms",
+                     "coverage": [{"record_id": "warranty:w1", "component": "labor", "term_months": 12,
+                                   "start_event": "install", "start_date": "2026-05-04",
+                                   "end_date": "2027-05-04", "status": "active", "synthetic": True}],
+                     "coverage_statement": "coverage line", "coverage_as_of": "2026-09-18"},
         "maintenance_due": [{"task": "task", "interval": "interval", "source_index": 0, "evidence": "e",
                              "last_done_record_id": "maintenance:m1", "last_done_on": "2026-03-01",
                              "due_date": "2026-10-01"}],
@@ -693,6 +730,19 @@ def test_warranty_caution_keeps_citation() -> None:
         page = render_brief(brief, identity={}, symptom="s", generated_at="2026-09-18", legacy=legacy)
         assert ('<li>Rental use may void coverage. <a class="ref" '
                 'href="https://manufacturer.example.com/m">[1]</a></li>') in page
+
+
+def test_coverage_line_is_drawn_in_v2_only_and_labels_synthetic_rows() -> None:
+    """SC13: the v2 page draws the coverage line code wrote, with each synthetic
+    row labeled; the legacy page never does, so v1 output stays byte identical.
+    Mutation render_coverage_line_in_legacy (the legacy page draws the line)."""
+    brief, _ = fixture_warranty_coverage()
+    statement = brief["warranty"]["coverage_statement"]
+    assert "(warranty:syn-compressor, synthetic)" in statement and "(warranty:syn-labor, synthetic)" in statement
+    v2 = render_brief(brief, identity=SYN_IDENTITY, symptom="s", generated_at=RECORDED_DATE)
+    assert f"  <p>{esc(statement)}</p>" in v2
+    legacy = render_brief(brief, identity=SYN_IDENTITY, symptom="s", generated_at=RECORDED_DATE, legacy=True)
+    assert "warranty:syn-" not in legacy and "(UTC)" not in legacy
 
 
 # ---------------------------------------------------------------------------

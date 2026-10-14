@@ -18,7 +18,9 @@ latency entry.
   draft with the graph derived upgrade options added, as pass kind "upgrade";
   the rules are the same, so those options are cited, verified, pruned and
   renumbered like any other entry. The appliance's maintenance_log is read
-  from the registry so rule 9 can write due dates.
+  from the registry so rule 9 can write due dates, and its warranty_coverage
+  rows so rule 8 can write the coverage line (SC13), both as of the run's one
+  date (`state.run_date`).
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ from langgraph.runtime import Runtime
 from agent.nodes.refuse import build_budget_stopped_brief
 from agent.nodes.upgrade_check import upgrade_pass_done
 from agent.rules.pipeline import run_rules
-from agent.state import AdvisorState, RunContext, latency_entry
+from agent.state import AdvisorState, RunContext, latency_entry, run_date
 
 NODE = "validate"
 NO_DRAFT = "no_draft: synthesize returned nothing to validate"
@@ -148,6 +150,16 @@ def load_maintenance_log(state: AdvisorState, ctx: RunContext) -> list[dict[str,
     return Registry(ctx.registry_path).maintenance_log(appliance_id)
 
 
+def load_warranty_coverage(state: AdvisorState, ctx: RunContext) -> list[dict[str, Any]]:
+    """The appliance's warranty_coverage rows, or [] with no appliance."""
+    appliance_id = state.get("appliance_id")
+    if not appliance_id or ctx.registry_path is None or not Path(ctx.registry_path).is_file():
+        return []
+    from agent.registry import Registry
+
+    return Registry(ctx.registry_path).warranty_coverage(appliance_id)
+
+
 def validate(state: AdvisorState, runtime: Runtime[RunContext]) -> dict:
     """Run the rules over the latest draft and record the outcome."""
     started = time.perf_counter()
@@ -189,6 +201,8 @@ def _validate(state: AdvisorState, ctx: RunContext) -> dict:
         maintenance_log=load_maintenance_log(state, ctx),
         recorded_text_urls=set(recorded_text_hashes(ctx.cassette)),
         safety_signals=state.get("safety_signals"),
+        today=run_date(state, ctx),
+        warranty_coverage=load_warranty_coverage(state, ctx),
     )
     report = {"grounding": result.grounding, "grounding_status": result.grounding_status}
     report["safety_provenance"] = result.safety_provenance

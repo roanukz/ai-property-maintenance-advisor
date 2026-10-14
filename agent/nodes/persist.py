@@ -44,6 +44,10 @@ quote that matches no pattern proposes no edge (it is not a drop):
   whose quote says "<part> is discontinued" (or "has been discontinued", "is
   no longer available", "is obsolete"), from the model to that part; a token
   naming the model or the successor is never taken as a part.
+  A SUPERSEDED_BY or PART_DISCONTINUED edge whose quote does not also name
+  the unit's confirmed model, as its own token in the page, is dropped with
+  reason "unit_not_in_span": a quote about a sibling model says nothing
+  about this unit.
 - CODE_POINTS_TO_PART: each candidate whose code has a HAS_CODE edge in the
   graph (written now or before) and whose quote names a part after "part",
   "part number", "part no." or "P/N", from the code to that part.
@@ -161,6 +165,7 @@ DROP_PRINTED_CONFLICT = "printed_form_conflict"
 DROP_NO_CODE_NODE = "code_not_in_graph"
 DROP_NO_LABEL = "no_documented_meaning"
 DROP_NO_ACTION = "no_documented_action"
+DROP_UNIT_NOT_IN_SPAN = "unit_not_in_span"
 
 # Phase 4 target patterns, read only from a quote that then passes the span check.
 _PART_TOKEN = r"[A-Z0-9][A-Z0-9-]*\d[A-Z0-9-]*"
@@ -442,6 +447,20 @@ def _retrieved(state: AdvisorState, brief: dict[str, Any], entry: dict[str, Any]
     return url, cited, found, None
 
 
+def _names_unit(evidence: Any, page: str | None, model: Any) -> bool:
+    """True when the quote names the unit's model as printed, as its own token in the page.
+
+    An upgrade quote about a sibling model ("The XR13 is replaced by the
+    XR99") names the successor, so rule 9 keeps it, but it says nothing about
+    this unit, so no lifecycle edge is saved from it. The family alone is not
+    enough, since it admits sibling models.
+    """
+    if not isinstance(evidence, str) or not isinstance(model, str) or not normalize_for_span(model):
+        return False
+    return (normalize_for_span(model) in normalize_for_span(evidence)
+            and target_is_token(evidence, page or "", target=model))
+
+
 def _proposal(kind: str, src: tuple, dst: tuple, target: str, url: str, cited: dict[str, Any],
               found: dict[str, Any], evidence: str, page: str, run_id: str) -> dict[str, Any]:
     return {
@@ -482,6 +501,10 @@ def document_edge_candidates(state: AdvisorState, ctx: RunContext) -> tuple[list
             # As for HAS_CODE: the target must stand as its own token in the page.
             if why is None and not target_is_token(entry["evidence"], texts[url], target=target):
                 why = TARGET_NOT_TOKEN
+            # A lifecycle edge is about this unit only when its quote names the unit too.
+            if why is None and kind in (SUPERSEDED_BY, PART_DISCONTINUED) \
+                    and not _names_unit(entry["evidence"], texts[url], model):
+                why = DROP_UNIT_NOT_IN_SPAN
         evidence = entry.get("evidence")
         if why is None:
             evidence = snap_span_to_words(evidence, texts[url], accept=_code_accepts(texts[url], target))

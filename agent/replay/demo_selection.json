@@ -1,23 +1,23 @@
 {
   "format": 1,
   "data_status": "rerun",
-  "note": "The recorded v2 demo's runs, by role: the re-record on the build with the safety check (Jev checks every step to try first), made on 30 September 2026. Built with agent/replay/build_demo.py, which refuses any run whose own records name another build.",
-  "build_id": "da738a1559ced359",
-  "recorded_on": "2026-09-30",
+  "note": "The recorded v2 demo's runs, by role: the re-record on Claude Haiku 5.5 (decision 69), made on 14 October 2026. Built with agent/replay/build_demo.py, which refuses any run whose own records name another build.",
+  "build_id": "d24ed7c475dcd813",
+  "recorded_on": "2026-10-14",
   "roles": {
-    "hot_tub_code_first": "t-f3a9466b85c84f0b",
-    "hot_tub_code_repeat": "t-9d92b1f1d1d44b7f",
-    "hot_tub_vague": "t-86a2271093f9495a",
-    "ac_first": "t-c702f1d53c7c442a",
-    "ac_new_symptom": "t-57bec10bc10f4c93",
-    "no_such_model": "t-88e2f7a26b49464a",
-    "blurry_plate": "t-49809b07ac4b4af4",
-    "hot_tub_with_history": "t-bbad96be657444a5"
+    "hot_tub_code_first": "t-88d15d19cba943ec",
+    "hot_tub_code_repeat": "t-d644c199cbd74532",
+    "hot_tub_vague": "t-d077f82722f24d5f",
+    "ac_first": "t-5cb8a33347ab4425",
+    "ac_new_symptom": "t-22e572e8a78146c1",
+    "no_such_model": "t-bacd9f2ab98844e4",
+    "blurry_plate": "t-9b66a3c84e99482f",
+    "hot_tub_with_history": "t-044cd20f9678498e"
   },
   "also_count": {
     "no_such_model": [
-      "t-370bc4256e1b4ef5",
-      "t-673aec872a904788"
+      "t-291fa46a78f34a5e",
+      "t-76da2cfb5ba443d3"
     ]
   },
   "compare": {

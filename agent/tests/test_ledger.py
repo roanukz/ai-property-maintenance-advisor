@@ -27,8 +27,19 @@ from agent.ledger import (
 )
 
 HAIKU = config.HAIKU
-IN = config.PRICES_PER_MTOK[HAIKU]["input"] / 1_000_000
-OUT = config.PRICES_PER_MTOK[HAIKU]["output"] / 1_000_000
+# The cap and settlement logic here is tested on one fixed card, the replay card
+# (Claude Haiku 4.5's), which _fixed_card gives HAIKU in every mode, so the
+# round numbers below hold. The Claude Haiku 5.5 cards and the long prompt line
+# are tested in test_haiku55_prices.py.
+CARD = dict(config.REPLAY_PRICES)
+IN = CARD["input"] / 1_000_000
+OUT = CARD["output"] / 1_000_000
+
+
+@pytest.fixture(autouse=True)
+def _fixed_card(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(config.PRICES_PER_MTOK, HAIKU, dict(CARD))
+    monkeypatch.setattr(config, "LONG_PROMPT_PRICES_PER_MTOK", {})
 
 
 def _cost(input_tokens: int, output_tokens: int) -> float:
@@ -152,8 +163,8 @@ def test_live_run_refused_when_build_total_would_pass_cap(ledger: Ledger) -> Non
         assert err.value.reason == "build_cap"
     # A single call that would carry the build past its cap is refused too,
     # even though it fits the fresh run's own cap.
-    big = dict(input_tokens_est=80_000, max_tokens=config.MAX_TOKENS["synthesize_cheap"])
-    assert remaining < _cost(80_000, config.MAX_TOKENS["synthesize_cheap"]) <= config.RUN_CAP_USD["cheap"]
+    big = dict(input_tokens_est=80_000, max_tokens=6_000)
+    assert remaining < _cost(80_000, 6_000) <= config.RUN_CAP_USD["cheap"]
     with pytest.raises(BudgetExceeded) as err:
         ledger.reserve("new", mode="cheap", node="synthesize", model=HAIKU, **big)
     assert err.value.reason == "build_cap"
@@ -345,10 +356,9 @@ def test_estimate_includes_tool_prompt_and_margin() -> None:
     assert estimate_input_tokens(messages, model=HAIKU, images=2) == math.ceil(
         base * config.ESTIMATE_MARGIN[HAIKU] + 2 * config.IMAGE_TOKENS_ESTIMATE
     )
-    # Sonnet's newer tokenizer gets the larger margin.
-    assert estimate_input_tokens(messages, model=config.SONNET) > estimate_input_tokens(
-        messages, model=HAIKU
-    )
+    # Claude Haiku 5.5 and Sonnet 5 share the newer tokenizer, so they share its margin.
+    assert config.ESTIMATE_MARGIN[HAIKU] == config.ESTIMATE_MARGIN[config.SONNET] == pytest.approx(1.25 * 1.3)
+    assert estimate_input_tokens(messages, model=config.SONNET) == estimate_input_tokens(messages, model=HAIKU)
 
 
 def test_live_run_cap_override_can_only_lower_the_cap(ledger: Ledger) -> None:

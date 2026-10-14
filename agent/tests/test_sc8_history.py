@@ -14,7 +14,7 @@ import copy
 import hashlib
 import json
 import shutil
-from datetime import datetime, timezone
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -196,7 +196,7 @@ def test_age_from_registry_date(tmp_path: Path) -> None:
         assert text in user, text
 
     warranty = state["brief"]["warranty"]
-    today = datetime.now(timezone.utc).date()
+    today = date.fromisoformat(state["run_date"])
     expected, record_id = age_statement(registry=appliance, manufacture_date=None, today=today)
     assert warranty["age_statement"] == expected
     assert expected.startswith(f"Installed {appliance['install_date']} per property record {appliance['record_id']}")

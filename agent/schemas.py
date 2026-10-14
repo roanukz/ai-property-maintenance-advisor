@@ -57,7 +57,9 @@ only after the parity layer and the v2 rules have run.
 
 Phase 2 schema pass (decision 29): `Warranty.record_id` and `Warranty.terms`
 are code written, and `DraftWarranty` has no `age_statement`, because code
-computes the unit's age from the registry or the manufacture date.
+computes the unit's age from the registry or the manufacture date. SC13 adds
+the code written `Warranty.coverage`, `coverage_statement` and
+`coverage_as_of`; `DraftWarranty` has none of them.
 """
 
 from __future__ import annotations
@@ -258,6 +260,19 @@ class WarrantyCaution(TopWarrantyCaution):
         return data
 
 
+class WarrantyCoverage(_Parity):
+    """One warranty_coverage row as code computed it for the run date (SC13)."""
+
+    record_id: StrictStr  # warranty:<id>
+    component: StrictStr
+    term_months: int
+    start_event: Literal["install", "purchase"]
+    start_date: StrictStr | None = None
+    end_date: StrictStr | None = None  # None when the start date is not a full date
+    status: Literal["not_started", "active", "ended", "end_date_unknown"]
+    synthetic: bool
+
+
 class Warranty(_Parity):
     age_statement: StrictStr  # v2: written by code (decision 29), never the model
     cautions: list[WarrantyCaution] = Field(default_factory=list)
@@ -266,6 +281,12 @@ class Warranty(_Parity):
     # warranty terms quoted from that record. Code fills both.
     record_id: StrictStr | None = None
     terms: StrictStr | None = None
+    # v2 (SC13): code computes coverage as of the run's one UTC date and writes
+    # the brief's coverage line from it (agent/rules/coverage.py). The model
+    # never writes any of these.
+    coverage: list[WarrantyCoverage] = Field(default_factory=list)
+    coverage_statement: StrictStr | None = None
+    coverage_as_of: StrictStr | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -380,7 +401,7 @@ class RunResult(BaseModel):
     route_reason: str = ""
     generated_at: str
     all_forum: bool = False
-    refusal_origin: Literal["model", "forced"] | None = None
+    refusal_origin: Literal["model", "forced", "model_declined"] | None = None
     stop_reason: str | None = None
     cost_usd: float = 0.0
     tavily_credits: int = 0
@@ -541,6 +562,16 @@ class BriefDraft(_Draft):
     no_reliable_answer: DraftNoReliableAnswer | None
     upgrade_options: list[DraftUpgrade]
     maintenance_due: list[DraftMaintenance]
+    source_tiers: list[DraftSourceTier]
+
+
+class LifecycleDraft(_Draft):
+    """What the lifecycle lookup asks the model for (SC14, decision 72): only
+    discontinuation and successor findings, each cited with a verbatim quote.
+    An empty list means the sources document neither. Summaries are never
+    stored or shown; code writes what the page says."""
+
+    upgrade_options: list[DraftUpgrade]
     source_tiers: list[DraftSourceTier]
 
 

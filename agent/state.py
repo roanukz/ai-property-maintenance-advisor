@@ -3,12 +3,20 @@
 AdvisorState holds only JSON native values so the SQLite checkpointer never has
 to pickle or msgpack a custom type. RunContext is passed per call and is never
 checkpointed, which is why it can hold a cassette object and a live collector.
+
+One run date (SC13): RunContext.run_date is the run's UTC date, set once when
+the context is built (the CLI passes cli._today(); tests inject a date).
+intake copies it into state as run_date, so a run resumed on a later day
+keeps its first date, and `run_date(state, ctx)` is what synthesize, validate
+and render read: the prompt's date, the age statement, every warranty status
+and the brief's footer are the same day.
 """
 
 from __future__ import annotations
 
 import operator
 from dataclasses import dataclass, field
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypedDict
 
@@ -57,6 +65,7 @@ class AdvisorState(TypedDict, total=False):
 
     run_id: str
     mode: str
+    run_date: str  # ISO date, UTC; intake is its only writer
     property_id: str | None
     appliance_id: str | None
     symptom: str
@@ -125,6 +134,19 @@ class RunContext:
     # any error text before it reaches a log, a model or the checkpoint
     # (agent/redaction.py). Never written anywhere; replay leaves it empty.
     secrets: list = field(default_factory=list, repr=False)
+    # The run's one UTC date, pinned when the context is built (SC13).
+    run_date: date = field(default_factory=lambda: datetime.now(UTC).date())
+
+
+def run_date(state: Any, ctx: RunContext) -> date:
+    """The run's one date: the one intake pinned in state, else the context's."""
+    pinned = (state or {}).get("run_date")
+    if isinstance(pinned, str):
+        try:
+            return date.fromisoformat(pinned)
+        except ValueError:
+            pass
+    return ctx.run_date
 
 
 def check_json_native(value: Any, path: str = "state") -> None:

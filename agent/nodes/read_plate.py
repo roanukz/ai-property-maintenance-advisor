@@ -6,6 +6,12 @@ through the ledger with the image counted at config.IMAGE_TOKENS_ESTIMATE.
 Code then sets every field the model marked "unreadable" to null, even when
 the model guessed text for it. This is one of the two rules decision 27 keeps
 outside validate (PRD:142).
+
+On Claude Haiku 5.5 (decision 69) a declined call ends the run on the code
+written decline brief (agent.declined), charged and never retried. A live
+plate read refuses before any spend once the capabilities check has recorded
+that the model refused the photo (preflight.plate_refusal); it never moves to
+another model.
 """
 
 from __future__ import annotations
@@ -19,14 +25,20 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
 from agent import config
+from agent.declined import ModelDeclined, declined_update
 from agent.ledger import BudgetExceeded
-from agent.nodes.synthesize import paid_structured_call
+from agent.live.preflight import plate_refusal
+from agent.nodes.synthesize import open_ledger, paid_structured_call
 from agent.prompts import EXTRACT_SYSTEM, EXTRACT_USER
 from agent.schemas import Extraction
 from agent.state import AdvisorState, RunContext
 
 NODE = "read_plate"
 FIELDS = ("manufacturer", "model", "serial", "manufacture_date")
+
+
+class PlateReadingRefused(RuntimeError):
+    """Plate reading is off for this mode's model; the message says why and what to do."""
 
 
 def null_unreadable(extraction: dict[str, Any]) -> dict[str, Any]:
@@ -62,7 +74,11 @@ def read_plate(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, A
     if state.get("identity") is not None or not photo:
         return {"latency": {NODE: time.perf_counter() - started}}
     ctx = runtime.context
+    refusal = plate_refusal(ctx.mode)
+    if refusal:
+        raise PlateReadingRefused(refusal)
     sent, estimate = plate_messages(photo["path"])
+    before = open_ledger(ctx).run_total(ctx.run_id)
     try:
         out, usd = paid_structured_call(ctx, NODE, Extraction, sent, estimate_messages=estimate, images=1)
     except BudgetExceeded as exc:
@@ -71,6 +87,10 @@ def read_plate(state: AdvisorState, runtime: Runtime[RunContext]) -> dict[str, A
             "stop_reason": exc.reason,
             "latency": {NODE: time.perf_counter() - started},
         }
+    except ModelDeclined as exc:
+        # Charged by paid_structured_call; the run ends on the decline brief.
+        return {**declined_update(state, exc, NODE), "cost_usd": open_ledger(ctx).run_total(ctx.run_id) - before,
+                "latency": {NODE: time.perf_counter() - started}}
     parsed = out.get("parsed")
     extraction = null_unreadable(parsed.model_dump(mode="json")) if parsed is not None else None
     return {

@@ -1,0 +1,50 @@
+[
+  {
+    "RecallID": 900001,
+    "RecallNumber": "SYN001",
+    "RecallDate": "2026-01-15T00:00:00",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. The model is printed in the product model field.",
+    "URL": "https://example.com/synthetic-recall-001",
+    "Title": "Synthetic Test Firm Recall of Synthetic Outdoor Units (test fixture)",
+    "Products": [
+      {"Name": "Synthetic outdoor unit", "Description": "", "Model": "XR16 4TTR6036", "Type": "", "CategoryID": "", "NumberOfUnits": "About 10"}
+    ],
+    "Manufacturers": [{"Name": "Synthetic Test Firm", "CompanyID": ""}],
+    "Importers": [],
+    "Distributors": [],
+    "Hazards": [{"Name": "Synthetic hazard text for testing.", "HazardType": "", "HazardTypeID": ""}],
+    "Remedies": [{"Name": "Synthetic remedy text for testing."}]
+  },
+  {
+    "RecallID": 900002,
+    "RecallNumber": "SYN002",
+    "RecallDate": "2026-02-15T00:00:00",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. Model numbers: XR16-4TTR6036, 4TTR6048. The model appears only in this description.",
+    "URL": "https://example.com/synthetic-recall-002",
+    "Title": "Synthetic Test Firm Recall of Synthetic Outdoor Units, second fixture",
+    "Products": [
+      {"Name": "Synthetic outdoor unit", "Description": "", "Model": "", "Type": "", "CategoryID": "", "NumberOfUnits": "About 20"}
+    ],
+    "Manufacturers": [],
+    "Importers": [{"Name": "Synthetic Test Firm", "CompanyID": ""}],
+    "Distributors": [],
+    "Hazards": [{"Name": "Second synthetic hazard text.", "HazardType": "", "HazardTypeID": ""}],
+    "Remedies": [{"Name": "Second synthetic remedy text."}]
+  },
+  {
+    "RecallID": 900003,
+    "RecallNumber": "SYN003",
+    "RecallDate": "2026-03-15T00:00:00",
+    "Description": "SYNTHETIC TEST FIXTURE, not a real recall. Its link is not a web address, so it must render as text.",
+    "URL": "javascript:alert(1)",
+    "Title": "Synthetic water heater PRO+E50 M2 RH92 CL (test fixture)",
+    "Products": [
+      {"Name": "Synthetic water heater", "Description": "", "Model": "", "Type": "", "CategoryID": "", "NumberOfUnits": "About 30"}
+    ],
+    "Manufacturers": [],
+    "Importers": [],
+    "Distributors": [{"Name": "Synthetic Test Firm", "CompanyID": ""}],
+    "Hazards": [],
+    "Remedies": [{"Name": "Third synthetic remedy text."}]
+  }
+]

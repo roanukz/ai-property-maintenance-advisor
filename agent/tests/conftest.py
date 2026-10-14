@@ -32,6 +32,7 @@ scrub_environ(os.environ)
 
 import json  # noqa: E402
 import re  # noqa: E402
+from datetime import date  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 import pytest  # noqa: E402
@@ -80,6 +81,33 @@ def _never_read_the_real_dotenv(tmp_path_factory: pytest.TempPathFactory, monkey
     test that needs a .env sets its own path, which wins over this one.
     """
     monkeypatch.setattr(config, "ENV_FILE", tmp_path_factory.getbasetemp() / NO_DOTENV_NAME)
+
+
+@pytest.fixture(autouse=True)
+def _never_touch_the_real_recall_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point config.RECALLS_DIR at this test's temp folder (SC15).
+
+    Every property page reads the stored product recall checks, so a test
+    that renders one would otherwise read data/recalls/, and a test of the
+    live check would write there. A test that wants its own store sets it.
+    """
+    monkeypatch.setattr(config, "RECALLS_DIR", tmp_path / "recalls")
+
+
+# The date every test runs on (PRD 2, 13 October read-through). cli._today()
+# reads the UTC wall clock, and the Haiku date gate (decision 14) refuses a
+# Haiku mode from config.HAIKU_RETIREMENT_EARLIEST on, so the live path tests
+# would start failing on that date with no change to the code. Any date before
+# it will do; a test that sets cli._today itself wins over this one.
+TEST_TODAY = date(2026, 10, 1)
+
+
+@pytest.fixture(autouse=True)
+def _pin_today(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin cli._today to TEST_TODAY, so no test depends on the wall clock."""
+    from agent import cli
+
+    monkeypatch.setattr(cli, "_today", lambda: TEST_TODAY)
 
 
 def gate_phase() -> int | None:
