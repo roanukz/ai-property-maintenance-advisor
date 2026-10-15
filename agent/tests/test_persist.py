@@ -158,11 +158,11 @@ def test_edges_go_where_decision_37_says(tmp_path: Path, monkeypatch: pytest.Mon
     assert edge["brief_run_id"] == "live-1"
 
 
-def _advisor(args: list[str], data_dir: Path, cassette: Path):
+def _advisor(args: list[str], data_dir: Path, cassette: Path, mode: str | None = None):
     return spawn_offline_child(
         ["-m", "agent.cli", *args], kind="python",
         env_extra={"ADVISOR_DATA_DIR": str(data_dir), config.ENV_CASSETTE: str(cassette),
-                   config.ENV_MODE: None, config.ENV_GATE: None},
+                   config.ENV_MODE: mode, config.ENV_GATE: None},
     )
 
 
@@ -197,7 +197,10 @@ def test_cli_replay_leaves_runtime_graph_unchanged(tmp_path: Path) -> None:
     replay_block = stats.stdout.split("replay graph (replay runs):", 1)[1]
     assert "edges: HAS_CODE 1" in replay_block
     assert "edges dropped for failed evidence: 0" in replay_block
-    runtime_block = stats.stdout.split("replay graph (replay runs):", 1)[0]
+    # A live mode's stats read the runtime graph; printing them spends nothing.
+    stats = _advisor(["graph", "stats"], data_dir, cassette, mode="cheap")
+    assert stats.returncode == 0, stats.stderr
+    runtime_block = stats.stdout.split("runtime graph (live runs):", 1)[1]
     assert "edges: DOCUMENTED_CAUSE 3, HAS_CODE 1, IN_FAMILY 2" in runtime_block
     assert "documented causes: 3 edges, 3 causes" in runtime_block
     assert runtime_graph.read_bytes() == before

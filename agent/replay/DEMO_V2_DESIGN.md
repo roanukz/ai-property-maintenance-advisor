@@ -1,25 +1,31 @@
 # Recorded demo v2: design
 
-Status: installed as `agent/replay/build_demo.py` (builder version 4), `agent/replay/check_demo.py`,
+Status: installed as `agent/replay/build_demo.py` (builder version 5), `agent/replay/check_demo.py`,
 `agent/replay/demo_page.html` (the page template) and `agent/replay/demo_selection.json`, and rebuilt on
-30 September 2026 from the re-record on the build with the safety check (build `da738a1559ced359`; the runs
-were made on 30 September in US Eastern time, the day the selection's `recorded_on` and the published pages give,
-and their own timestamps fall on 1 October 2026 in UTC, which the page adds in brackets). Every run ID below is a run of
-that build. The 18 September build's runs were filed under `data/superseded/` and its briefs left `briefs/v2/`
-(decision 67). The builder refuses a run whose own records name any other build unless `--stand-in` is passed,
-and a stand-in build is stamped as not a result on every surface (section 6). Version 4 adds the safety check
-display (section 2a).
+14 October 2026 from the re-record on Claude Haiku 5.5 (decision 69), build `d24ed7c475dcd813`. The live batch
+behind it ran on 13 and 14 October in US Eastern time (all on 14 October in UTC, the clock the run records use);
+the demo's eight cases were all made on the morning of 14 October, finishing between 06:37 and 06:56 US Eastern
+(10:37 to 10:56 UTC). That is the same day in both clocks, so the page gives one date with no UTC day in
+brackets. Every run ID below is a run of that build. The 30 September runs (build `da738a1559ced359`) were filed
+under `data/superseded/2026-10-13-build-da738a1559ced359/` by moves only (decision 91), and their seven briefs in
+`briefs/v2/` were replaced by the new runs' briefs at the 14 October install (the "Installed" note after
+decision 92). The demo is shown as measured, refusals included (decision 92): four of its eight cases end with
+no reliable answer, and version 5 is the version that shows them (section 2b). The builder refuses a run whose
+own records name any other build unless `--stand-in` is passed, and a stand-in build is stamped as not a result
+on every surface (section 6). After the install, a read only fix to `agent/cli.py` (`advisor graph stats` now
+prints one block, for ADVISOR_MODE's graph, the replay graph when the mode is unset) moved
+`build_info.build_id()` from `d24ed7c475dcd813` to `179b4295c98a3143`, so this selection now builds only with
+`--stand-in` (section 9); the installed demo and the PRD 2 results stay on `d24ed7c475dcd813`, as the demo kept
+naming the build it was recorded on after decision 68.
 
 ## 0. Shape of the thing
 
-```
-demo_selection.json ──►  build_demo.py (offline, read only on the repo)  ──►  out/ (repo relative layout)
-   roles → run IDs          reads data/runs, data/eval, data/recordings,        tool.html
-                            data/lookups, data/graph.json, data/briefs,         src/demo.js, src/demo.css
-                            ledger (sqlite, mode=ro)                             src/fixtures.js
-                            copies by allowlist only                             briefs/v2/<run>.html
-                                                                                 build_report.json
-```
+* In: `demo_selection.json`, which maps each role to a run ID.
+* The builder, `build_demo.py`, runs offline and read only on the repo. It reads `data/runs`, `data/eval`,
+  `data/recordings`, `data/lookups`, `data/graph.json`, `data/briefs`, the registry seed and the ledger
+  (sqlite, `mode=ro`), and copies by allowlist only.
+* Out, in a repo relative layout under `--out`: `tool.html`, `src/demo.js` and `src/demo.css` (with
+  `--preview`), `src/fixtures.js`, `briefs/v2/<run>.html` and `build_report.json`.
 
 * The page is one static `tool.html` plus local scripts. Data arrives through `<script src="src/fixtures.js">`,
   which sets `window.ADVISOR_DEMO`. No fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon, dynamic
@@ -40,12 +46,13 @@ demo_selection.json ──►  build_demo.py (offline, read only on the repo)  �
 | `data/recordings/live_t_<run>.json` (recorder.py cassette) | runs that reached END and were recorded | input.symptom, input.plate_sha256, read_plate.extraction (value and confidence per field, exactly what the plate reader returned), resume.identity and resume.observed_code (what the owner confirmed), classifier[].structured.verdict, research.tool_results (query, credits, result url and title, fetch url, failed_results), research.blocked_calls (counts) |
 | `data/recordings/t-<run>.capture.jsonl` | every live segment | only the `segment` events (`ask`, `resume`) to prove the run paused and was finished later; and `read_plate` content when there is no cassette (paused runs such as the blurry plate) |
 | `data/lookups/<run>.jsonl` | runs that searched or fetched | fallback for the trail: tool, status, query or url, credits, n_results, result urls; `at` timestamps for ordering |
-| ledger `entries` table | every live run | cost by node and provider (Jev's answers are node `safety_check`, provider `typesafe`), Tavily credits, token counts, model name; cost for paused runs; sum must equal run record cost_usd |
-| run record `safety` (persist.py `safety_record`) | every run that reached END on this build | the safety check's status, model and per step provenance: the step's words, `writer_flag`, `jev_noul`, `final_flag`, `raised_by` (section 2a); `word_rule` is not shown, since the word rule is not a production layer (decision 62) |
+| ledger `entries` table | every live run | cost by node and provider (Jev's answers are node `safety_check`, provider `typesafe`), Tavily credits, token counts, model name; cost for paused runs; sum must equal run record cost_usd. Every Claude call on this recording was charged on `claude-haiku-5-5`, and when a recording names the models it was recorded on, each node's ledger model must be that one |
+| run record `safety` (persist.py `safety_record`) | every run that reached END on this build | the safety check's status, model and per step provenance: the step's words, `writer_flag`, `jev_noul`, `final_flag`, `raised_by` (section 2a); `word_rule` is not shown, since the word rule is not a production layer (decision 62), though a flag the word rule raised for a failed Jev call (`word_fallback`, decision 68) is named |
+| run record `brief.warranty` and `seed/registry_seed.json` | case 8 | the age statement, the warranty terms and the code written coverage line and rows (SC13), each checked against the synthetic seed |
 | (not used) `agent/live/preflight.run_plan` | none | **No estimate is shown.** No run or eval record stores the planner's estimate, and one computed at build time would come from the current config, not from the run (finding H1). |
-| `data/graph.json` | case 2 and 3 | the stored fact: HAS_CODE (and later DOCUMENTED_CAUSE) edge fields `evidence`, `source_url`, `retrieved_at`, `validated_at`, `brief_run_id` |
+| `data/graph.json` | cases 2 and 8, and any case whose memory step shows a fact | the stored fact: HAS_CODE (and DOCUMENTED_CAUSE, when a run stores one) edge fields `evidence`, `source_url`, `retrieved_at`, `validated_at`, `brief_run_id`. On this recording it holds one edge, FLO on the Optima 880 from a dealer page, stored by case 1 |
 | `data/briefs/<run>.html` | runs that rendered | copied byte for byte to `briefs/v2/<run>.html` |
-| `demo-assets/plate-clear.jpg`, `plate-blurry.jpg` | already published | not copied; sha256 is compared with the cassette's `input.plate_sha256` (clear plate = `3a142b56...`, matches today) so the page never shows a photo that was not the one sent |
+| `demo-assets/plate-clear.jpg`, `plate-blurry.jpg` | already published | not copied; sha256 is compared with the cassette's `input.plate_sha256` (clear plate `3a142b56...`, blurry plate `02a3b463...`, both matching this recording) so the page never shows a photo that was not the one sent |
 
 Precedence when two sources disagree: run record, then cassette, then eval, then lookups. Any disagreement on a
 number shown on the page (cost, searches, credits, route) is a **build failure**, not a silent pick. Rules the
@@ -55,9 +62,9 @@ builder keeps where the records legitimately differ:
   (`SUNDANCE SPAS`). The page shows **raw** (what the reader read) and the **confirmed** identity separately.
 * An edge whose `brief_run_id` run record lists that edge as dropped is shown exactly as stored, and the
   disagreement is a build failure outside `--stand-in` (a warning in `build_report.json` on a stand-in build).
-* A brief may quote a stored fact in full, as its opening words, or as a span inside it (the vague symptom run
-  quotes the FLO fact without its leading code label). The page says which. A quote that is not in the stored
-  fact at all is a build failure.
+* A brief may quote a stored fact in full, as its opening words, or as a span inside it (the FLO repeat quotes
+  the FLO fact without its leading code label; the records run quotes it in full). The page says which. A quote
+  that is not in the stored fact at all is a build failure.
 * A no reliable answer brief's `searched` list may hold queries the run's search or fetch limit blocked. The page labels each query
   "sent" or "blocked, never sent" (blocked by the run's search or fetch limit, never by the spending cap).
 * `latency_s` is the sum of node times. It does not include the owner's confirmation pause. The page calls it
@@ -66,131 +73,167 @@ builder keeps where the records legitimately differ:
 ## 2. The cases
 
 Roles are fixed names. The selection file (section 4) maps each role to a run ID. Each case says **Live run**
-and its run ID in its header, always.
+and its run ID in its header, always. Every number given as measured below is the run's own, as the installed
+`src/fixtures.js` shows it; every cost is within the run's $0.15 cap (`sc11.result` is `pass` on every run).
 
 ### Case 1. `hot_tub_code_first`: hot tub, code on the panel, first question
 
-Rerun: `t-f3a9466b85c84f0b`.
+Run: `t-88d15d19cba943ec` ("panel shows FLO", the clear plate photo). Measured: ok, 1 confirmed cause, route
+research with the main limits, 2 searches, 3 fetches (a fourth fetch blocked by the limit), 4 search credits,
+$0.0075 of a $0.15 cap in 40.1 seconds; it stored 1 fact (FLO, from a dealer page).
 
 | Step | What the reader sees | Fed by |
 |---|---|---|
 | 1. What the owner sends | the plate photo `demo-assets/plate-clear.jpg`; the symptom in quotes | cassette `input.symptom`; `input.plate_sha256` checked against the file |
-| 2. What the plate reader read | four rows: manufacturer, model, serial, manufacture date, each with its value and a confidence badge (high, low, unreadable); unreadable shows "not readable", never a blank | cassette `read_plate.extraction` (else capture `read_plate` content) |
-| 3. The confirmation pause | "The run stopped here and spent nothing more until the owner confirmed." Shows the confirmed identity and the confirmed code side by side with what was read, differences highlighted; the cost spent before the pause (the read_plate charge); and a line that the run can be finished later (it paused, then resumed as the same thread) | capture `segment` events `ask` then `resume`; cassette `resume.identity`, `resume.observed_code`; eval `pauses`, `answers`; ledger rows before the first `resume` charge (node `read_plate`) |
-| 4. The route and why | route chips (for example "research"), the research limits used, and the route reason sentence verbatim | run record `route`, `research_limits`, `route_reason` |
+| 2. What the plate reader read | four rows: manufacturer, model, serial, manufacture date, each with its value and a confidence badge (high, low, unreadable); unreadable shows "not readable", never a blank. On this run all four read high | cassette `read_plate.extraction` (else capture `read_plate` content) |
+| 3. The confirmation pause | "The run stopped here and spent nothing more until the owner confirmed." Shows the confirmed identity and the confirmed code side by side with what was read, differences highlighted; the cost spent before the pause (the read_plate charge, $0.000333 here); and a line that the run can be finished later (it paused, then resumed as the same thread) | capture `segment` events `ask` then `resume`; cassette `resume.identity`, `resume.observed_code`; eval `pauses`, `answers`; ledger rows before the first `resume` charge (node `read_plate`) |
+| 4. The route and why | route chips (here "research"), the research limits used, and the route reason sentence verbatim | run record `route`, `research_limits`, `route_reason` |
 | 5. The research trail | an ordered list: each search query with its Tavily credits, result count and the hosts it returned; each fetched page as host plus path (link to the public URL, `rel="noreferrer"`), ok or failed; each call **blocked by the run's search or fetch limit** with its query and "never sent" | cassette `research.tool_results` (ordering), eval `search_trail` and `not_reached`, lookups; blocked queries from eval `not_reached`, or when absent, the script tool calls with no matching result (recorder `blocked_calls` count must match) |
-| 6. The brief | verdict chip ("1 confirmed candidate", or "No reliable answer"), grounding status ("the code was found in the cited page's text": `grounding[].reason`), then the real brief file in a same origin iframe with "Open the brief on its own" | run record `brief.status`, `brief.candidates`, `grounding`, `grounding_status`; `briefs/v2/<run>.html` |
-| 7. The run's numbers | cost against its cap as a meter and in US dollars to four places ("$0.0435 of a $0.15 cap, within the cap"), the rounding the teardown uses, the exact ledger value in a caption; searches; fetches; search credits (Tavily) with a one line gloss; processing time (the pause note only when the run paused and resumed); model calls by step in plain names in a collapsed details | run record `cost_usd`, `sc11.run_cap_usd` (else eval `run_cap_usd`; a rerun build fails when neither exists), `searches`, `fetches`, `tavily_credits`, `latency_s`; ledger tokens by node |
+| 6. The safety check | section 2a; on this run Jev answered 4 of 4 steps, the writer flagged 3 and Jev added none | run record `safety` |
+| 7. The brief | verdict chip ("1 confirmed cause", or "No reliable answer"), grounding status ("the code was found in the cited page's text": `grounding[].reason`), then the real brief file in a same origin iframe with "Open the brief on its own" | run record `brief.status`, `brief.candidates`, `grounding`, `grounding_status`; `briefs/v2/<run>.html` |
+| 8. The run's numbers | cost against its cap as a meter and in US dollars to four places ("$0.0075 of a $0.15 cap, within the cap"), the rounding the teardown uses, the exact ledger value in a caption; searches; fetches; search credits (Tavily) with a one line gloss (the ledger counts them apart from the dollar cost, and these runs used Tavily's free tier); processing time (the pause note only when the run paused and resumed); model calls by step in plain names in a collapsed details, each with its service ("Claude Haiku 5.5", "Jev 1.13.0 (TypeSafe)", "Tavily web search") | run record `cost_usd`, `sc11.run_cap_usd` (else eval `run_cap_usd`; a rerun build fails when neither exists), `searches`, `fetches`, `tavily_credits`, `latency_s`; ledger tokens and model by node |
 
 ### Case 2. `hot_tub_code_repeat`: the same question again
 
-Rerun: `t-9d92b1f1d1d44b7f`. Compared with case 1.
+Run: `t-d644c199cbd74532`. Compared with case 1. Measured: ok from memory, route graph, 0 searches, $0.0015 in
+9.8 seconds, with no steps to try first.
 
 * Step 1 and 2 collapsed to one line ("same photo, same symptom, same confirmation"), with the confirmation
   still shown because the run still paused.
 * **Route from memory**: route chips ("graph"), route reason verbatim ("...the graph answers with no search").
 * **The stored fact**: a card with the code, the word for word evidence quote in a `<blockquote>`, the source
-  host and tier, when the page was retrieved, when the fact was validated, and which live run first stored it
-  (a link that switches to case 1). Fed by the brief candidate whose source has `origin: "graph"`, matched to
-  the `graph.json` edge by `source_url` and code; the quote shown is the edge's `evidence` and must equal the
-  candidate's `evidence` byte for byte or the build fails.
+  host and tier (`www.spastore.com`, dealer), when the page was retrieved, when the fact was validated, and which
+  live run first stored it (a link that switches to case 1). Fed by the brief candidate whose source has
+  `origin: "graph"`, matched to the `graph.json` edge by `source_url` and code; the quote shown is the edge's
+  `evidence`, and the candidate's `evidence` must equal it byte for byte, or be it with only the leading code
+  label left off (as on this run, and the page says which part was quoted), or the build fails.
 * **Side by side table** (two columns, first question and same question again; rows: route, searches, fetches,
   Tavily credits, cost, processing time). On phone width it becomes stacked pairs, no horizontal scroll.
   Every cell names its run ID in the column header.
+* The takeaway says what memory saved and what it cost in depth: "Answered from memory: 0 searches, $0.0015 and
+  9.8 seconds, against 2 searches, $0.0075 and 40.1 seconds the first time (case 1)", then that the brief listed
+  none of the 4 steps to try first the first brief gave. With no steps, the case has no safety step.
 * The brief iframe and numbers as in case 1.
 
 ### Case 3. `hot_tub_vague`: a vague symptom on the same hot tub
 
-Rerun: `t-86a2271093f9495a` ("not heating"). Compared with case 1.
+Run: `t-d077f82722f24d5f` ("not heating", the clear plate photo). Compared with case 1. Measured: no reliable
+answer, refused by the model; route graph then research with the top up limits; 2 searches and 1 fetch (a second
+fetch blocked by the top up limit), 2 credits, $0.0040 in 26.5 seconds.
 
 * Plate read and confirmation as case 1 (confirmed code: none).
-* Route: a plain sentence first, driven by the outcome (confirmed or only a possibility) and by the run's
-  search count, then the routing reason verbatim inside a disclosure. When the route is from memory because the
-  symptom was matched to a documented cause, show the classifier's verdict in words from cassette
-  `classifier[].structured`. The memory step is headed "What memory could offer" when memory only offered a
-  possibility.
-* **What memory could answer, and what it could not**: two short lists built only from the record: facts used
-  from memory (sources with `origin: "graph"`), and what needed a search (sources with `origin: "search"`,
-  plus `research_limits` when the route included a top up). If the route was research, the page says memory
-  had nothing verified for this symptom and quotes the route reason.
-* The safety check (section 2a): Jev raised a flag the writer left off, and the page says so plainly.
+* Route: a plain sentence first, then the routing reason verbatim inside a disclosure. The page words a top up
+  as memory holding facts the symptom check could not match; this run never called the symptom check, confirmed
+  no code and was offered nothing from memory, so the builder writes the route lead instead (`route.lead`):
+  memory held facts for the unit, but a stored code never answers a question without a confirmed code, so the
+  short top up search ran and the symptom check was not called.
+* When a route is from memory because the symptom was matched to a documented cause, the page shows the
+  classifier's verdict in words from cassette `classifier[].structured`, and the memory step is headed "What
+  memory could offer" when memory only offered a possibility. Neither happens on this recording: the graph holds
+  0 documented causes.
+* No reliable answer (section 2b): what was searched, what was found and why it was not enough, in the tool's
+  own words, and who refused. The takeaway names the 1 fact case 1 stored and says it was not enough to answer
+  on its own. The side by side table with case 1 carries the builder's note that the two runs ended
+  differently, and that the refusal cost less but bought no answer.
+* No safety step: the brief has no steps to try first.
 * Brief and numbers.
 
 ### Case 4. `ac_first`: the air conditioner's first question
 
-Rerun: `t-c702f1d53c7c442a` (typed identity, "AC not cooling upstairs"). If the selected run has no
-photo, step 2 reads "Typed by hand for this case" and shows the typed identity, as v1 did. Otherwise as case 1.
-Research trail, candidates count, source tiers, brief, numbers.
+Run: `t-5cb8a33347ab4425` (typed identity Trane XR16 (4TTR6036), "AC not cooling upstairs"). The run has no
+photo, so step 2 shows the unit as typed for this case, says it was typed by hand, and the run goes straight to
+its route. Measured: no reliable answer, refused by the model; route research with the main limits; 4 searches
+and 3 fetches (two more fetches blocked by the limit), 4 credits, $0.0086 in 37.6 seconds. The takeaway says
+memory had nothing verified for this unit, so the tool searched, and that the run ended with no reliable answer
+and saved nothing to memory. Research trail, the refusal (section 2b), brief, numbers.
 
 ### Case 5. `ac_new_symptom`: a new symptom on the air conditioner
 
-Rerun: `t-57bec10bc10f4c93`. Same unit, different symptom. Shows the route and reason verbatim, and a
-compact comparison with case 4 (route, searches, credits, cost, time). When memory held nothing, the route step
-says why from the record: what memory keeps, and how many facts case 4's run stored (`graph_edges.written`),
-and a line above the comparison says both runs had to search, so memory saved nothing. When some source has
-`origin: "graph"`, the memory step appears, headed from the outcome. When the route is memory plus a top up
+Run: `t-22e572e8a78146c1` ("outdoor unit runs but the fan does not spin"). Same unit, different symptom.
+Measured: no reliable answer, refused by the model; a full research pass of 4 searches and 3 fetches, 4 credits,
+$0.0089 in 43.5 seconds. Shows the route and reason verbatim, and a compact comparison with case 4 (route,
+searches, credits, cost, time, and how each run ended). Case 4 stored nothing (`graph_edges.written` is 0), so
+the builder's note above the comparison says both runs ended with no reliable answer, that a run ending that
+way saves nothing to memory, so both had to search, and that the table compares what the searching cost while
+neither run gave an answer. The takeaway says the same from the record.
+
+The builder keeps the wording for the other shapes this case can take: when some source has `origin: "graph"`,
+the memory step appears, headed from the outcome; when the route is memory plus a top up
 (`research_limits: "top_up"`), the route step says memory held facts for the unit (case 4's
-`graph_edges.written`) but the symptom check could not match one to the new symptom, so the short top up search ran
-instead of a full one; the side by side table says both runs searched but this one ran only the top up.
+`graph_edges.written`) but the symptom check could not match one to the new symptom, so the short top up search
+ran instead of a full one.
 
 ### Case 6. `no_such_model`: a model that does not exist
 
-Rerun: `t-88e2f7a26b49464a`, counted with `t-370bc4256e1b4ef5` and `t-673aec872a904788`.
+Run: `t-bacd9f2ab98844e4` (typed identity Aquarest ZX-9000 Pro, "not heating"), counted with
+`t-291fa46a78f34a5e` and `t-76da2cfb5ba443d3`. Measured: 3 of 3 refused by the model; the shown run made 3
+searches and 3 fetches for 5 credits, $0.0045 in 25.6 seconds.
 
 * Big verdict: **NO RELIABLE ANSWER**.
 * What was searched: every query from `brief.no_reliable_answer.searched`, each labeled "sent" (it appears in the
-  lookup log) or "blocked, never sent" (blocked by the run's search or fetch limit; it appears in eval `not_reached`); fetched pages listed.
+  lookup log) or "blocked, never sent" (blocked by the run's search or fetch limit; it appears in eval
+  `not_reached`); fetched pages listed. All 3 were sent on this run.
 * What was found and why it was not enough: `no_reliable_answer.found` and `why_insufficient`, verbatim, with the
   label "the tool's own words".
 * Who refused: `refusal_origin` ("the model declined" or "the rules forced a refusal"), and `stop_reason` when
   set (for example a cap stop).
-* Optional: if the selection lists repeat runs for this role, a line "N of N runs of this question ended with no
-  reliable answer", each run ID linked, from the eval summary rows. Only runs of the same build count.
+* The selection lists the repeat runs for this role, so a line reads "3 of 3 live runs of this question on the
+  same build ended with no reliable answer", with each run ID, from their records. Only runs of the same build
+  count. The two repeat runs' recordings fail the privacy scan (their research notes quote a maker's contact
+  details), so the demo reads only their run IDs and statuses.
 * Brief (the NRA brief is itself useful: it tells the technician what was searched) and numbers.
 
 ### Case 7. `blurry_plate`: a blurry plate
 
-Rerun: `t-49809b07ac4b4af4`. No run record and no brief exist, because the run halted at the pause.
+Run: `t-9b66a3c84e99482f` ("not heating"). No run record and no brief exist, because the run halted at the
+pause.
 
 * Photo `demo-assets/plate-blurry.jpg` and the symptom.
 * Plate read table: every field `unreadable` shows "not readable" with its badge (from eval `extraction.raw`, or
-  capture `read_plate` content).
+  capture `read_plate` content). On this run the manufacturer read low and the other three fields unreadable.
 * **Halted at the confirmation step**: "Nothing was searched" (only when the record says 0 searches), what it
-  spent against case 1's full run, both in dollars. Status `paused` from eval.
-* Cost: ledger total for the run, labeled "spent reading the photo", with searches 0 and
-  credits 0 from the ledger.
+  spent against case 1's full run, both in dollars ($0.0006 against $0.0075). Status `paused` from eval.
+* Cost: ledger total for the run, labeled "spent reading the photo", with searches 0 and credits 0 from the
+  ledger; processing time 3.7 seconds.
 * No iframe. The brief panel reads "No brief: the run stopped before anything was searched."
 
 ### Case 8 (optional role). `hot_tub_with_history`: the same code with the property's records attached
 
-Rerun: `t-bbad96be657444a5`. A live run with the seeded synthetic registry rows for the hot tub attached. Labeled
+Run: `t-044cd20f9678498e`. A live run with the seeded synthetic registry rows for the hot tub attached. Labeled
 **"Live run against synthetic property records"** on its tab, its header, its records step, its numbers panel,
-its brief caption and the glance table.
+its brief caption and the glance table. Measured: ok from the records and memory, route history then graph,
+0 searches, $0.0013 in 7.7 seconds, with no steps to try first.
 
-* What the owner sends: the unit as its property record names it (a real model name with a synthetic serial);
-  no photo. The confirmation step shows the one pause, for the code the tool found in the symptom, and that
-  nothing was spent before it.
+* What the owner sends: the unit as its property record names it (a real model name with the synthetic serial
+  `SYN-OPT-000001`); no photo. The confirmation step shows the one pause, for the code the tool found in the
+  symptom, and that nothing was spent before it.
 * Route: history plus memory, no search, and the route reason verbatim.
 * **What the property's records added**: the brief's "this has happened before" summary, cited to the prior
-  service record by ID and date; the age statement, which code writes from the install date (the builder
-  recomputes it with `agent/rules/citations.age_statement` on the run's date and fails on any difference); and
-  the warranty terms quoted from the record. Every cited row must be in `seed/registry_seed.json` and marked
-  synthetic, and the cited appliance must be the run's unit, or the build fails.
-* Memory, brief and numbers as case 2.
+  service record by ID and date (`service:svc-0001`, 2025-11-14); the age statement, which code writes from the
+  install date (the builder recomputes it with `agent/rules/citations.age_statement` on the run's date and fails
+  on any difference); the warranty terms quoted from the record; and the warranty coverage line and rows that
+  code writes (SC13). The builder recomputes the rows and the line with `agent/rules/coverage.py` from the seed
+  on the run's coverage date and fails on any difference, and the line must be in the brief file. On this run it
+  reads "No warranty coverage on file is active as of 2026-10-14 (UTC)", over three synthetic rows (equipment,
+  labor and shell), all ended. Every cited row must be in `seed/registry_seed.json` and marked synthetic, and
+  the cited appliance must be the run's unit, or the build fails.
+* Memory, brief and numbers as case 2. The brief quotes the stored FLO fact in full.
 
 The prototype's replay cases R1 (`replay_happened_before`) and R2 (`replay_upgrade`) are left out: case 8 shows
 the same records on a real live run, so a replay would add nothing, and a replay's cassette draft is not what a
 user sees.
 
-## 2a. The safety check on the steps to try first (builder version 4)
+## 2a. The safety check on the steps to try first (builder version 4, kept in 5)
 
 After the brief is drafted, Jev (`jev-1.13.0`, TypeSafe's judgment model) answers each step to try first with a
 probability that the step involves electricity, gas or overheating; at `config.JEV_THRESHOLD` (0.51) or above it
-raises a safety flag. It can add a flag, never remove one (`agent/rules/safety.raise_flags`). Every case whose
-brief has steps to try first gets a step "The safety check on the steps to try first", placed before the brief:
+raises a safety flag. It can add a flag, never remove one (`agent/rules/safety.raise_flags`). When a Jev call
+fails, the tuned word rule backs up that step only (`word_fallback`, decision 68) and the notice line still
+shows. Every case whose brief has steps to try first gets a step "The safety check on the steps to try first",
+placed before the brief:
 
-* "Jev answered N of M steps", and how many steps carry a flag, split by the layer that raised it (the writer or
-  Jev), from the run record's `safety.steps[].raised_by`.
+* "Jev answered N of M steps", and how many steps carry a flag, split by the layer that raised it (the writer,
+  Jev, or the word rule for a failed Jev call), from the run record's `safety.steps[].raised_by`.
 * A table, one row per step in the brief's order: the step's own words, Jev's probability (two places, or "no
   answer" when the call failed), and the flag on the brief ("flagged by the writer", "flagged by Jev", or "no
   flag"). The badge carries words, not color alone; on phone width the table stacks.
@@ -202,64 +245,114 @@ brief has steps to try first gets a step "The safety check on the steps to try f
 * The page never says whether a step is a safety step. The page shows only what the run recorded and says so;
   the readers' labels are not shown on the demo.
 
+On this recording only case 1's brief has steps to try first, so it is the one case with the safety step. Jev
+answered all 4 steps and its check ran cleanly. The writer flagged 3 of them, and Jev's answers on those were
+0.98, 0.77 and 0.96, all at or above the threshold; the fourth step has no flag, at 0.09. Jev added no flag of
+its own, and the page's list under the lede says so: case 1 is where Jev agrees with all three of the writer's
+flags. Jev's 4 answers are 4 `safety_check` calls in the ledger, $0.000111 in all, charged by TypeSafe.
+
 Checks, each a build failure outside `--stand-in`: a brief with steps but no safety section; a status that is not
 one of `agent/nodes/safety_check.STATUSES`; a model other than `config.JEV_MODEL`; safety steps that differ from
 the brief's steps, or a flag that differs from the brief's; a flag whose `raised_by` disagrees with
 `writer_flag`, or is put down to Jev without an answer at or above the threshold; an unflagged step with a Jev
-answer at or above the threshold; a flag put down to the word rule, which this build does not ship; fewer
+answer at or above the threshold; a flag put down to the word rule, which this build does not ship as a layer;
+a flag put down to the word fallback on a step whose Jev call did not fail in a partial or failed check; fewer
 `safety_check` ledger charges than answered steps; and a notice line in the brief file that does not match the
-status. The new node `safety_check` reads "Checking the steps for safety" in the calls by step table, with the
+status. The node `safety_check` reads "Checking the steps for safety" in the calls by step table, with the
 service "Jev 1.13.0 (TypeSafe)".
 
 `check_demo.py` check 8 holds the built page to it: every case with steps to try first carries the safety
 display with one row per step, every flagged row names its layer, a notice line is the brief's own and is in the
 brief file, and `src/demo.js` draws the step.
 
+## 2b. Refusals, shown as measured (builder version 5)
+
+Four of the eight cases end with no reliable answer: case 3 (the vague hot tub question), cases 4 and 5 (both
+air conditioner questions) and case 6 (the invented model). All four were refused by the model, not by the
+rules. Declining is the tool's success state when its sources do not support an answer, so each case keeps its
+place on the page and is shown as exactly what it was. Cases 3, 4 and 5 ask about real units, so those refusals
+also count against the tool's own answer bars, which Part 8 of the teardown reports.
+
+* `REFUSAL_ROLES` (`hot_tub_vague`, `ac_first`, `ac_new_symptom`) may end with status `ok` or
+  `no_reliable_answer`; `no_such_model` must end with no reliable answer; every other role (except
+  `blurry_plate`, which must be paused) must be `ok`, because the first question stores the fact the repeat
+  reads and the repeat and the records case answer from it.
+* Each refusal's takeaway is built from its record (`refusal_takeaway`): how the run got there, from the route
+  and the trail; that it ended with no reliable answer and who refused; what it spent of its cap and in what
+  time; and that the brief lists what was searched and found and nothing was saved to memory. It never says the
+  run answered. The invented model keeps its own takeaway, with the count of its repeat runs.
+* A side by side table beside a refusal carries a note on how each run ended (`compare_note`) and a "How it
+  ended" row (`outcome_text`), and a refusal that cost less says the difference is not a saving.
+* The page template's case references under the lede are worked out from the cases (`page_fills`), so no line
+  points at a case that does not show what it says, and one note there names the cases that end with no
+  reliable answer and the ones that count against the answer bars.
+
+Checks, each a build failure: a run that ended with no reliable answer and names no refusal origin (`model` or
+`rules`), has no refusal section in its brief, lists causes or steps to try first (so claims an answer), or
+stored facts in memory (`graph_edges.written`). `check_demo.py` check 9 holds the built page to it: a refusal's
+takeaway says "no reliable answer" and none of the words that claim an answer ("answered", "confirmed cause",
+"documented possibilit", "returned a brief with"); every side by side table with a refusal carries the note and
+says the refused run ended with no reliable answer; and `src/demo.js` draws every field version 5 adds when the
+fixtures use it (the route lead, the side by side note and outcome row, the warranty coverage rows and the quote
+note).
+
 ## 3. Fixtures format: `src/fixtures.js`
 
 ```js
-// Generated by build_demo.py 4 from a selection file (sha256 ...). Replays recorded runs. This page makes no network request.
+// Generated by build_demo.py 5 from a selection file (sha256 ...). Replays recorded runs. This page makes no network request.
 window.ADVISOR_DEMO = {
   "format": 2,
   "data_status": "rerun",                     // "stand_in" | "rerun"
   "stand_in_label": null,                     // the stand-in label when data_status is "stand_in"
-  "build": { "build_id": "da738a1559ced359", "builds": ["da738a1559ced359"], "recorded": "Recorded 30 September 2026 (1 October in UTC, ...), on the lower cost model setting" },
-  "generated": { "builder": "build_demo.py 4", "selection_sha256": "...", "built_at": "..." },
+  "stand_in_reasons": [],                     // why the build is a stand-in, on stand-in builds only
+  "build": { "build_id": "d24ed7c475dcd813", "builds": ["d24ed7c475dcd813"], "recorded": "Recorded 14 October 2026, on the lower cost model setting" },
+  "generated": { "builder": "build_demo.py 5", "selection_sha256": "...", "built_at": "..." },
+  "replay_label": "Replay of synthetic property records, no live call",
   "cases": [
     {
       "id": "c1", "role": "hot_tub_code_first",
       "kind": "live",
-      "kind_label": "Live run t-f3a9466b85c84f0b",
+      "kind_label": "Live run t-88d15d19cba943ec",
       "records_label": null,                  // "Live run against synthetic property records" on case 8
-      "records": null,                        // case 8: {label, happened_before, age, warranty_terms}
-      "run_id": "t-f3a9466b85c84f0b",
+      "records": null,                        // case 8: {label, happened_before, age, warranty_terms, coverage}
+      "run_id": "t-88d15d19cba943ec",
       "button": "Hot tub, code on the panel",
       "title": "Hot tub: first question, with a code on the panel",
-      "recorded": "Recorded 30 September 2026 (1 October in UTC, the clock the run records and briefs use), on the lower cost model setting",
-      "takeaway": "Read the plate, paused for the owner to confirm, then searched 3 times ...",
-      "compare_with": null,                   // {with: case id, columns: [...]} on c2 and c3 (c1) and c5 (c4)
+      "recorded": "Recorded 14 October 2026, on the lower cost model setting",
+      "takeaway": "Read the plate, paused for the owner to confirm, then searched 2 times ...",
+      "compare_with": null,                   // {with, columns: [...], note} on c2 and c3 (c1) and c5 (c4)
       "graph_edges": { "written": 1, "already_present": 0, "dropped": 0 },
       "ask": { "symptom": "panel shows FLO", "plate": "demo-assets/plate-clear.jpg", "plate_sha256": "3a142b56...",
                "typed_identity": null, "same_as": null },
-      "plate_read": { "fields": [ { "key": "model", "label": "Model", "value": "...", "confidence": "high" } ] },
+      "plate_read": { "fields": [ { "key": "model", "label": "Model", "value": "OPTIMA 880", "confidence": "high" } ] },
       "confirmation": { "paused": true, "resumed": true, "confirmed_identity": { ... }, "confirmed_code": "FLO",
-                        "spent_before_pause_usd": 0.002904, "from_photo": true },
-      "route": { "steps": ["research"], "limits": "main", "classifier_verdict": null, "reason": "Route table row 5: ..." },
-      "trail": [ { "tool": "search", "status": "sent", "query": "...", "results": 5, "hosts": ["..."] } ],
+                        "spent_before_pause_usd": 0.000333, "from_photo": true },
+      "route": { "steps": ["research"], "limits": "main", "reason": "Route table row 5: ...",
+                 "classifier_verdict": null, "classifier_called": false,
+                 "lead": null },                // the route step's first sentence when the page's own would not fit (c3)
+      "trail": [ { "tool": "search", "status": "sent", "credits": 1, "query": "...", "results": 5, "hosts": ["..."] } ],
       "memory": null,                         // {heading, facts, confirmed_from_memory, offered_from_memory, searched_instead, prior}
-      "outcome": { "status": "ok", "candidates": 1, "confirmed_candidates": 1, "grounding_status": "verified", "sources": [ ... ] },
-      "brief": { "share": "briefs/v2/t-f3a9466b85c84f0b.html", "sha256": "..." },
+      "outcome": { "status": "ok", "refusal_origin": null, "candidates": 1, "confirmed_candidates": 1,
+                   "try_first_steps": 4, "grounding_status": "verified", "sources": [ ... ],
+                   "no_reliable_answer": null },   // {found, why_insufficient, searched} on a refusal
+      "brief": { "share": "briefs/v2/t-88d15d19cba943ec.html", "sha256": "..." },
       "safety": { "status": "ran", "model": "jev-1.13.0", "threshold": 0.51, "steps_checked": 4, "answered": 4,
-                  "notice": null, "flags_by_writer": 2, "flags_by_jev": 0, "jev_added": [],
+                  "notice": null, "flags_by_writer": 3, "flags_by_jev": 0, "jev_added": [],
                   "steps": [ { "step": "Turn off the power at the breaker.", "flag": true, "raised_by": "writer",
                                "writer_flag": true, "jev_probability": 0.98 } ] },   // null when the brief has no steps to try first
-      "numbers": { "cost_usd": 0.043465, "cost_text": "$0.0435", "run_cap_usd": 0.15, "cap_text": "$0.15 cap", "cap_check": "pass",
-                   "searches": 3, "fetches": 3, "tavily_credits": 3, "processing_s": 28.7, "processing_note": "...", "by_node": [ ... ] },
+      "numbers": { "cost_usd": 0.00752, "cost_text": "$0.0075", "run_cap_usd": 0.15, "cap_text": "$0.15 cap", "cap_check": "pass",
+                   "searches": 2, "fetches": 3, "tavily_credits": 4, "processing_s": 40.1, "processing_note": "...", "by_node": [ ... ] },
+      "also_count": null,                     // on c6: {runs, no_reliable_answer, total}
       "warnings": []                          // builder notes, shown on stand-in builds only
     }
   ]
 };
 ```
+
+Each `compare_with` column carries `outcome_text` ("No reliable answer", or the confirmed cause count), which
+the side by side table shows as its "How it ended" row; `note` is the builder's line above the table when either
+run refused, else null. Each memory fact carries `brief_quote_relation` (`equal`, `prefix` or `within`) and
+`brief_quote_drops_code_label`, so the page says which part of the stored fact the brief quoted.
 
 Rules: every string is plain text (the page uses `textContent`, never `innerHTML`); every URL shown is `https:`
 and rendered as a link only (never loaded); every local path (`plate`, `share`) is relative, has no `..`, no
@@ -268,10 +361,21 @@ can parse it back with `json.loads` after stripping the comment and the prefix.
 
 ## 4. Selection file: `agent/replay/demo_selection.json`
 
-Written by hand after the rerun. The builder picks runs by role; nothing is hard coded. The file holds `format`,
-`data_status` ("rerun"), `build_id` (`da738a1559ced359`), `recorded_on` (2026-09-30), `roles` (the seven
-required roles and the optional `hot_tub_with_history`), `also_count` (the other two runs of the invented model
-question) and `compare` (case 2 and case 3 against case 1, case 5 against case 4).
+Written by hand after the rerun. The builder picks runs by role; nothing is hard coded. The file holds `format`
+(1), `data_status` ("rerun"), a `note`, `build_id` (`d24ed7c475dcd813`), `recorded_on` (2026-10-14), `roles` (the
+seven required roles and the optional `hot_tub_with_history`), `also_count` (the other two runs of the invented
+model question) and `compare` (case 2 and case 3 against case 1, case 5 against case 4). The runs by role:
+
+| Role | Case | Run |
+|---|---|---|
+| `hot_tub_code_first` | 1 | `t-88d15d19cba943ec` |
+| `hot_tub_code_repeat` | 2 | `t-d644c199cbd74532` |
+| `hot_tub_vague` | 3 | `t-d077f82722f24d5f` |
+| `ac_first` | 4 | `t-5cb8a33347ab4425` |
+| `ac_new_symptom` | 5 | `t-22e572e8a78146c1` |
+| `no_such_model` | 6 | `t-bacd9f2ab98844e4`, with also_count `t-291fa46a78f34a5e` and `t-76da2cfb5ba443d3` |
+| `blurry_plate` | 7 | `t-9b66a3c84e99482f` |
+| `hot_tub_with_history` | 8 | `t-044cd20f9678498e` |
 
 Checks, each a build failure:
 
@@ -279,8 +383,12 @@ Checks, each a build failure:
   other role needs a run record, a ledger total and, when a brief was rendered, the brief file.
 * Each role's record matches its role: first questions have a route that includes `research`; the repeat has
   route `graph` and 0 searches; the blurry run has status `paused` and every plate field `unreadable` except at
-  most the manufacturer; the no such model run has status `no_reliable_answer`; the hot tub runs share one
-  confirmed identity and the AC runs share another.
+  most the manufacturer; the no such model run has status `no_reliable_answer`; the vague and both air
+  conditioner runs end `ok` or `no_reliable_answer`, and every other run `ok`; any run that ended with no
+  reliable answer passes the refusal checks of section 2b; the records run's route is history then graph with 0
+  searches, and its brief cites a prior service record and has an age statement; the hot tub runs (the records
+  run included) share one confirmed identity and the AC runs share another, with different symptoms; the repeat
+  asked the same question with the same photo as the first question.
 * Build guard: a build is refused unless every selected **and every also_count** run names its build in its own
   records (the run record's `build_id`, written by `agent/build_info.py`, else its eval record's `build_id`; when
   both exist they must agree), that build equals `selection.build_id` and the current build, and it is not a
@@ -299,7 +407,8 @@ Checks, each a build failure:
 * Photo runs other than `blurry_plate` must show both an `ask` and a `resume` segment in the capture;
   `blurry_plate` must have an `ask` segment, no searches, fetches or credits in its eval record, and no ledger
   charge other than the plate read.
-* Ledger total per run equals run record `cost_usd` within 0.000001; `sc11.result` is `pass`.
+* Ledger total per run equals run record `cost_usd` within 0.000001, ledger credits equal the recorded credits,
+  and the trail's sent searches and fetches equal the run record's; `sc11.result` is `pass`.
 
 ## 5. Briefs: copy and display
 
@@ -327,17 +436,18 @@ Checks, each a build failure:
   "These numbers come from a superseded build and are not results." The page's `og:` tags are omitted in a
   stand-in build.
 * **Live chip** on every live case header and numbers panel: "Live run t-..." (info tokens), plus "Recorded
-  30 September 2026 (1 October in UTC, the clock the run records and briefs use), on the lower cost model
-  setting". The date is the selection's `recorded_on`, the day the published pages give; the run record's own UTC
-  day is added in brackets only when it differs, and a `recorded_on` more than a day from it fails the build.
+  14 October 2026, on the lower cost model setting". The date is the selection's `recorded_on`, the day the
+  published pages give; the run record's own UTC day is added in brackets ("(... in UTC, the clock the run
+  records and briefs use)") only when it differs, which it does not on this recording, and a `recorded_on` more
+  than a day from it fails the build.
 * **Synthetic records chip** on case 8 everywhere it appears: "Live run against synthetic property records"
   (notice tokens, dashed border so it is not carried by color alone). A replay case, if one is ever added, carries
   "Replay of synthetic property records, no live call" the same way, with a dotted border.
 * **Estimates**: none. The page shows only what the ledger and the run records hold. Caps are labeled "cap".
 * **Takeaway**: one line under each case title, computed by the builder from the run's own numbers (and, for a
-  comparison, the compared case's), for example "Answered from memory: 0 searches, $0.0082 and 4.3 seconds,
-  against 3 searches, $0.0435 and 28.7 seconds the first time (case 1)." A case where Jev added a flag, or where
-  the safety check failed, gains one sentence saying so (section 2a).
+  comparison, the compared case's), for example "Answered from memory: 0 searches, $0.0015 and 9.8 seconds,
+  against 2 searches, $0.0075 and 40.1 seconds the first time (case 1)." A case where Jev added a flag, or where
+  the safety check failed, gains one sentence saying so (section 2a); a refusal's takeaway follows section 2b.
 * **Stand-in, everywhere a brief appears**: the brief caption, the "Open the brief on its own" link and the
   frame title say "(stand-in data from a superseded build, not a result)", and a stand-in build writes
   `briefs/v2/STAND-IN.txt` carrying the label, since the verbatim briefs cannot carry it.
@@ -355,7 +465,7 @@ Checks, each a build failure:
   the confirmation pause"). Focus moves to the step heading on change. Each step is an `<h3>` under the case
   `<h2>`.
 * Tables use `<th scope>`; confidence badges carry text, not color alone; the cost meter is a `<meter>` with a
-  text equivalent ("0.040 USD of a 0.15 USD cap").
+  text equivalent ("$0.0075 of a $0.15 cap").
 * Phone width: `.wrap` gutter 16px, tables collapse to label and value pairs, long URLs `overflow-wrap:
   anywhere`, iframe width 100%, the comparison table stacks. No horizontal scroll at 320px.
 * Copy: plain prose for a business reader, American spelling, no em or en dashes anywhere a reader sees,
@@ -405,7 +515,7 @@ any failure the fresh folder is deleted and `--out` is untouched. An empty `--pa
 | `agent/replay/build_demo.py` | the builder (reads `data/` read only; writes only `--out`) |
 | `agent/replay/demo_selection.json` | the rerun's runs by role |
 | `agent/replay/demo_page.html` | the page template, stamped into `tool.html` |
-| `agent/replay/check_demo.py` | offline checks on a built folder or on the repo root: the builder's scan, `test_published_pages.py`'s page scan, stand-in labels, the synthetic records label, brief frame sandbox order in `demo.js`, fixtures parse, no superseded build or run named, the safety check display (check 8) |
+| `agent/replay/check_demo.py` | offline checks on a built folder or on the repo root: the builder's scan, `test_published_pages.py`'s page scan, stand-in labels, the synthetic records label, brief frame sandbox order in `demo.js`, fixtures parse, no superseded build or run named, the safety check display (check 8), refusals shown as refusals and every version 5 field drawn (check 9) |
 | `src/demo.js`, `src/demo.css` | the page's script and styles (edited in place; scanned by every build) |
 | `tool.html`, `src/fixtures.js`, `briefs/v2/<run>.html` | the builder's output, installed |
 | `agent/tests/fixtures/v1_fixtures.js` | v1's recorded briefs, which were `src/fixtures.js` until this page replaced it; read by the v1 tests |
@@ -417,6 +527,10 @@ Rebuild, from the repo root (never with `--live`, never into the repo directly):
     --out <temp folder> --src-dir src --preview
 .venv/bin/python -m agent.replay.check_demo <temp folder>
 ```
+
+On any build after `d24ed7c475dcd813`, `179b4295c98a3143` included, the first command refuses (exit 2) and names
+each run, also_count runs included, because their records name another build. A `--stand-in` build is stamped as
+not a result (section 6) and is never installed over the recorded demo.
 
 Then copy `tool.html`, `src/fixtures.js` and `briefs/v2/` from the temp folder into the repo, run
 `.venv/bin/python -m agent.replay.check_demo .`, and regenerate `agent/tests/fixtures/published_manifest.json`

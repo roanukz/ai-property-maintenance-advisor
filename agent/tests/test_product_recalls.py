@@ -425,7 +425,8 @@ def test_fixture_folder_readme_names_every_file_and_marks_the_synthetic_ones() -
     """Mutation product_recalls_readme_drops_a_fixture (a fixture file goes undescribed)."""
     readme = (FIXTURES / "README.md").read_text(encoding="utf-8")
     files = sorted(p.name for p in FIXTURES.iterdir() if p.suffix == ".json")
-    assert files == ["live_17057.json", "synthetic_matches.json", "synthetic_near_misses.json"]
+    assert files == ["live_17057.json", "live_check_20261014_rheem.json", "live_check_20261014_sundance.json",
+                     "live_check_20261014_trane.json", "synthetic_matches.json", "synthetic_near_misses.json"]
     for name in files:
         assert f"`{name}`" in readme, name
     for recall in MATCHES + NEAR_MISSES:

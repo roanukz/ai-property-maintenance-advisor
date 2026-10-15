@@ -1215,45 +1215,44 @@ def recalls_live(appliances: Sequence[Mapping[str, object]]) -> int:
     return EXIT_OK if complete else EXIT_LIVE_ERROR
 
 
-GRAPH_LABELS = (("runtime graph (live runs)", "GRAPH_PATH"), ("replay graph (replay runs)", "REPLAY_GRAPH_PATH"))
+def graph_stats_lines(environ: Mapping[str, str]) -> list[str]:
+    """The lines `advisor graph stats` prints for the mode's graph: nodes by type, edges by kind, drops.
 
-
-def graph_stats_lines() -> list[str]:
-    """The lines `advisor graph stats` prints: per graph, nodes by type, edges by kind, drops.
-
-    Registry derived nodes and edges (decision 45) are counted apart, because
-    they are built at load time and never saved.
+    ADVISOR_MODE picks the graph by the rule `property show` uses
+    (property_graph_path): config.GRAPH_PATH in a live mode,
+    config.REPLAY_GRAPH_PATH in replay. Registry derived nodes and edges
+    (decision 45) are counted apart, because they are built at load time and
+    never saved.
     """
     import json
 
     from agent.kg import DOCUMENTED_CAUSE, KnowledgeGraph, drops_path
 
     registry = config.REGISTRY_PATH if config.REGISTRY_PATH.exists() else None
-    lines: list[str] = []
-    for label, attr in GRAPH_LABELS:
-        path = getattr(config, attr)
-        lines.append(f"{label}: {path}")
-        if not path.exists():
-            lines.append("  no graph file yet")
-        stats = KnowledgeGraph.load(path, registry=registry).stats()
-        if stats["load_drops"]:
-            lines.append(f"  saved edges dropped at load (failed a check; see the drop log): {stats['load_drops']}")
-        lines.append("  nodes: " + _counts(stats["nodes"]))
-        lines.append("  edges: " + _counts(stats["edges"]))
-        # Symptom level knowledge (decision D2): route row 3 needs config.GRAPH_ONLY_MIN_CAUSES of them.
-        lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
-                     f"{stats['nodes'].get('cause', 0)} causes")
-        lines.append("  registry nodes (not saved): " + _counts(stats["registry_nodes"]))
-        lines.append("  registry edges (not saved): " + _counts(stats["registry_edges"]))
-        drops = drops_path(path)
-        dropped = [ln for ln in drops.read_text(encoding="utf-8").splitlines() if ln.strip()] if drops.exists() else []
-        lines.append(f"  edges dropped for failed evidence: {len(dropped)}")
-        reasons: dict[str, int] = {}
-        for line in dropped:
-            reason = json.loads(line).get("reason") or "unknown"
-            reasons[reason] = reasons.get(reason, 0) + 1
-        if reasons:
-            lines.append("    by reason: " + _counts(dict(sorted(reasons.items()))))
+    path = property_graph_path(environ)
+    label = "replay graph (replay runs)" if path == config.REPLAY_GRAPH_PATH else "runtime graph (live runs)"
+    lines = [f"{label}: {path}"]
+    if not path.exists():
+        lines.append("  no graph file yet")
+    stats = KnowledgeGraph.load(path, registry=registry).stats()
+    if stats["load_drops"]:
+        lines.append(f"  saved edges dropped at load (failed a check; see the drop log): {stats['load_drops']}")
+    lines.append("  nodes: " + _counts(stats["nodes"]))
+    lines.append("  edges: " + _counts(stats["edges"]))
+    # Symptom level knowledge (decision D2): route row 3 needs config.GRAPH_ONLY_MIN_CAUSES of them.
+    lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
+                 f"{stats['nodes'].get('cause', 0)} causes")
+    lines.append("  registry nodes (not saved): " + _counts(stats["registry_nodes"]))
+    lines.append("  registry edges (not saved): " + _counts(stats["registry_edges"]))
+    drops = drops_path(path)
+    dropped = [ln for ln in drops.read_text(encoding="utf-8").splitlines() if ln.strip()] if drops.exists() else []
+    lines.append(f"  edges dropped for failed evidence: {len(dropped)}")
+    reasons: dict[str, int] = {}
+    for line in dropped:
+        reason = json.loads(line).get("reason") or "unknown"
+        reasons[reason] = reasons.get(reason, 0) + 1
+    if reasons:
+        lines.append("    by reason: " + _counts(dict(sorted(reasons.items()))))
     return lines
 
 
@@ -1263,7 +1262,7 @@ def _counts(counts: Mapping[str, int]) -> str:
 
 def cmd_graph_stats(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
     """Print node and edge counts by type and the edges dropped for failed evidence (PLAN 8.13)."""
-    for line in graph_stats_lines():
+    for line in graph_stats_lines(environ):
         print(line)
     return EXIT_OK
 

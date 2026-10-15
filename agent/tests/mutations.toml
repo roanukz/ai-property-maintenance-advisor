@@ -4666,8 +4666,8 @@ tests = ["agent/tests/test_validate.py::test_future_install_date_falls_back_to_t
 [[mutation]]
 id = "cli_graph_stats_hides_load_drops"
 file = "agent/cli.py"
-search = '''        if stats["load_drops"]:'''
-replace = '''        if False:'''
+search = '''    if stats["load_drops"]:'''
+replace = '''    if False:'''
 tests = ["agent/tests/test_kg.py::test_graph_stats_reports_load_drops"]
 
 [[mutation]]
@@ -6862,9 +6862,9 @@ tests = ["agent/tests/test_kg.py::test_reverify_checks_cause_and_code_edges_agai
 [[mutation]]
 id = "cli_graph_stats_hides_causes"
 file = "agent/cli.py"
-search = '''        lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
-                     f"{stats['nodes'].get('cause', 0)} causes")'''
-replace = '''        pass'''
+search = '''    lines.append(f"  documented causes: {stats['edges'].get(DOCUMENTED_CAUSE, 0)} edges, "
+                 f"{stats['nodes'].get('cause', 0)} causes")'''
+replace = '''    pass'''
 tests = ["agent/tests/test_kg.py::test_graph_stats_counts_documented_causes",
          "agent/tests/test_persist.py::test_cli_replay_leaves_runtime_graph_unchanged"]
 
@@ -13028,3 +13028,66 @@ replace = '''    if False:
         raise BuildError(f"the page template has placeholders nothing filled'''
 tests = ["agent/tests/test_build_demo.py::test_page_list_points_only_at_cases_that_show_it"]
 why = "a template placeholder nothing filled fails the build"
+
+[[mutation]]
+id = "cli_graph_stats_ignores_mode"
+file = "agent/cli.py"
+search = '''    path = property_graph_path(environ)
+    label = "replay graph (replay runs)"'''
+replace = '''    path = config.REPLAY_GRAPH_PATH
+    label = "replay graph (replay runs)"'''
+tests = ["agent/tests/test_kg.py::test_graph_stats_reads_the_modes_graph",
+         "agent/tests/test_persist.py::test_cli_replay_leaves_runtime_graph_unchanged"]
+why = "graph stats in a live mode reads config.GRAPH_PATH, not the replay graph"
+
+# ---------------------------------------------------------------------------
+# The first live product recall check, read back offline (SC15; PRD 2
+# success criterion 3): agent/tests/fixtures/cpsc/live_check_20261014_*.json
+# and agent/tests/test_product_recalls_live_fixture.py
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "product_recalls_live_readme_hash_wrong"
+file = "agent/tests/fixtures/cpsc/README.md"
+search = '''789153a8f4f5e985a1219eb8827f6071c7d0ca52c98e3676ed5589d90109a02a'''
+replace = '''2044ae15baa5e9dde89312497bdc4d6982007275b66aa0fc3571fa8cd83cc6c8'''
+tests = ["agent/tests/test_product_recalls_live_fixture.py::test_live_check_body_hashes_match_the_readme[appl-xr16]"]
+why = "the README must list each stored body's own sha256"
+
+[[mutation]]
+id = "product_recalls_live_found_as_first_role_only"
+file = "agent/product_recalls.py"
+search = '''            if field not in entry["found_as"]:'''
+replace = '''            if not entry["found_as"]:'''
+tests = ["agent/tests/test_product_recalls_live_fixture.py::test_live_check_reads_back_with_its_recorded_counts[appl-waterheater]"]
+why = "Rheem's recall 16177 was found under Manufacturer and Distributor; both roles are kept"
+
+[[mutation]]
+id = "product_recalls_live_target_last_token"
+file = "agent/product_recalls.py"
+search = '''    return norm_model(model)
+
+
+def _norm_or_empty'''
+replace = '''    return norm_model(model.split()[-1])
+
+
+def _norm_or_empty'''
+tests = ["agent/tests/test_product_recalls_live_fixture.py::test_no_live_product_recall_names_the_exact_model[appl-optima880]"]
+why = "Sundance recall 23068 prints the series number 880, never the model Optima 880"
+
+[[mutation]]
+id = "product_recalls_live_statement_drops_model_number"
+file = "agent/product_recalls.py"
+search = '''    return SEARCHED_BOTH.format(number=number, model=model) if number else str(model)'''
+replace = '''    return str(model)'''
+tests = ["agent/tests/test_product_recalls_live_fixture.py::test_live_check_says_no_product_recall_names_the_exact_model[appl-xr16]"]
+why = "the Trane no match sentence names model number 4TTR6036 and model on record XR16 4TTR6036"
+
+[[mutation]]
+id = "product_recalls_live_statement_names_model_as_maker"
+file = "agent/product_recalls.py"
+search = '''    return SEARCHED.format(maker=result.get("maker"), date='''
+replace = '''    return SEARCHED.format(maker=result.get("model"), date='''
+tests = ["agent/tests/test_product_recalls_live_fixture.py::test_live_check_says_no_product_recall_names_the_exact_model[appl-optima880]"]
+why = "the no match statement names the maker searched"

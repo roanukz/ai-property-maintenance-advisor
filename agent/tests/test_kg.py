@@ -306,7 +306,7 @@ def test_graph_stats_reports_load_drops(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setattr(config, "GRAPH_PATH", tmp_path / "graph.json")
     monkeypatch.setattr(config, "REPLAY_GRAPH_PATH", replay_graph)
     monkeypatch.setattr(config, "REGISTRY_PATH", tmp_path / "no_registry.sqlite")
-    lines = cli.graph_stats_lines()
+    lines = cli.graph_stats_lines({config.ENV_MODE: "replay"})
     replay_block = "\n".join(lines[lines.index(f"replay graph (replay runs): {replay_graph}"):])
     assert "saved edges dropped at load (failed a check; see the drop log): 1" in replay_block
     assert "edges dropped for failed evidence: 1" in replay_block
@@ -432,7 +432,36 @@ def test_graph_stats_counts_documented_causes(tmp_path: Path, monkeypatch: pytes
     monkeypatch.setattr(config, "GRAPH_PATH", tmp_path / "graph.json")
     monkeypatch.setattr(config, "REPLAY_GRAPH_PATH", OPTIMA_FLO)
     monkeypatch.setattr(config, "REGISTRY_PATH", tmp_path / "no_registry.sqlite")
-    lines = cli.graph_stats_lines()
-    replay_block = lines[lines.index(f"replay graph (replay runs): {OPTIMA_FLO}"):]
+    replay_block = cli.graph_stats_lines({config.ENV_MODE: "replay"})
+    assert replay_block[0] == f"replay graph (replay runs): {OPTIMA_FLO}"
     assert "  documented causes: 3 edges, 3 causes" in replay_block
-    assert "  documented causes: 0 edges, 0 causes" in lines[:lines.index(f"replay graph (replay runs): {OPTIMA_FLO}")]
+    assert "  documented causes: 0 edges, 0 causes" in cli.graph_stats_lines({config.ENV_MODE: "cheap"})
+
+
+def test_graph_stats_reads_the_modes_graph(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mutation cli_graph_stats_ignores_mode: `advisor graph stats` reads one
+    graph whatever ADVISOR_MODE says, so with ADVISOR_MODE=cheap it reported
+    "no graph file yet" while the runtime graph held edges. It must read
+    config.GRAPH_PATH in a live mode and config.REPLAY_GRAPH_PATH in replay,
+    the rule property_graph_path applies."""
+    from agent import cli, config
+
+    runtime_graph = tmp_path / "graph.json"
+    runtime_graph.write_bytes(OPTIMA_FLO.read_bytes())  # a temp graph standing for data/graph.json
+    replay_graph = tmp_path / "replay_graph.json"  # never written: no replay graph yet
+    monkeypatch.setattr(config, "GRAPH_PATH", runtime_graph)
+    monkeypatch.setattr(config, "REPLAY_GRAPH_PATH", replay_graph)
+    monkeypatch.setattr(config, "REGISTRY_PATH", tmp_path / "no_registry.sqlite")
+    for mode in config.LIVE_MODES:
+        lines = cli.graph_stats_lines({config.ENV_MODE: mode})
+        assert lines[0] == f"runtime graph (live runs): {runtime_graph}"
+        assert "  no graph file yet" not in lines
+        assert "  edges: DOCUMENTED_CAUSE 3, HAS_CODE 1, IN_FAMILY 2" in lines
+        assert not any(str(replay_graph) in line for line in lines)
+    for environ in ({config.ENV_MODE: "replay"}, {}):
+        lines = cli.graph_stats_lines(environ)
+        assert lines[:2] == [f"replay graph (replay runs): {replay_graph}", "  no graph file yet"]
+        assert "  edges: none" in lines
+    with pytest.raises(cli.CliRefusal):
+        cli.graph_stats_lines({config.ENV_MODE: "turbo"})
+    assert not replay_graph.exists()

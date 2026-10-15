@@ -1,0 +1,47 @@
+{
+  "appliance_id": "appl-optima880",
+  "applies": true,
+  "check_version": 2,
+  "checked_at": "2026-10-14T02:21:48+00:00",
+  "maker": "Sundance Spas",
+  "model": "Optima 880",
+  "model_number": null,
+  "requests": [
+    {
+      "body": "[]",
+      "body_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "error": null,
+      "field": "Manufacturer",
+      "params": {
+        "Manufacturer": "Sundance Spas",
+        "format": "json"
+      },
+      "retrieved_at": "2026-10-14T02:21:48+00:00",
+      "url": "https://www.saferproducts.gov/RestWebServices/Recall?Manufacturer=Sundance%20Spas&format=json"
+    },
+    {
+      "body": "[{\"RecallID\":9473,\"RecallNumber\":\"23068\",\"RecallDate\":\"2022-12-15T00:00:00\",\"Description\":\"This recall involves JacuzziJ-200, J-300, J-400 and J-500 collection hot tubs and Sundance Spas 680, 780, 880 and 980 Series spas. The model number and serial number are engraved into a silver plate in the equipment bay of the hot tub. The serial number can be entered into the recall links, www.sundancespas.com/en-us/recall.html or www.jacuzzi.com/en-us/recall.html, to identify hot tubs with the recalled sensor.\",\"URL\":\"https://www.cpsc.gov/Recalls/2023/Sundance-Spas-Recalls-Jacuzzi-and-Sundance-Spas-Brand-Hot-Tubs-Due-to-Injury-and-Thermal-Burn-Hazards\",\"Title\":\"Sundance Spas Recalls Jacuzzi and Sundance Spas Brand Hot Tubs Due to Injury and Thermal Burn Hazards\",\"ConsumerContact\":\"Sundance Spas at 800-549-1502from 7 a.m. to 4 p.m. PT Monday through Friday, email at TempSensor@jacuzzi.com for Jacuzzi brands and TempSensor@sundancespas.com for Sundance Spas brands or Sundance Spas online at www.sundancespas.com/en-us/recall.html or www.sundancespas.com and click on \\\"Recall Information\\\" at the bottom of the page for more information or Jacuzzi online at www.jacuzzi.com/en-us/recall.html or www.jacuzzi.com and click on \\\"Recall Information\\\" at the bottom of the page for more information.\",\"LastPublishDate\":\"2022-12-15T00:00:00\",\"Products\":[{\"Name\":\"Jacuzzi® Hot Tubs and Sundance® Spas\",\"Description\":\"\",\"Model\":\"\",\"Type\":\"\",\"CategoryID\":\"\",\"NumberOfUnits\":\"About 23,700 (In addition, about 5,400 were sold in Canada and about 40 were sold in Mexico)\"}],\"Inconjunctions\":[],\"Images\":[{\"URL\":\"https://www.cpsc.gov/s3fs-public/RecalledJacuzziJ200_J300_J400orJ500_0.png\",\"Caption\":\"Recalled Jacuzzi J-200, J-300, J-400 or J-500 collection hot tubs\"},{\"URL\":\"https://www.cpsc.gov/s3fs-public/RecalledSundanceSpa680_780_880or980seriesspas_0.jpg\",\"Caption\":\"Recalled Sundance Spa 680, 780, 880 or 980 series spas\"},{\"URL\":\"https://www.cpsc.gov/s3fs-public/Locationofthemodelnumberandserialnumberinsidetheequipmentbayofthehottub_0.png\",\"Caption\":\"Location of the model number and serial number inside the equipment bay of the hot tub\"}],\"Injuries\":[{\"Name\":\"Sundance Spas has received 185 reports of inaccurate temperature readings. No injuries have been reported.\"}],\"Manufacturers\":[],\"Retailers\":[{\"Name\":\"Authorized Sundance Spas or Jacuzzi Hot Tubs dealers nationwide from July 2021 through December 2022 for between $6,500 and $30,000.\",\"CompanyID\":\"\"}],\"Importers\":[{\"Name\":\"Sundance Spas Inc., (which also does business as Jacuzzi Hot Tubs), of Chino, Calif.\",\"CompanyID\":\"\"}],\"Distributors\":[],\"SoldAtLabel\":null,\"ManufacturerCountries\":[{\"Country\":\"Mexico\"}],\"ProductUPCs\":[],\"Hazards\":[{\"Name\":\"The temperature sensor can relay incorrect water temperatures and cause the water to be hotter than the set temperature, posing injury (heat stroke) and thermal burn hazards.\",\"HazardType\":\"\",\"HazardTypeID\":\"\"}],\"Remedies\":[{\"Name\":\"Consumers should use an accurate external thermometer to confirm the water temperature to be no higher than 104 degrees prior to entering the hot tub to prevent injuries and burns. Consumers should not enter the recalled hot tubs if the external thermometer temperature reads higher than 104 degrees. Contact a local authorized Jacuzzi dealer at www.jacuzzi.com/en-us/find-a-dealer/ for Jacuzzi brands and a Sundance Spas dealer at www.sundancespas.com/en-us/find-a-dealer/ for Sundance Spas brands, to schedule a free repair. Sundance Spas and Jacuzzi Hot Tub are contacting all known purchasers directly.\"}],\"RemedyOptions\":[{\"Option\":\"Repair\"}]}]",
+      "body_sha256": "e9cacfbe7f7d912f1d549222863eafd67a90d0536eb0cc20318dc0ad9f994999",
+      "error": null,
+      "field": "Importer",
+      "params": {
+        "Importer": "Sundance Spas",
+        "format": "json"
+      },
+      "retrieved_at": "2026-10-14T02:21:48+00:00",
+      "url": "https://www.saferproducts.gov/RestWebServices/Recall?Importer=Sundance%20Spas&format=json"
+    },
+    {
+      "body": "[]",
+      "body_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "error": null,
+      "field": "Distributor",
+      "params": {
+        "Distributor": "Sundance Spas",
+        "format": "json"
+      },
+      "retrieved_at": "2026-10-14T02:21:49+00:00",
+      "url": "https://www.saferproducts.gov/RestWebServices/Recall?Distributor=Sundance%20Spas&format=json"
+    }
+  ]
+}

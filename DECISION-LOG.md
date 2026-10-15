@@ -1678,3 +1678,37 @@ diff):
 and 30 credits for the filed medium effort runs; the product recall check was
 free. The build has spent $1.5275 of its $5 cap and 242 of its 300 Tavily
 credits.
+
+---
+
+## Two follow-ups after the publish, 14 October 2026
+
+PRD 2 was published at 253d357. Two small items held back while the build was
+frozen for the demo were done afterward, offline and at no cost. A review and
+a second reader checked them; five minor findings were fixed.
+
+**Decided:**
+- **93. `advisor graph stats` reads the graph that matches the mode.** It
+  printed a block for both the runtime and the replay graph every time, so in
+  cheap mode the missing replay graph read as if the live graph were missing.
+  It now prints one block: the runtime graph in cheap or full mode, the replay
+  graph in replay or when no mode is set. This changes runtime code, so the
+  build moves from `d24ed7c475dcd813` to `179b4295c98a3143`. Nothing it
+  changes runs in a brief. The published demo and every PRD 2 result stay on
+  `d24ed7c475dcd813`, as the demo stayed on its build after decision 68.
+- **94. The first live product recall check is kept as the offline
+  fixture,** as the PRD asked. The three stored checks from 13 October
+  (22:21 US Eastern) are copied byte for byte into
+  `agent/tests/fixtures/cpsc/`, with each response body's hash in that
+  folder's README, and tests read them through the check's own code: no
+  product recall names any of the three models exactly. The Sundance Spas
+  response holds one recall that lists an "880" series among others, a near
+  miss the exact match correctly leaves out.
+- The demo's design note (`agent/replay/DEMO_V2_DESIGN.md`) now describes the
+  14 October demo, and says a rebuild on a later build is refused unless it is
+  marked as a stand-in.
+
+**Measured:** 3,470 tests pass offline, in normal and gate mode, and all
+1,543 planted bugs are caught.
+
+**Cost:** $0.
