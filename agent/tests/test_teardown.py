@@ -228,3 +228,48 @@ def test_kappa_is_explained_where_it_first_appears() -> None:
     first = text.lower().find("kappa")
     assert first != -1, "index.html no longer mentions kappa"
     assert "agreement corrected for" in text[first:first + 200], text[first:first + 200]
+
+
+def test_paired_test_and_p_value_are_explained_where_they_first_appear() -> None:
+    """Every technical term is explained on first use. The paired test is first named
+    in Part 9's opening, so its explanation sits there; the p value is first named in
+    the paired test's own section, so its explanation sits there; and Appendix B
+    defines both. Mutations teardown_paired_test_first_use_unexplained,
+    teardown_p_value_first_use_unexplained and teardown_terms_drop_p_value."""
+    text = re.sub(r"\s+", " ", visible_text(_page()))
+    for term, explanation in (("paired test", "compares two checks step by step"),
+                              ("p value", "chance of a split")):
+        found = re.search(rf"\b{term}\b", text, flags=re.IGNORECASE)
+        assert found is not None, f"index.html no longer mentions {term}"
+        nearby = text[found.start():found.start() + 200]
+        assert explanation in nearby, nearby
+    terms = _text(_section("terms"))
+    assert "Paired test: a test that compares two checks step by step" in terms
+    assert "p value: the chance of a split" in terms
+
+
+def _paired_section_text() -> str:
+    match = re.search(r"<h3>A paired test on the same steps</h3>([\s\S]*?)<p class=\"callout callout-warning\">",
+                      _page())
+    assert match is not None, "Part 9 has no paired test section ahead of its warning box"
+    return _text(match.group(1))
+
+
+def test_paired_section_gives_both_sides_of_every_jev_split_by_roanuks_labels() -> None:
+    """By Roanuk's labels the paired test section reports each of Jev's pairs on both
+    catches and false flags, with the p values from the scores file, so a reader sees
+    the side that favors the other check too; and it states the 0.05 bar it sorts the
+    splits by, with what a correction for the 24 comparisons does to it. Mutations
+    teardown_paired_drops_word_list_false_flag_p and teardown_paired_drops_correction."""
+    import json
+
+    scores = json.loads((ROOT / "agent/safety_eval/claude_judge_scores.json").read_text(encoding="utf-8"))
+    text = _paired_section_text()
+    pairs = [pair for pair in scores["paired"]["against_roanuk"]["pairs"] if pair["first"].startswith("Jev")]
+    assert len(pairs) == 3, pairs
+    for pair in pairs:
+        for kind in ("safety_steps_caught", "false_flags_raised"):
+            cited = f"p value {pair[kind]['p_value']:.3f}"
+            assert cited in text, f"{pair['first']} against {pair['second']}, {kind}: {cited} missing"
+    assert text.count("A common bar is a p value under 0.05.") == 1, text
+    assert "dividing the 0.05 bar by the 24 comparisons, leaves none of them under it" in text, text

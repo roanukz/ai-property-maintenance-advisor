@@ -1797,3 +1797,60 @@ examples, and the answers were sealed before scoring (sha256 `70725f59...`;
 
 **Cost:** $0.0182 for the Claude judge; $0 for the human check. The build has
 spent $1.5457 of its $5 cap.
+
+## A paired test on the same steps, added after the results, 16 October 2026
+
+**Decided:**
+- **96. A paired test on the same steps, added after the results.** The
+  teardown rested "no check is shown to beat another" on overlapping Wilson
+  intervals, which judge each check by its own total. A paired test is
+  stronger on the same 175 steps: it compares two checks step by step,
+  counting only the steps where they disagree. The exact two sided McNemar
+  test (binomial on the disagreements at one half, the smaller tail doubled
+  and capped at 1) is now in `stats.mcnemar_exact`, and `claude_judge score`
+  runs it for every pair of Jev, Claude and the two word lists, against
+  Roanuk's sealed labels and the readers' majority, for missed safety steps
+  and for false flags: 24 tests. It was chosen after the recall and precision
+  results were known, not registered before any run, and no correction is
+  made for the number of tests; the printout, the scores file and the pages
+  all say so. Recorded answers only: no call, nothing under `data/` changed.
+
+**Measured (source: `agent/safety_eval/claude_judge_scores.json`, under
+`paired`, which also holds the ids behind every split):**
+- Against Roanuk's sealed labels (26 safety steps, 149 others), Jev against
+  Claude: safety steps only one caught 3 and 0, p 0.250 (1/4); false flags
+  only one raised 7 and 2, p 0.180 (23/128). This matches the figures worked
+  out by hand before the build. Jev against each word list: catches 4 and 0,
+  p 0.125; false flags against the published list 17 and 8, p 0.108, the
+  smallest p of the 12 tests by Roanuk's labels, and against the tuned list
+  12 and 9, p 0.664.
+- Against the readers' majority (31 safety steps, 144 others), Jev against
+  Claude: catches 3 and 1, p 0.625 (5/8); false flags 7 and 1, p 0.070
+  (9/128). Jev against the published list: catches 11 and 1, p 0.006; against
+  the tuned list 8 and 0, p 0.008. Claude against the published list: 9 and
+  1, p 0.021.
+- What it changes: by Roanuk's labels nothing is separated, as before, now on
+  a paired test rather than intervals alone; Jev's widest lead is 4 to 0 over
+  each word list on catches, and the published list's is 8 to Jev's 17 on
+  false flags. By the readers' labels Jev's leads over both word lists are
+  the most lopsided splits, including the tuned list, whose recall interval
+  overlapped Jev's; with 24 uncorrected tests chosen after the results, they
+  are reported as a reason to look again, not proof. The pages sort splits
+  against the common 0.05 bar, stated once; a Bonferroni correction for 24
+  tests (0.05 divided by 24, about 0.0021) leaves none under it, the
+  smallest being 0.006 (13/2048).
+- The teardown's safety part, Part 10, Appendix A and Appendix B (plain
+  definitions of a paired test and a p value) and the two README rows were
+  updated; the TL;DR and Summary were not, since nothing in them is now
+  contradicted. index.html was re-hashed in the published manifest.
+- 14 planted bugs were added, 1,599 in all: 9 for the test and scorer, 3
+  for the teardown's explanation of a paired test and a p value where each
+  first appears and in Appendix B, and 2 for the paired section giving both
+  sides of each of Jev's splits by Roanuk's labels and the correction for 24
+  comparisons. Each was first confirmed caught with `mutate.py --only`, and
+  a full mutation run on 16 October caught all 1,599; the offline suite,
+  3,562 tests, passes with the network blocked in normal mode and in gate
+  mode (phases 5 and 6). `build_info.build_id()` is still
+  `179b4295c98a3143`.
+
+**Cost:** $0. The build has spent $1.5457 of its $5 cap.

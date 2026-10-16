@@ -13454,3 +13454,121 @@ search = "(Cohen's kappa 0.728; kappa is agreement corrected for chance, where 1
 replace = "(kappa 0.728)"
 tests = ["agent/tests/test_teardown.py::test_kappa_is_explained_where_it_first_appears"]
 why = "Part 8 names kappa before Part 9 explains it, so a reader meets the term unexplained"
+
+[[mutation]]
+id = "stats_mcnemar_one_tail"
+file = "agent/safety_eval/stats.py"
+search = '''    return min(Fraction(1), Fraction(2 * tail, 2 ** n))'''
+replace = '''    return min(Fraction(1), Fraction(tail, 2 ** n))'''
+tests = ["agent/tests/test_claude_judge.py::test_mcnemar_exact_matches_hand_computed_values"]
+why = "the McNemar p value is one sided: the smaller tail is not doubled"
+
+[[mutation]]
+id = "stats_mcnemar_uncapped"
+file = "agent/safety_eval/stats.py"
+search = '''    return min(Fraction(1), Fraction(2 * tail, 2 ** n))'''
+replace = '''    return Fraction(2 * tail, 2 ** n)'''
+tests = ["agent/tests/test_claude_judge.py::test_mcnemar_exact_matches_hand_computed_values"]
+why = "an even split gives a McNemar p value above 1"
+
+[[mutation]]
+id = "stats_mcnemar_tail_short"
+file = "agent/safety_eval/stats.py"
+search = '''    tail = sum(math.comb(n, k) for k in range(min(b, c) + 1))'''
+replace = '''    tail = sum(math.comb(n, k) for k in range(min(b, c)))'''
+tests = ["agent/tests/test_claude_judge.py::test_mcnemar_exact_matches_hand_computed_values"]
+why = "the tail stops one short of the smaller count, so the p value is too small"
+
+[[mutation]]
+id = "stats_mcnemar_no_disagreement_zero"
+file = "agent/safety_eval/stats.py"
+search = '''    if n == 0:
+        return Fraction(1)
+    tail ='''
+replace = '''    if n == 0:
+        return Fraction(0)
+    tail ='''
+tests = ["agent/tests/test_claude_judge.py::test_mcnemar_exact_matches_hand_computed_values"]
+why = "two checks that never disagree get a p value of 0 instead of 1"
+
+[[mutation]]
+id = "claude_judge_paired_first_second_swapped"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        first_only = [k for k in ids if raised[first][k] and not raised[second][k]]'''
+replace = '''        first_only = [k for k in ids if raised[second][k] and not raised[first][k]]'''
+tests = ["agent/tests/test_claude_judge.py::test_paired_tests_match_hand_counts_on_a_synthetic_set", "agent/tests/test_claude_judge.py::test_paired_tests_reproduce_the_hand_computation_on_the_real_files"]
+why = "the paired test credits the second arm's disagreements to the first"
+
+[[mutation]]
+id = "claude_judge_paired_false_flags_on_every_step"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    negatives = [i["id"] for i in scored if not i["positive"]]'''
+replace = '''    negatives = [i["id"] for i in scored]'''
+tests = ["agent/tests/test_claude_judge.py::test_paired_tests_match_hand_counts_on_a_synthetic_set", "agent/tests/test_claude_judge.py::test_paired_tests_reproduce_the_hand_computation_on_the_real_files"]
+why = "false flags are counted on every step, safety steps included"
+
+[[mutation]]
+id = "claude_judge_paired_readers_jev_is_claude"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        JEV_ARM: lambda i: jev[i["id"]], CLAUDE_ARM: lambda i: claude[i["id"]],'''
+replace = '''        JEV_ARM: lambda i: claude[i["id"]], CLAUDE_ARM: lambda i: claude[i["id"]],'''
+tests = ["agent/tests/test_claude_judge.py::test_paired_tests_match_hand_counts_on_a_synthetic_set", "agent/tests/test_claude_judge.py::test_paired_tests_reproduce_the_hand_computation_on_the_real_files"]
+why = "the paired tests against the readers read Jev's flags from Claude's"
+
+[[mutation]]
+id = "claude_judge_paired_lines_drop_the_note"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    lines = [f"paired tests ({paired['method']})", f"note: {paired['note']}"]'''
+replace = '''    lines = [f"paired tests ({paired['method']})"]'''
+tests = ["agent/tests/test_claude_judge.py::test_paired_tests_match_hand_counts_on_a_synthetic_set"]
+why = "the printout leaves out that the test was chosen after the results and that many comparisons are reported"
+
+[[mutation]]
+id = "claude_judge_paired_unsealed_drops_the_note"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        return unsealed, dict(unsealed)'''
+replace = '''        return unsealed, {"sealed": False}'''
+tests = ["agent/tests/test_claude_judge.py::test_paired_tests_say_so_when_roanuk_labels_are_not_sealed"]
+why = "with no sealed labels the paired tests against Roanuk no longer say why they are not scored"
+
+[[mutation]]
+id = "teardown_paired_test_first_use_unexplained"
+file = "index.html"
+search = '''a paired test, which compares two checks step by step on the same'''
+replace = '''a paired test, which it explains below, on the same'''
+tests = ["agent/tests/test_teardown.py::test_paired_test_and_p_value_are_explained_where_they_first_appear"]
+why = "Part 9's opening names the paired test before its section explains it, so a reader meets the term unexplained"
+
+[[mutation]]
+id = "teardown_p_value_first_use_unexplained"
+file = "index.html"
+search = '''not. Its p value is the chance of a split at least this lopsided if'''
+replace = '''not. Its p value is given for each split below, and is small if'''
+tests = ["agent/tests/test_teardown.py::test_paired_test_and_p_value_are_explained_where_they_first_appear"]
+why = "the p value is named and used with no plain explanation of what it measures"
+
+[[mutation]]
+id = "teardown_terms_drop_p_value"
+file = "index.html"
+search = '''            <li><strong>p value:</strong> the chance'''
+replace = '''            <li><strong>Odds:</strong> the chance'''
+tests = ["agent/tests/test_teardown.py::test_paired_test_and_p_value_are_explained_where_they_first_appear"]
+why = "Appendix B no longer defines the p value the safety part relies on"
+
+[[mutation]]
+id = "teardown_paired_drops_word_list_false_flag_p"
+file = "index.html"
+search = '''not, against 8 the other way (p value 0.108), and 12 that the tuned'''
+replace = '''not, against 8 the other way, and 12 that the tuned'''
+tests = ["agent/tests/test_teardown.py::test_paired_section_gives_both_sides_of_every_jev_split_by_roanuks_labels"]
+why = "the paired test section gives Jev's catch lead over the published list but not that list's false flag lead, so a reader sees only the side that favors Jev"
+
+[[mutation]]
+id = "teardown_paired_drops_correction"
+file = "index.html"
+search = '''            tries chance alone can produce a lopsided split; a common
+            correction, dividing the 0.05 bar by the 24 comparisons, leaves
+            none of them under it. How the test was run is in'''
+replace = '''            tries chance alone can produce a lopsided split. How the test was run is in'''
+tests = ["agent/tests/test_teardown.py::test_paired_section_gives_both_sides_of_every_jev_split_by_roanuks_labels"]
+why = "the page sorts splits by the 0.05 bar but leaves out that a correction for its 24 comparisons leaves none under it"

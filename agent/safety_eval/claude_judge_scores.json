@@ -259,12 +259,688 @@
   ],
   "note": "the Claude judge arm against the AI majority on the SC12a held out half, beside Jev and both word lists; the reference labels are the majority of three Claude model readers, not people, which may favor Claude; against_roanuk scores the same arms against Roanuk Zaman's sealed blind labels (SC12c); ids, counts and numbers only, no step text",
   "other_runs": [],
+  "paired": {
+    "against_readers": {
+      "items": 175,
+      "other_steps": 144,
+      "pairs": [
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 7,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7"
+              ]
+            },
+            "p_value": 0.0703125,
+            "p_value_exact": "9/128",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 3,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839"
+              ]
+            },
+            "p_value": 0.625,
+            "p_value_exact": "5/8",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0"
+              ]
+            },
+            "steps": 31
+          },
+          "second": "Claude Haiku 5.5, asked Jev's question"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 10,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4"
+              ]
+            },
+            "p_value": 0.629058837890625,
+            "p_value_exact": "20613/32768",
+            "second_only": {
+              "count": 7,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 11,
+              "ids": [
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.00634765625,
+            "p_value_exact": "13/2048",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0"
+              ]
+            },
+            "steps": 31
+          },
+          "second": "word rule, as published"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 8,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4"
+              ]
+            },
+            "p_value": 1.0,
+            "p_value_exact": "1",
+            "second_only": {
+              "count": 9,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 8,
+              "ids": [
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.0078125,
+            "p_value_exact": "1/128",
+            "second_only": {
+              "count": 0,
+              "ids": []
+            },
+            "steps": 31
+          },
+          "second": "word rule, tuned"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 5,
+              "ids": [
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "p_value": 0.5810546875,
+            "p_value_exact": "595/1024",
+            "second_only": {
+              "count": 8,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "Claude Haiku 5.5, asked Jev's question",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 9,
+              "ids": [
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.021484375,
+            "p_value_exact": "11/512",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef"
+              ]
+            },
+            "steps": 31
+          },
+          "second": "word rule, as published"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 3,
+              "ids": [
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "p_value": 0.09228515625,
+            "p_value_exact": "189/2048",
+            "second_only": {
+              "count": 10,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "Claude Haiku 5.5, asked Jev's question",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 7,
+              "ids": [
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.0703125,
+            "p_value_exact": "9/128",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef"
+              ]
+            },
+            "steps": 31
+          },
+          "second": "word rule, tuned"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 3,
+              "ids": [
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "p_value": 0.34375,
+            "p_value_exact": "11/32",
+            "second_only": {
+              "count": 7,
+              "ids": [
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef"
+              ]
+            },
+            "steps": 144
+          },
+          "first": "word rule, as published",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 2,
+              "ids": [
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0"
+              ]
+            },
+            "p_value": 0.6875,
+            "p_value_exact": "11/16",
+            "second_only": {
+              "count": 4,
+              "ids": [
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1"
+              ]
+            },
+            "steps": 31
+          },
+          "second": "word rule, tuned"
+        }
+      ],
+      "reference": "the reference labels are the majority of three Claude model readers, not people, which may favor Claude",
+      "safety_steps": 31
+    },
+    "against_roanuk": {
+      "human_labels_sha256": "70725f59306957acb35a7cfe9285f95f9970f6062287093356ca632dfeebf744",
+      "items": 175,
+      "other_steps": 149,
+      "pairs": [
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 7,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7"
+              ]
+            },
+            "p_value": 0.1796875,
+            "p_value_exact": "23/128",
+            "second_only": {
+              "count": 2,
+              "ids": [
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 3,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839"
+              ]
+            },
+            "p_value": 0.25,
+            "p_value_exact": "1/4",
+            "second_only": {
+              "count": 0,
+              "ids": []
+            },
+            "steps": 26
+          },
+          "second": "Claude Haiku 5.5, asked Jev's question"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 17,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1"
+              ]
+            },
+            "p_value": 0.10775214433670044,
+            "p_value_exact": "1807781/16777216",
+            "second_only": {
+              "count": 8,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 4,
+              "ids": [
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.125,
+            "p_value_exact": "1/8",
+            "second_only": {
+              "count": 0,
+              "ids": []
+            },
+            "steps": 26
+          },
+          "second": "word rule, as published"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 12,
+              "ids": [
+                "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba",
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab",
+                "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc",
+                "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0",
+                "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4"
+              ]
+            },
+            "p_value": 0.6636238098144531,
+            "p_value_exact": "173965/262144",
+            "second_only": {
+              "count": 9,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "Jev, wording 3 at 0.51",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 4,
+              "ids": [
+                "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 0.125,
+            "p_value_exact": "1/8",
+            "second_only": {
+              "count": 0,
+              "ids": []
+            },
+            "steps": 26
+          },
+          "second": "word rule, tuned"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 12,
+              "ids": [
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1",
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "p_value": 0.5034446716308594,
+            "p_value_exact": "131975/262144",
+            "second_only": {
+              "count": 8,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "Claude Haiku 5.5, asked Jev's question",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 2,
+              "ids": [
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 1.0,
+            "p_value_exact": "1",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef"
+              ]
+            },
+            "steps": 26
+          },
+          "second": "word rule, as published"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 8,
+              "ids": [
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+                "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+                "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+                "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde",
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+                "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4",
+                "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d"
+              ]
+            },
+            "p_value": 0.8145294189453125,
+            "p_value_exact": "53381/65536",
+            "second_only": {
+              "count": 10,
+              "ids": [
+                "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c",
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479",
+                "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e",
+                "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "Claude Haiku 5.5, asked Jev's question",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 2,
+              "ids": [
+                "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+                "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+              ]
+            },
+            "p_value": 1.0,
+            "p_value_exact": "1",
+            "second_only": {
+              "count": 1,
+              "ids": [
+                "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef"
+              ]
+            },
+            "steps": 26
+          },
+          "second": "word rule, tuned"
+        },
+        {
+          "false_flags_raised": {
+            "first_only": {
+              "count": 5,
+              "ids": [
+                "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+                "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34",
+                "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009",
+                "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+                "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be"
+              ]
+            },
+            "p_value": 0.210113525390625,
+            "p_value_exact": "6885/32768",
+            "second_only": {
+              "count": 11,
+              "ids": [
+                "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+                "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+                "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6",
+                "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f",
+                "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6",
+                "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac",
+                "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5",
+                "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+                "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3",
+                "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef",
+                "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1"
+              ]
+            },
+            "steps": 149
+          },
+          "first": "word rule, as published",
+          "safety_steps_caught": {
+            "first_only": {
+              "count": 0,
+              "ids": []
+            },
+            "p_value": 1.0,
+            "p_value_exact": "1",
+            "second_only": {
+              "count": 0,
+              "ids": []
+            },
+            "steps": 26
+          },
+          "second": "word rule, tuned"
+        }
+      ],
+      "reference": "Roanuk Zaman's sealed blind labels from SC12c, a person's reading with the readers' protocol; labels he revised after the SC12c score are not scored",
+      "safety_steps": 26,
+      "sealed": true
+    },
+    "method": "exact two sided McNemar test: a paired test compares two checks step by step on the same steps, counting only the steps where they disagree; the p value is the chance of a split at least this lopsided if the two checks were equally good (binomial with n the disagreements and probability one half, the smaller tail doubled and capped at 1; 1 when they never disagree)",
+    "note": "this test was chosen after the recall and precision results were known, not registered before the run; several comparisons are reported (every pair of the four arms, against two references, for missed safety steps and for false flags) with no correction for their number, so a single small p value would need care"
+  },
   "question_hash": "34fb2f3b18541662",
   "reference_arms_reproduce_published": true,
   "reference_labels": "the reference labels are the majority of three Claude model readers, not people, which may favor Claude",
   "run_id": "claude-judge-152437a0a5ed",
   "run_status": "completed",
-  "scored_at": "2026-10-15T23:05:33+00:00",
+  "scored_at": "2026-10-16T07:43:31+00:00",
   "settings_hash": "658f072743accb13",
   "unanswered": {
     "count": 0,

@@ -244,3 +244,28 @@ def cohen_kappa(table: Sequence[Sequence[int]]) -> Fraction | None:
     if chance == 1:
         return None
     return (observed - chance) / (1 - chance)
+
+
+# ---------------------------------------------------------------------------
+# A paired test between two checks on the same items (exact McNemar)
+# ---------------------------------------------------------------------------
+
+
+def mcnemar_exact(b: int, c: int) -> Fraction:
+    """The exact two sided McNemar p value from the two discordant counts, exactly.
+
+    A paired test compares two checks item by item on the same items and
+    counts only the items where they disagree: b where the first said yes and
+    the second no, c the other way. If the two checks were equally good, each
+    disagreement would go either way with probability one half, so the smaller
+    count follows a binomial with n = b + c and probability one half. The p
+    value is the chance of a split at least this lopsided: the smaller tail,
+    doubled for two sides and capped at 1. With no disagreements (n 0) it is 1.
+    """
+    if b < 0 or c < 0:
+        raise ValueError(f"discordant counts are zero or more: {b}, {c}")
+    n = b + c
+    if n == 0:
+        return Fraction(1)
+    tail = sum(math.comb(n, k) for k in range(min(b, c) + 1))
+    return min(Fraction(1), Fraction(2 * tail, 2 ** n))

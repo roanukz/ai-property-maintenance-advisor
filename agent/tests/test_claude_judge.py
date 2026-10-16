@@ -954,6 +954,170 @@ def test_score_against_roanuk_reproduces_sc12c_and_the_decision_log_on_the_real_
 
 
 # ---------------------------------------------------------------------------
+# paired tests (exact McNemar) between the arms
+# ---------------------------------------------------------------------------
+
+
+def test_mcnemar_exact_matches_hand_computed_values() -> None:
+    """Hand computed: n = b + c, p = 2 * (C(n, 0) + ... + C(n, min(b, c))) / 2**n, capped at 1.
+
+    (3, 0): n 3, 2 * 1 / 8 = 1/4. (7, 2): n 9, 2 * (1 + 9 + 36) / 512 = 23/128. (3, 1): n 4, 2 * (1 + 4) / 16
+    = 5/8. (7, 1): n 8, 2 * (1 + 8) / 256 = 9/128. (10, 2): n 12, 2 * (1 + 12 + 66) / 4096 = 79/2048. (6, 0):
+    2 / 64 = 1/32. The order of the two counts does not matter. Edge cases: no disagreements (0, 0) is 1; a
+    single one (1, 0) is 2 * 1 / 2 = 1; an even split (2, 2) would be 2 * 11 / 16, capped at 1; (4, 3) would be
+    2 * 64 / 128, exactly 1. A negative count is refused.
+
+    Mutations: stats_mcnemar_one_tail (the tail is not doubled), stats_mcnemar_uncapped (the cap at 1 is
+    dropped), stats_mcnemar_tail_short (the tail stops one short of the smaller count),
+    stats_mcnemar_no_disagreement_zero (n 0 gives 0)."""
+    assert stats.mcnemar_exact(3, 0) == Fraction(1, 4)
+    assert stats.mcnemar_exact(7, 2) == Fraction(23, 128)
+    assert stats.mcnemar_exact(3, 1) == Fraction(5, 8)
+    assert stats.mcnemar_exact(7, 1) == Fraction(9, 128)
+    assert stats.mcnemar_exact(10, 2) == Fraction(79, 2048)
+    assert stats.mcnemar_exact(6, 0) == Fraction(1, 32)
+    for b, c in ((3, 0), (7, 2), (3, 1), (7, 1), (10, 2), (0, 6)):
+        assert stats.mcnemar_exact(b, c) == stats.mcnemar_exact(c, b), (b, c)
+    assert round(float(stats.mcnemar_exact(7, 2)), 3) == 0.180 and round(float(stats.mcnemar_exact(7, 1)), 3) == 0.070
+    assert stats.mcnemar_exact(0, 0) == 1
+    assert stats.mcnemar_exact(1, 0) == 1
+    assert stats.mcnemar_exact(2, 2) == 1
+    assert stats.mcnemar_exact(4, 3) == 1
+    assert isinstance(stats.mcnemar_exact(5, 1), Fraction)
+    with pytest.raises(ValueError):
+        stats.mcnemar_exact(-1, 2)
+
+
+def _pair(reference: dict[str, Any], first: str, second: str) -> dict[str, Any]:
+    found = [p for p in reference["pairs"] if (p["first"], p["second"]) == (first, second)]
+    assert len(found) == 1, (first, second)
+    return found[0]
+
+
+def test_paired_tests_match_hand_counts_on_a_synthetic_set(synthetic: Path,
+                                                           capsys: pytest.CaptureFixture[str]) -> None:
+    """Hand counts. Jev (at 0.51) flags A, B, E; Claude flags A, C, F, H; neither word list flags a step.
+    Against the readers (positives A to D, others E to H): Jev against Claude, safety steps caught by Jev only
+    B and by Claude only C (1 and 1, p 1); false flags by Jev only E and by Claude only F and H (1 and 2, p 1).
+    Claude against the published list: caught A and C against none (p 2/4 = 1/2), false flags F and H against
+    none (p 1/2). Against Roanuk (positives A, C, E, G, others B, D, F, H): Jev against Claude, caught by Jev
+    only E, by Claude only C; false flags by Jev only B, by Claude only F and H. Jev against the tuned list:
+    caught A and E against none (p 1/2), false flag B against none (p 1). The six pairs run Jev against
+    Claude first; the printout names the method, says the test was chosen after the results and that many
+    comparisons are reported, and gives the counts and p values.
+
+    Mutations: claude_judge_paired_first_second_swapped, claude_judge_paired_false_flags_on_every_step,
+    claude_judge_paired_readers_jev_is_claude, claude_judge_paired_lines_drop_the_note."""
+    _seal_human_labels(SYNTHETIC_HUMAN)
+    result = cj.score()
+    paired = result["paired"]
+    assert paired["method"] == cj.PAIRED_METHOD and paired["note"] == cj.PAIRED_NOTE
+    assert "chosen after" in paired["note"] and "several comparisons" in paired["note"]
+    order = [_sid(n) for n in sorted(SYNTHETIC, key=_sid)]
+
+    def ids(*names: str) -> dict[str, Any]:
+        found = [k for k in order if k in {_sid(n) for n in names}]
+        return {"count": len(found), "ids": found}
+
+    readers, roanuk = paired["against_readers"], paired["against_roanuk"]
+    assert (readers["items"], readers["safety_steps"], readers["other_steps"]) == (8, 4, 4)
+    assert (roanuk["items"], roanuk["safety_steps"], roanuk["other_steps"]) == (8, 4, 4)
+    assert roanuk["sealed"] is True and "three Claude model readers" in readers["reference"]
+    expected_pairs = [(cj.JEV_ARM, cj.CLAUDE_ARM), (cj.JEV_ARM, cj.PUBLISHED_ARM), (cj.JEV_ARM, cj.TUNED_ARM),
+                      (cj.CLAUDE_ARM, cj.PUBLISHED_ARM), (cj.CLAUDE_ARM, cj.TUNED_ARM),
+                      (cj.PUBLISHED_ARM, cj.TUNED_ARM)]
+    for reference in (readers, roanuk):
+        assert [(p["first"], p["second"]) for p in reference["pairs"]] == expected_pairs
+    expected = {
+        ("readers", cj.JEV_ARM, cj.CLAUDE_ARM): (ids("B"), ids("C"), "1", ids("E"), ids("F", "H"), "1"),
+        ("readers", cj.CLAUDE_ARM, cj.PUBLISHED_ARM): (ids("A", "C"), ids(), "1/2", ids("F", "H"), ids(), "1/2"),
+        ("readers", cj.PUBLISHED_ARM, cj.TUNED_ARM): (ids(), ids(), "1", ids(), ids(), "1"),
+        ("roanuk", cj.JEV_ARM, cj.CLAUDE_ARM): (ids("E"), ids("C"), "1", ids("B"), ids("F", "H"), "1"),
+        ("roanuk", cj.JEV_ARM, cj.TUNED_ARM): (ids("A", "E"), ids(), "1/2", ids("B"), ids(), "1"),
+    }
+    for (ref, first, second), (c1, c2, cp, f1, f2, fp) in expected.items():
+        reference = {"readers": readers, "roanuk": roanuk}[ref]
+        pair = _pair(reference, first, second)
+        caught, false = pair["safety_steps_caught"], pair["false_flags_raised"]
+        assert (caught["steps"], false["steps"]) == (4, 4), (first, second)
+        assert (caught["first_only"], caught["second_only"], caught["p_value_exact"]) == (c1, c2, cp), (first, second)
+        assert (false["first_only"], false["second_only"], false["p_value_exact"]) == (f1, f2, fp), (first, second)
+        assert caught["p_value"] == float(Fraction(cp)) and false["p_value"] == float(Fraction(fp))
+    assert json.loads(cj.scores_path().read_text(encoding="utf-8"))["paired"] == json.loads(json.dumps(paired))
+    lines = cj.format_score(result)
+    assert f"paired tests ({cj.PAIRED_METHOD})" in lines and f"note: {cj.PAIRED_NOTE}" in lines
+    assert "  against Roanuk's sealed blind labels: 4 safety steps, 4 other steps" in lines
+    assert (f"    {cj.CLAUDE_ARM} against {cj.PUBLISHED_ARM}: safety steps caught by the first only 2, by the second "
+            "only 0, p 0.500; false flags raised by the first only 2, by the second only 0, p 0.500") in lines
+
+
+def test_paired_tests_say_so_when_roanuk_labels_are_not_sealed(synthetic: Path) -> None:
+    """No sealed labels: the paired tests against Roanuk say not sealed, and the readers' are still scored.
+
+    Mutation: claude_judge_paired_unsealed_drops_the_note."""
+    result = cj.score()
+    paired = result["paired"]
+    assert paired["against_roanuk"]["sealed"] is False and "not sealed here" in paired["against_roanuk"]["note"]
+    assert set(paired["against_roanuk"]) == {"sealed", "note"}
+    assert len(paired["against_readers"]["pairs"]) == 6
+    assert any(line.startswith("  against Roanuk's sealed blind labels: not scored; Roanuk's blind labels are not")
+               for line in cj.format_score(result))
+
+
+def test_paired_tests_reproduce_the_hand_computation_on_the_real_files(
+        real: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Copies of the real Claude run and the committed SC12c files. Jev against Claude, by Roanuk's sealed
+    labels: Jev caught 3 safety steps Claude missed and Claude 0 that Jev missed (p 1/4 = 0.250); among the 149
+    steps he did not call safety steps, Jev raised 7 false flags Claude did not and Claude 2 that Jev did not
+    (p 23/128, 0.180). By the readers' majority: caught 3 and 1 (p 5/8 = 0.625), false flags 7 and 1 (p 9/128,
+    0.070). The caught ids match the missed lists already scored; the SC12c files are read only.
+
+    Mutations: claude_judge_paired_false_flags_on_every_step, claude_judge_paired_readers_jev_is_claude,
+    claude_judge_paired_first_second_swapped."""
+    if not (REAL_CLAUDE_RUN / cj.REPLIES).is_file() or not (REAL_CLAUDE_RUN / cj.RUN_RECORD).is_file():
+        pytest.skip("needs the recorded Claude judge run under data/eval/sc12a/claude_judge (gitignored)")
+    cj.run_dir().mkdir(parents=True)
+    for name in (cj.REPLIES, cj.RUN_RECORD):
+        shutil.copy2(REAL_CLAUDE_RUN / name, cj.run_dir() / name)
+    committed = sc12c.COMMITTED_DIR
+    committed.mkdir()
+    for name in SC12C_COMMITTED:
+        shutil.copy2(SAFETY_EVAL_DIR / name, committed / name)
+    before = _tree_hashes(committed, cj.run_dir())
+    capsys.readouterr()
+    assert cj.main(["score"]) == cli.EXIT_OK
+    out = capsys.readouterr().out
+    assert _tree_hashes(committed, cj.run_dir()) == before
+    result = json.loads(cj.scores_path().read_text(encoding="utf-8"))
+    roanuk, readers = result["paired"]["against_roanuk"], result["paired"]["against_readers"]
+    assert (roanuk["items"], roanuk["safety_steps"], roanuk["other_steps"]) == (175, 26, 149)
+    assert (readers["items"], readers["safety_steps"], readers["other_steps"]) == (175, 31, 144)
+    assert roanuk["human_labels_sha256"] == result["against_roanuk"]["human_labels_sha256"]
+    want = {"roanuk": ((3, 0, "1/4"), (7, 2, "23/128")), "readers": ((3, 1, "5/8"), (7, 1, "9/128"))}
+    for ref, reference in (("roanuk", roanuk), ("readers", readers)):
+        pair = reference["pairs"][0]
+        assert (pair["first"], pair["second"]) == (cj.JEV_ARM, cj.CLAUDE_ARM)
+        for kind, (first, second, p) in zip(("safety_steps_caught", "false_flags_raised"), want[ref]):
+            split = pair[kind]
+            assert (split["first_only"]["count"], split["second_only"]["count"], split["p_value_exact"]) == \
+                (first, second, p), kind
+            assert len(split["first_only"]["ids"]) == first and len(split["second_only"]["ids"]) == second
+    caught = roanuk["pairs"][0]["safety_steps_caught"]
+    assert caught["first_only"] == result["against_roanuk"]["missed_by_claude_caught_by_jev"]
+    assert caught["second_only"] == result["against_roanuk"]["missed_by_jev_caught_by_claude"]
+    readers_caught = readers["pairs"][0]["safety_steps_caught"]
+    assert readers_caught["first_only"]["ids"] == result["caught_by_jev_only"]
+    assert readers_caught["second_only"]["ids"] == result["caught_by_claude_only"]
+    assert (f"    {cj.JEV_ARM} against {cj.CLAUDE_ARM}: safety steps caught by the first only 3, by the second only 0, "
+            "p 0.250; false flags raised by the first only 7, by the second only 2, p 0.180") in out
+    assert (f"    {cj.JEV_ARM} against {cj.CLAUDE_ARM}: safety steps caught by the first only 3, by the second only 1, "
+            "p 0.625; false flags raised by the first only 7, by the second only 1, p 0.070") in out
+    raw = cj.scores_path().read_text(encoding="utf-8")
+    texts = {t for i in harness.load_items()["items"] for t in (i.get("step"), i.get("detail")) if t}
+    assert not [t for t in texts if t in raw or json.dumps(t, ensure_ascii=False)[1:-1] in raw]
+
+
+# ---------------------------------------------------------------------------
 # SC12a stays untouched, and the build fingerprint does not move
 # ---------------------------------------------------------------------------
 

@@ -269,7 +269,7 @@
               models and may favor Claude in the comparison. The check against a
               person's labels has now been run, but the person is me, one
               labeler and not a technician, and 26 safety steps is a small
-              sample. On 15 October 2026, all 3,542 offline tests passed on
+              sample. On 16 October 2026, all 3,562 offline tests passed on
               the code of build 179b4295c98a3143, with the network blocked, no
               key and no cost (<a href="#method">Appendix A</a>).
             </li>
@@ -1045,7 +1045,7 @@
             <li>v1's and v2's validators agree on the decision, the reason and the cleaned brief for all 180 differential test briefs: 16 from v1's guardrail tests and 164 new edge cases. The test needs v1's private source, so it skips on a fresh copy of the repository.</li>
             <li>A refusal or a budget stop clears candidates, steps, upgrade options and maintenance items; tier labels can be lowered by code, never raised; an observed code still narrows the answer.</li>
             <li>A stored fact needs a word for word evidence sentence from its page; a fact that fails is dropped, not downgraded.</li>
-            <li>On 15 October 2026, on the code of build 179b4295c98a3143, all 3,542 offline tests passed with the network blocked. A full run the same day caught all 1,585 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
+            <li>On 16 October 2026, on the code of build 179b4295c98a3143, all 3,562 offline tests passed with the network blocked. A full run the same day caught all 1,599 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
           </ul>
 
           <h3>Criteria, bars and results</h3>
@@ -1224,7 +1224,9 @@
             check included, is scored against the labels of three model
             readers, and by their labels Jev's lead over the published word
             list is clear. Both sets of results follow: the check and its test
-            against the readers first, then my labels and the Claude comparison.
+            against the readers first, then my labels, the Claude comparison and
+            a paired test, which compares two checks step by step on the same
+            steps, counting only the steps where they disagree.
           </p>
 
           <h3>Why safety steps needed a check in code</h3>
@@ -1418,13 +1420,64 @@
             about 3.7 times as much, and took a median 1.08 seconds a step
             (90th percentile 1.67 seconds).
           </p>
+
+          <h3>A paired test on the same steps</h3>
+          <p>
+            Overlapping intervals judge each check by its own total. A paired
+            test is sharper: it compares two checks step by step on the same
+            steps, counting only the steps where they disagree, here the safety
+            steps one caught and the other missed, and the false flags (flags
+            on steps that were not safety steps) one raised and the other did
+            not. Its p value is the chance of a split at least this lopsided if
+            the two checks were equally good, so the smaller it is, the harder
+            the split is to put down to chance. A common bar is a p value
+            under 0.05. I chose this test after the
+            results above were known; unlike the Claude comparison, it was not
+            set before the run. It reads only the recorded answers and cost
+            nothing.
+          </p>
+          <p>
+            By my labels, Jev caught 3 safety steps that Claude missed, and
+            Claude none that Jev missed (p value 0.250). Among the 149 steps I
+            did not call safety steps, Jev raised 7 false flags that Claude did
+            not, and Claude 2 that Jev did not (p value 0.180). Against each
+            word list, Jev caught 4 safety steps the list missed and the list
+            none that Jev missed (p value 0.125 for each list). On false flags
+            the lists do better: Jev raised 17 that the published list did
+            not, against 8 the other way (p value 0.108), and 12 that the tuned
+            list did not, against 9 (p value 0.664). By the readers'
+            labels, Jev caught 3 that Claude missed and Claude 1 that Jev missed
+            (p value 0.625), and Jev raised 7 false flags that Claude did not
+            against 1 the other way (p value 0.070). Jev caught 11 safety steps
+            the published word list missed, against 1 the other way (p value
+            0.006), and 8 that the tuned list missed, against none (p value
+            0.008).
+          </p>
+          <p>
+            So by my labels the paired test agrees with the intervals: every
+            split on catches that involves Jev leans toward Jev, but with 26
+            safety steps none is under that bar, nor are Jev's extra
+            false flags against Claude or the word lists. By the readers'
+            labels, Claude's edge on false flags, 7 to 1, comes close to that
+            bar but does not clear it. The splits under that bar are all by the
+            readers' labels: Jev's leads over the two word lists, and Claude's
+            over the published list, 9 safety steps to 1 (p value 0.021). They
+            need care: the scorer reports 24 such comparisons (every pair of
+            the four checks, by both sets of labels, for catches and for false
+            flags), with no correction for their number, and with that many
+            tries chance alone can produce a lopsided split; a common
+            correction, dividing the 0.05 bar by the 24 comparisons, leaves
+            none of them under it. How the test was run is in
+            <a href="#method">Appendix A</a>.
+          </p>
           <p class="callout callout-warning">
             <strong>What these comparisons cannot say.</strong> One person
             labeled the steps, and I designed the tool; I am not a technician,
             and a technician might draw the line elsewhere. With 26 safety steps
-            every interval is wide, so by my labels no check is shown to beat
-            another on recall. The readers' labels came from Claude models, which may
-            favor Claude: by their labels Claude's precision is well above
+            every interval is wide, and by my labels the paired test, chosen
+            after the results were known, shows no check beating another on
+            safety steps caught or on false flags. The readers' labels came from Claude models, which may
+            favor Claude: by their labels Claude's precision is above
             Jev's (0.848 against 0.732), and by mine the two are close (0.576
             against 0.537), the pattern such a bias would produce, though it
             does not prove one. Claude ran at the cheap classifier setting,
@@ -1469,7 +1522,11 @@
               half its flags were steps I would not call safety steps
               (<a href="#safety">Part 9</a>). Two checks would settle more: a
               technician's labels, since I am not one, and a larger labeled set,
-              since 26 safety steps cannot separate these checks.
+              since with 26 safety steps even a paired test, which compares two
+              checks only on the steps where they disagree, cannot separate
+              them: Jev's widest lead by my labels, 4 safety steps to none over
+              each word list, has a p value of 0.125, and the published
+              list's lead on false flags, 8 to Jev's 17, one of 0.108.
             </li>
             <li>
               <strong>Enforce the source rule in code.</strong> Both models
@@ -1553,11 +1610,12 @@
             <li>The build ran in phases. Replay phases came first, at no cost; live phases ran only after a typed "proceed", with the planned calls and spend printed first.</li>
             <li>The ledger reserves each call before it is made, against a $5 cap for the whole build.</li>
             <li>Every library name was checked against the current release before use.</li>
-            <li>Planted bugs test the tests: a full run on 15 October 2026, on the code of build 179b4295c98a3143, caught all 1,585.</li>
+            <li>Planted bugs test the tests: a full run on 16 October 2026, on the code of build 179b4295c98a3143, caught all 1,599.</li>
             <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to its build: the live evaluation and the demo to build d24ed7c475dcd813, the product recall check to build ad11e6e15a55d30a, Haiku 4.5's comparison figures to builds da738a1559ced359 and 9a64835e86a5a6c8, and the labeled set scores to Jev calls on 30 September under the locked settings and model jev-1.13.0, and the Claude comparison to build 179b4295c98a3143. The whole build spend is the one total that also counts runs on earlier builds.</li>
             <li>The safety check was scored on a labeled set built before any scoring, with its settings locked and its choice rule written before the held out half was scored once.</li>
             <li>The check of those labels against a person's ran blind on 15 October 2026. A local labeling page showed me each held out step with the instructions, worked examples and hazard choices the model readers had, and no reader's vote or check's flag; an answer could be changed until sealing, and the latest one stands. The answers were then sealed by a hash (a fingerprint of a file's contents that changes if one byte does) before any score existed. Once they were sealed, the labeling page would not start again, and the scorers check that the labels still match the seal. The 3 answers I changed after seeing the disagreements are kept in a separate file and scored nowhere. The locked settings file and Jev's settings were not touched, and nothing was retuned. Eleven of my yes answers named only "other" as the hazard, which the protocol counts as no, exactly as it counts the readers' votes.</li>
             <li>The Claude comparison was registered before it ran: its settings were written down and fixed in code (settings fingerprint 658f072743accb13), with Claude Haiku 5.5 asked Jev's exact question and criteria, one call per step, effort low, a single true or false answer, and no thinking, sampling or fallback setting; a true answer is a flag, with no threshold and no tuning; a decline would count as not flagged and be reported apart; one run only, retried only on a lost connection; scored against my sealed labels and the readers' majority, beside Jev and both word lists. It was planned at about $0.02 and capped at $0.15, and cost $0.0182. Its run record names build 179b4295c98a3143, and its spend is ledger run claude-judge-152437a0a5ed, both of 15 October 2026.</li>
+            <li>The paired test was added on 16 October 2026, after every result above was known, and was not registered before any run. It is McNemar's exact test, the standard paired test for two checks' yes or no answers on the same steps, run by the Claude comparison's scorer on the recorded answers only, with no call and no cost. The scorer reports all 24 comparisons in its scores file, with the steps behind every split, and makes no correction for their number. Nothing in the shipped check changed.</li>
           </ul>
 
           <h3>What I got wrong</h3>
@@ -1610,7 +1668,9 @@
             <li><strong>Held out half:</strong> the half of a labeled set kept aside from every setting choice, so its score is a fair test.</li>
             <li><strong>Blind labels:</strong> labels given without seeing anyone else's labels or any check's flags.</li>
             <li><strong>Cohen's kappa:</strong> agreement between two labelers corrected for the agreement chance alone would give; 1 is perfect agreement and 0 is no better than chance.</li>
-            <li><strong>95% interval:</strong> the range a true rate probably falls in, given how few cases were tested; when two checks' intervals overlap, the test has not shown which is better.</li>
+            <li><strong>95% interval:</strong> the range a true rate probably falls in, given how few cases were tested; when two checks' intervals overlap, the intervals alone have not shown which is better.</li>
+            <li><strong>Paired test:</strong> a test that compares two checks step by step on the same steps, counting only the steps where they disagree; here, McNemar's exact test.</li>
+            <li><strong>p value:</strong> the chance of a split at least as lopsided as the one seen, if the two checks were equally good; the smaller it is, the harder the split is to put down to chance, and when many comparisons are run, a small one can still turn up by chance.</li>
             <li><strong>Hash:</strong> a short fingerprint of a file's contents that changes if one byte changes; sealing the labels by hash shows they were not edited after scoring began.</li>
           </ul>
         </section>

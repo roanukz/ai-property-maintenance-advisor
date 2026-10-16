@@ -53,6 +53,15 @@ Where the SC12c score is committed for the same sealed labels, Jev and both
 word lists must reproduce it, or score refuses. Revisions made after the
 SC12c score are counted, never scored.
 
+score also reports paired tests (exact two sided McNemar, stats.mcnemar_exact)
+between every pair of Jev, Claude and both word lists, against Roanuk's
+sealed labels and against the readers' majority: among each reference's
+safety steps, the steps one arm caught and the other missed; among its other
+steps, the false flags one arm raised and the other did not; the counts, the
+p value and the ids. The test was chosen after the recall and precision
+results were known, and many comparisons are reported, so a single small p
+value would need care; the scores and printout say so.
+
 Read only on every SC12a file: items.json, the Jev replies, lock.json,
 labels.json and item_ids.json are read and never written; so are the SC12c
 labels, seal, revisions and score. score writes
@@ -911,17 +920,56 @@ def _ids(ids: Sequence[str]) -> dict[str, Any]:
     return {"count": len(ids), "ids": list(ids)}
 
 
+# The paired tests (exact McNemar), every pair of these arms in this order, Jev against Claude first.
+PAIRED_ARMS = (JEV_ARM, CLAUDE_ARM, PUBLISHED_ARM, TUNED_ARM)
+PAIRED_METHOD = ("exact two sided McNemar test: a paired test compares two checks step by step on the same steps, "
+                 "counting only the steps where they disagree; the p value is the chance of a split at least this "
+                 "lopsided if the two checks were equally good (binomial with n the disagreements and probability "
+                 "one half, the smaller tail doubled and capped at 1; 1 when they never disagree)")
+PAIRED_NOTE = ("this test was chosen after the recall and precision results were known, not registered before the "
+               "run; several comparisons are reported (every pair of the four arms, against two references, for "
+               "missed safety steps and for false flags) with no correction for their number, so a single small "
+               "p value would need care")
+
+
+def paired_tests(scored: Sequence[Mapping[str, Any]],
+                 flags: Mapping[str, Callable[[Mapping[str, Any]], bool]]) -> dict[str, Any]:
+    """Every pair of PAIRED_ARMS on the same items, step by step: among the reference's safety steps (its
+    positives), the ones each arm caught and the other missed; among its other steps (its negatives), the false
+    flags each arm raised and the other did not; with the exact McNemar p value of each split. Ids only."""
+    raised = {name: {i["id"]: bool(flags[name](i)) for i in scored} for name in PAIRED_ARMS}
+    positives = [i["id"] for i in scored if i["positive"]]
+    negatives = [i["id"] for i in scored if not i["positive"]]
+
+    def split(first: str, second: str, ids: Sequence[str]) -> dict[str, Any]:
+        first_only = [k for k in ids if raised[first][k] and not raised[second][k]]
+        second_only = [k for k in ids if raised[second][k] and not raised[first][k]]
+        p = stats.mcnemar_exact(len(first_only), len(second_only))
+        return {"steps": len(ids), "first_only": _ids(first_only), "second_only": _ids(second_only),
+                "p_value": float(p), "p_value_exact": str(p)}
+
+    pairs = []
+    for n, first in enumerate(PAIRED_ARMS):
+        for second in PAIRED_ARMS[n + 1:]:
+            pairs.append({"first": first, "second": second,
+                          "safety_steps_caught": split(first, second, positives),
+                          "false_flags_raised": split(first, second, negatives)})
+    return {"items": len(scored), "safety_steps": len(positives), "other_steps": len(negatives), "pairs": pairs}
+
+
 def score_against_roanuk(held: Sequence[Mapping[str, Any]], jev_replies: Mapping[str, Mapping[str, Any]],
-                         threshold: float, claude: Mapping[str, bool]) -> dict[str, Any]:
-    """Every arm against Roanuk's sealed blind labels, read through sc12c's own loader and positive rule.
+                         threshold: float, claude: Mapping[str, bool]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Every arm against Roanuk's sealed blind labels, read through sc12c's own loader and positive rule, and
+    the paired tests between the arms against the same labels.
 
     Not sealed here (the labels or the seal missing): says so and scores nothing. Sealed but changed since:
     refused by sc12c.require_sealed. Ids, counts and numbers only."""
     labels_file, seal_file = sc12c.committed(sc12c.HUMAN_LABELS), sc12c.committed(sc12c.SEAL)
     if not labels_file.is_file() or not seal_file.is_file():
         missing = ", ".join(p.name for p in (labels_file, seal_file) if not p.is_file())
-        return {"sealed": False, "note": (f"Roanuk's blind labels are not sealed here ({missing} missing in "
-                                          f"{labels_file.parent}); scored against the AI majority only")}
+        unsealed = {"sealed": False, "note": (f"Roanuk's blind labels are not sealed here ({missing} missing in "
+                                              f"{labels_file.parent}); scored against the AI majority only")}
+        return unsealed, dict(unsealed)
     human = sc12c.require_sealed()["labels"]
     ids = [i["id"] for i in held]
     if set(human) != set(ids):
@@ -954,7 +1002,7 @@ def score_against_roanuk(held: Sequence[Mapping[str, Any]], jev_replies: Mapping
                 raise EvalRefusal(f"Jev and the word lists against Roanuk's labels ({got}) do not reproduce the "
                                   f"SC12c score in {sc12c_scores.name} ({want}); the recorded data changed.")
             reproduces = True
-    return {
+    summary = {
         "sealed": True,
         "note": HUMAN_NOTE,
         "human_labels_sha256": sha,
@@ -968,6 +1016,8 @@ def score_against_roanuk(held: Sequence[Mapping[str, Any]], jev_replies: Mapping
         "reproduces_sc12c_score": reproduces,
         "revisions_not_scored": len(sc12c.load_revisions()),
     }
+    return summary, {"sealed": True, "reference": HUMAN_NOTE, "human_labels_sha256": sha,
+                     **paired_tests(scored, flags)}
 
 
 def score() -> dict[str, Any]:
@@ -999,7 +1049,10 @@ def score() -> dict[str, Any]:
     jev = {i["id"]: stats.jev_raises(i["noul"], threshold) for i in scored}
     positive = {i["id"]: bool(i["positive"]) for i in scored}
     arms = {CLAUDE_ARM: stats.count(scored, lambda i: claude[i["id"]]), **reference}
-    against_roanuk = score_against_roanuk(held, jev_replies, threshold, claude)
+    against_roanuk, paired_roanuk = score_against_roanuk(held, jev_replies, threshold, claude)
+    paired_readers = paired_tests(scored, {
+        JEV_ARM: lambda i: jev[i["id"]], CLAUDE_ARM: lambda i: claude[i["id"]],
+        PUBLISHED_ARM: lambda i: i["word_published"], TUNED_ARM: lambda i: i["word_tuned"]})
 
     yes_no = ("yes", "no")
     table = stats.agreement_table([("yes" if claude[k] else "no", "yes" if jev[k] else "no") for k in ids], yes_no)
@@ -1033,6 +1086,12 @@ def score() -> dict[str, Any]:
         "arms": {name: c.summary() for name, c in arms.items()},
         "reference_arms_reproduce_published": True,
         "against_roanuk": against_roanuk,
+        "paired": {
+            "method": PAIRED_METHOD,
+            "note": PAIRED_NOTE,
+            "against_roanuk": paired_roanuk,
+            "against_readers": {"reference": REFERENCE_NOTE, **paired_readers},
+        },
         "agreement_with_jev": {
             "items": len(ids), "agree": agree, "percent": _ratio(100 * agree, len(ids)),
             "cohen_kappa": None if kappa is None else float(kappa),
@@ -1083,6 +1142,30 @@ def roanuk_lines(h: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def paired_lines(paired: Mapping[str, Any] | None) -> list[str]:
+    """The printout of the paired tests: for each reference and pair, the two discordant counts and the p value
+    for safety steps caught and for false flags raised; the discordant ids are in the scores file."""
+    if not paired:
+        return ["paired tests: not scored"]
+    lines = [f"paired tests ({paired['method']})", f"note: {paired['note']}"]
+    for key, title in (("against_roanuk", "against Roanuk's sealed blind labels"),
+                       ("against_readers", "against the readers' majority")):
+        ref = paired[key]
+        if ref.get("sealed") is False:
+            lines.append(f"  {title}: not scored; {ref['note']}")
+            continue
+        lines.append(f"  {title}: {ref['safety_steps']} safety steps, {ref['other_steps']} other steps")
+        for pair in ref["pairs"]:
+            caught, false = pair["safety_steps_caught"], pair["false_flags_raised"]
+            lines.append(
+                f"    {pair['first']} against {pair['second']}: safety steps caught by the first only "
+                f"{caught['first_only']['count']}, by the second only {caught['second_only']['count']}, "
+                f"p {caught['p_value']:.3f}; false flags raised by the first only {false['first_only']['count']}, "
+                f"by the second only {false['second_only']['count']}, p {false['p_value']:.3f}")
+    lines.append(f"  the ids of every disagreement are under paired in {SCORES}")
+    return lines
+
+
 def format_score(result: Mapping[str, Any]) -> list[str]:
     a = result["agreement_with_jev"]
     t = a["table"]
@@ -1114,6 +1197,7 @@ def format_score(result: Mapping[str, Any]) -> list[str]:
         f"({lat['items']} items)",
     ]
     lines += roanuk_lines(result.get("against_roanuk") or {"sealed": False, "note": "not scored"})
+    lines += paired_lines(result.get("paired"))
     lines.append(f"other {SUITE} runs: " + (describe_runs(result["other_runs"]) if result["other_runs"] else "none"))
     if [m for m in result["models_seen"] if m != SETTINGS["model"]]:
         lines.append(f"warning: replies named {result['models_seen']}, not only {SETTINGS['model']}")
