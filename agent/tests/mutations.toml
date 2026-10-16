@@ -14052,12 +14052,14 @@ why = "the MCP section no longer names the build its live run ran on"
 [[mutation]]
 id = "teardown_mcp_limit_apps_dropped"
 file = "index.html"
-search = '''No assistant has yet run
-              a live, paid brief, and Claude Desktop has not been tried; the'''
-replace = '''An assistant has run
-              a live, paid brief, and Claude Desktop works; the'''
+search = '''Claude Desktop has run
+              one live, paid brief, but no live brief through an assistant has
+              yet carried steps to try first or safety flags; the'''
+replace = '''Claude Desktop has run
+              one live, paid brief, and briefs through an assistant have
+              carried steps to try first and safety flags; the'''
 tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
-why = "the MCP section no longer says that no assistant has run a live, paid brief and that Claude Desktop is untried"
+why = "the MCP section no longer says that no live brief through an assistant has yet carried steps to try first or safety flags"
 
 [[mutation]]
 id = "teardown_mcp_limit_forms_dropped"
@@ -14088,12 +14090,41 @@ why = "the MCP section no longer says the assistant's retelling of a brief is ou
 id = "teardown_mcp_limit_live_flags_dropped"
 file = "index.html"
 search = '''that safety flags reach
-              the response is shown on the recorded cases, not on this live
+              the response is shown on the recorded cases, not on a live
               run.'''
-replace = '''and safety flags reach
-              the response on every run.'''
+replace = '''safety flags reach
+              the response on every run, live ones included.'''
 tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
-why = "the MCP section claims the live run showed safety flags reaching the response; only the recorded cases show it"
+why = "the MCP section claims the live runs showed safety flags reaching the response; only the recorded cases show it"
+
+[[mutation]]
+id = "teardown_mcp_desktop_run_dropped"
+file = "index.html"
+search = 'in run t-7f23f74a338140bd on'
+replace = 'in a run on'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer names the Claude Desktop run its figures come from"
+
+[[mutation]]
+id = "teardown_mcp_desktop_build_dropped"
+file = "index.html"
+search = 'build 841df66ad9669ef8, which carries those fixes'
+replace = 'the build that carries those fixes'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer names the build the Claude Desktop run ran on"
+
+[[mutation]]
+id = "teardown_mcp_limit_pause_dropped"
+file = "index.html"
+search = '''Decision 105 now tells
+              the assistant never to fill in a field itself, but the pause to
+              confirm the unit has not been put to an assistant since: the
+              Desktop brief had no plate photo, so there was no unit to
+              confirm.'''
+replace = '''Decision 105 now tells
+              the assistant never to fill in a field itself.'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer says the pause to confirm the unit is untested with an assistant since decision 105"
 
 [[mutation]]
 id = "teardown_terms_drop_mcp"
@@ -14102,3 +14133,35 @@ search = '''            <li><strong>MCP:</strong> the Model Context Protocol, an
 replace = '''            <li><strong>MCP:</strong> a standard'''
 tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
 why = "Appendix B no longer says what MCP stands for or what it does"
+
+[[mutation]]
+id = "mcp_counts_always_plural"
+file = "agent/mcp_server.py"
+search = '''    return f"{n} {one if n == 1 else many}"'''
+replace = '''    return f"{n} {many}"'''
+tests = ["agent/tests/test_mcp_server.py::test_counts_in_the_result_messages_are_singular_at_one", "agent/tests/test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner"]
+why = "a result message says 1 documented candidates, as the live log of 16 October did"
+
+[[mutation]]
+id = "mcp_brief_flags_always_plural"
+file = "agent/mcp_server.py"
+search = '''    flags = "flagged as a safety step" if flagged == 1 else "flagged as safety steps"'''
+replace = '''    flags = "flagged as safety steps"'''
+tests = ["agent/tests/test_mcp_server.py::test_counts_in_the_result_messages_are_singular_at_one", "agent/tests/test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner"]
+why = "one flagged step reads 1 flagged as safety steps"
+
+[[mutation]]
+id = "mcp_pause_drops_ask_owner"
+file = "agent/mcp_server.py"
+search = '''        step = (f"{ASK_OWNER} Then call {TOOL_RESUME} with thread_id'''
+replace = '''        step = (f"Then call {TOOL_RESUME} with thread_id'''
+tests = ["agent/tests/test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner"]
+why = "a paused brief no longer tells the assistant to leave the unit's fields to the owner"
+
+[[mutation]]
+id = "mcp_instructions_drop_ask_owner"
+file = "agent/mcp_server.py"
+search = '''    + ASK_OWNER + " property_status is offline and free."'''
+replace = '''    + " property_status is offline and free."'''
+tests = ["agent/tests/test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner"]
+why = "the server's standing instructions no longer tell the assistant to leave the unit's fields to the owner"

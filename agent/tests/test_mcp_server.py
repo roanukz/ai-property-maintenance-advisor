@@ -847,3 +847,33 @@ def test_the_entry_point_refuses_a_live_mode_without_live(monkeypatch: pytest.Mo
     monkeypatch.delenv(config.ENV_MODE)
     assert mcp_server.main(["--live"]) == cli.EXIT_REFUSED
     assert "--live needs ADVISOR_MODE set to one of" in capsys.readouterr().err
+
+
+def test_counts_in_the_result_messages_are_singular_at_one() -> None:
+    """A result message says "1 step", "1 flagged as a safety step", "1 documented candidate" and "1 appliance",
+    and the plural otherwise (the live log of 16 October printed "1 documented candidates"; decision 105).
+    Mutations: mcp_counts_always_plural (a count's noun stays plural at 1); mcp_brief_flags_always_plural (one
+    flagged step reads "1 flagged as safety steps")."""
+    assert mcp_server.brief_counts(1, 1, 1) == "1 step to try first, 1 flagged as a safety step; 1 documented candidate"
+    assert mcp_server.brief_counts(2, 0, 3) == ("2 steps to try first, 0 flagged as safety steps; "
+                                                "3 documented candidates")
+    assert mcp_server.counted(1, "appliance", "appliances") == "1 appliance"
+    assert mcp_server.counted(0, "appliance", "appliances") == "0 appliances"
+
+
+def test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner(mcp_data: Path) -> None:
+    """The pause's next step, the plain text the model reads and the server's standing instructions all tell the
+    assistant to show the owner what was read and never fill in a field itself, because the server cannot tell
+    who supplied the fields resume_brief receives (decision 105); the finished brief's message then counts its one
+    flagged step and one candidate in the singular. Mutations: mcp_pause_drops_ask_owner (the pause no longer
+    asks for the owner's answer); mcp_instructions_drop_ask_owner (the standing instructions no longer say it)."""
+    server = mcp_server.build_server(cassette=str(FLO))
+    result = call(server, "get_service_brief", {"symptom": "panel shows FLO", "photo_path": str(PLATE)})
+    paused = ok(result)
+    assert paused["status"] == "paused"
+    assert paused["next_step"].startswith(mcp_server.ASK_OWNER)
+    assert mcp_server.ASK_OWNER in result.content[0].text
+    assert "When a brief pauses for the owner to confirm the unit: " + mcp_server.ASK_OWNER in mcp_server.INSTRUCTIONS
+    final = ok(call(server, "resume_brief", {"thread_id": paused["thread_id"], **OWNER, "code": "FLO"}))
+    assert final["status"] == "ok"
+    assert "2 steps to try first, 1 flagged as a safety step; 1 documented candidate." in final["message"]

@@ -404,6 +404,8 @@
         "test_mcp_server.py::test_the_server_is_in_the_build_fingerprint_and_imports_nothing_it_leaves_out",
         "test_mcp_server.py::test_the_server_starts_over_stdio_from_its_entry_point",
         "test_mcp_server.py::test_tools_their_schemas_and_resources",
+        "test_mcp_server.py::test_counts_in_the_result_messages_are_singular_at_one",
+        "test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner",
         "test_mcp_gate.py::test_phase_7_requires_every_mcp_test_and_nothing_missing"
       ]
     }

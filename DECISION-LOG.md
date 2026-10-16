@@ -2227,3 +2227,196 @@ small changes found in review wait for the next build:
 connection, the Claude Code replay session and every test spent nothing from
 the project's ledger. The build has spent $1.5471 of its $5 cap and 242 of its
 300 Tavily credits.
+
+---
+
+## Two fixes to what the MCP server says, 16 October 2026
+
+**Decided:**
+- **105. The server's words.** Result messages now count in the singular at 1
+  ("1 step", "1 flagged as a safety step", "1 documented candidate", "1
+  appliance"); the live log of 16 October had printed "1 documented
+  candidates". A paused brief's next step, and the server's standing
+  instructions to the assistant, now say to show the owner what was read, ask
+  them to confirm or correct it, and never fill in or change a field itself,
+  because the server cannot tell who supplied the fields `resume_brief`
+  receives. An assistant can still ignore the instruction, so the app's own
+  approval prompt before each tool call stays the owner's check, as the
+  teardown says.
+- These are edits to runtime code, so the build moves from
+  `17427277685ed433` to `841df66ad9669ef8`. The published MCP evidence (the live brief
+  `t-bc31dd881bff44c4` and the Claude Code replay session
+  `t-7ecdeb193c584be8`) stays on `17427277685ed433`, and the second PRD's
+  results on `d24ed7c475dcd813`, as the demo stayed on its build after
+  decisions 68 and 93.
+
+**Measured:** 2 new tests, each in gate phase 7, and 4 planted bugs, each
+confirmed caught with `mutate.py --only`.
+
+**Cost:** $0.
+
+---
+
+## Claude Desktop runs one live brief, 16 October 2026
+
+Claude Desktop ran the advisor's MCP server for one live, paid brief: the first
+live brief through an assistant, and the first MCP brief with a person reading
+the preflight and typing "proceed". Roanuk chose the trial and approved the
+money in advance ("proceed, use the money"), then read the preflight and typed
+"proceed" himself in the Desktop chat. The brief ended with no reliable answer,
+so no live brief through an assistant has yet carried steps to try first or
+safety flags.
+
+**Decided:**
+- **106. The Claude Desktop trial, reported as it ran.** The refusal stands
+  under the existing rule (prompt rule 6: documentation for this exact model
+  or its documented family, never general knowledge of the equipment
+  category), and nothing in the code changes: no file under `agent/` outside
+  `agent/tests/` was edited, and `build_info.build_id()` is still
+  `841df66ad9669ef8`. Claude Desktop goes back to replay after the trial. The
+  pages report the run, its refusal and what Desktop added outside the tool,
+  with the limits the trial leaves open.
+
+**Measured, live** (run `t-7f23f74a338140bd` on build `841df66ad9669ef8`, 16
+October 2026, finished 16:21:37 UTC; sources, all untracked and kept out of the
+public repository: `data/runs/t-7f23f74a338140bd.json` and
+`data/evidence/claude_desktop_live_20261016/ledger_t-7f23f74a338140bd.txt`, the
+ledger's readout of the run, for the cost, route, searches and processing time;
+`data/evidence/claude_desktop_live_20261016/mcp-server-property-advisor.log`,
+Claude Desktop's own log of the server's messages, and
+`mcp.log.property-advisor-lines`, the same lines from Desktop's MCP log, for
+each call's times; `desktop_transcript.txt`, the Desktop chat as Roanuk pasted
+it; `desktop_mcp_entry_live.json`, the server entry Desktop ran, with the
+repository path replaced by `<repo>`; and the brief's page,
+`data/briefs/t-7f23f74a338140bd.html`):
+- Who connected: Claude Desktop 2.42304.0 on macOS, which started the server
+  from its own settings file with live spending allowed in cheap mode
+  (`--live`, `ADVISOR_MODE=cheap`), on build `841df66ad9669ef8`, which
+  includes decision 105.
+- The request, in Roanuk's words: "The water heater at my rental isn't making
+  hot water. Use the property-advisor tools to get me a service brief for
+  appliance appl-waterheater at property prop-b." There was no plate photo:
+  the unit came from the property's synthetic registry record (a Rheem PRO+E50
+  M2 RH92 CL electric water heater), so there was no plate reading and no
+  pause to confirm the unit, and decision 105's instruction (never fill in a
+  field) was not put to Desktop.
+- (1) `get_service_brief` returned the preflight and sent nothing, in 0.41 s
+  in Desktop's log (16:20:24.046 to 16:20:24.456 UTC): typical $0.0105 and
+  worst case $0.15 against the $0.15 cap; model calls typical 7, at most 17;
+  Tavily credits typical 5, at most 10; Jev calls 8 planned for one draft, up
+  to 16 for two; the whole build at $1.5471 of its $5.
+- The server sent no form: it took the path for apps without forms. Desktop
+  showed the preflight as text in the chat and asked Roanuk to type proceed,
+  and its log shows no request from the server to the app, only results. So
+  "proceed" passed through the assistant, the fallback way:
+  `confirmation_required`, then a call with `confirm="proceed"` and the
+  `confirmation_id`. Roanuk typed it himself; the next call reached the server
+  25.7 s after the preflight left it, a gap that includes the assistant
+  writing its message and his reading and typing. Desktop's log does not
+  record which protocol version it used.
+- (2) The call with "proceed" took 47.50 s in Desktop's log (16:20:50.161 to
+  16:21:37.656 UTC). The run record gives 43.45 s of processing, 26.06 s of it
+  in research and 17.30 s in writing the brief. Route: history and research
+  (the graph had nothing verified for this unit or its family; the registry
+  held 1 record for the appliance). 5 web searches, 3 page fetches, 7 Tavily
+  credits. $0.0061 by the ledger (0.0060734), against the preflight's typical
+  $0.0105, inside the $0.15 cap (SC11 pass).
+- The brief: `no_reliable_answer`, refused by the model. Its reason, from the
+  run record: the only manuals found belong to sibling models with different
+  suffixes (RH95 EC1), the retailer and marketing pages describe no
+  procedure, and matching the symptom would need general knowledge about
+  electric water heaters, which the brief does not use. Jev's check was
+  skipped, because there were no steps to check. No steps, no safety flags.
+- (3) Claude Desktop then called `property_status` for prop-b on its own (0.09
+  s in its log, 16:21:57.247 to 16:21:57.335 UTC), offline and free, and
+  searched the web itself (its chat shows "searched the web").
+- Claude Desktop's answer reported the refusal and its reason correctly, the
+  cost ($0.0061 and 7 credits, 51 of 300 left) and the location of the brief's
+  page, and said the property's record is synthetic. Then it added its own
+  content, outside the tool: warranty terms of closely related models from the
+  maker's product pages, with an inference that parts are probably still
+  covered; troubleshooting steps it labeled as general electric water heater
+  knowledge, "not from the advisor"; and its own pick of what to do. Before
+  the run it had also added a safety caution of its own. It suggested logging
+  the sibling suffix refusal in the decision log, which this entry does. So
+  the tool refused to fill the gap from general knowledge, and the assistant
+  filled it, labeled as its own: the retelling limit the pages already state,
+  now seen in a live run.
+- After the run, the whole build has spent $1.5532 of its $5 and 249 of its
+  300 Tavily credits. Claude Desktop's own usage on Roanuk's Claude plan was
+  not measured and is outside the project's ledger.
+- Afterward Desktop's settings were switched back to replay (`--cassette
+  agent/tests/cassettes/flo.json`). Claude Desktop rewrote its settings file
+  from its own copy once, which put live mode back, so the switch was made
+  again; it takes effect when Desktop next starts.
+
+**Pages** (16 October 2026, in the working tree only; nothing is committed or
+published):
+- `index.html`, the MCP section (`#mcp`): the opening now says what has run so
+  far (Claude Code in free replay; one live brief through the official client,
+  driven by a test program; one live brief in Claude Desktop, with Roanuk
+  reading the preflight and typing "proceed", which ended with no reliable
+  answer). A new paragraph pair, "One live brief in Claude Desktop, with me as
+  the owner.", follows the Claude Code paragraph and opens with one sentence
+  on decision 105's two fixes. The test program's paragraph no longer says a
+  research brief has not run live through the server, and the paragraph on
+  the offline tests no longer says the 2025-11-25 version has run only in
+  them, since Desktop's log does not record which version it used. The
+  warning box now says that Desktop has run one live brief but no live brief
+  through an assistant has carried steps or safety flags; that no form has
+  reached a person outside the tests and the server sent Desktop none; that
+  the pause to confirm the unit has not been put to an assistant since
+  decision 105; that the app's approval prompt and how each app shows it are
+  unverified, Desktop included; and that the retelling is outside the tool's
+  control, with Desktop's labeled general advice as the live example. "Where
+  each number comes from" names the Desktop evidence by its paths inside the
+  repository and says the Desktop preflight's figures come from the chat.
+  The server's counts read 31 test cases, 27 through the official client (26
+  in process, 1 over real standard input and output), and 50 planted bugs for
+  the server and its gate setting.
+- The Summary's method adds the Desktop brief, still free of the word MCP; the
+  results replace "Claude Desktop is untried" with the Desktop brief, its
+  refusal and its labeled general advice; the cautions trace the Desktop brief
+  to build `841df66ad9669ef8` and give 3,659 tests on that build. The TL;DR is
+  unchanged.
+- Part 6 and Part 8 give the whole build spend as $1.5532 and 249 of 300
+  Tavily credits, counting the two MCP briefs; Part 8 and Appendix A give
+  3,659 tests and 1,663 planted bugs on the code of build
+  `841df66ad9669ef8`; Appendix A traces the Desktop brief to that build, adds
+  it to the replay first order and rewrites its limits line; Appendix B's
+  build entry names it. `index.html` was re-hashed in the published manifest.
+- `README.md`: the MCP bullet, the results intro, the suite row (3,659 tests;
+  phase 7 lists 22 test functions, for 392 required node ids), the spend row,
+  the MCP row (decisions 97 to 106, the Desktop run, the limits and the
+  evidence), the planted bug count (1,663) and the section on using the
+  advisor from an assistant.
+- `docs/mcp.md`: the status paragraph adds the Desktop brief and its limits;
+  "Adding it to Claude Desktop" no longer says "Not yet tried", and says that
+  the server sent Desktop no form for the preflight and that Desktop may
+  rewrite its settings file while it runs, so the file is edited with Desktop
+  closed or edited again after quitting.
+- `test_teardown.py::test_mcp_section_names_its_run_build_and_limits` now also
+  requires the Desktop run `t-7f23f74a338140bd` and build `841df66ad9669ef8`,
+  and its limits match the new warning box, including the pause not yet put
+  to an assistant. The search texts of `teardown_mcp_limit_apps_dropped` and
+  `teardown_mcp_limit_live_flags_dropped` moved with the text. No test
+  function was added or removed. Three planted bugs were added, one for each
+  new check: `teardown_mcp_desktop_run_dropped`,
+  `teardown_mcp_desktop_build_dropped` and `teardown_mcp_limit_pause_dropped`,
+  each confirmed caught with `mutate.py --only`; they add 3 manifest test
+  cases, so the suite has 3,659 tests and the full run 1,663 planted bugs.
+
+**Cost:** $0.0061 for the live brief, with 7 Tavily credits; Claude Desktop's
+own usage on Roanuk's Claude plan was not measured and is not a project cost.
+The build has spent $1.5532 of its $5 cap and 249 of its 300 Tavily credits.
+
+**Next steps:**
+- A plate photo through Claude Desktop, to put the pause to confirm the unit,
+  and decision 105's instruction never to fill in a field, to an assistant.
+- A live brief with steps to try first and safety flags through an assistant,
+  to show the flags reaching the response, and the retelling, live.
+- Whether any app shows the server's forms (elicitation) to the person; the
+  server sent Claude Desktop none, so this trial did not test it.
+- Whether a sibling model's manual (the same line with a different suffix,
+  here RH95 EC1 for an RH92 CL) can ever count for a unit. That is a rule
+  change for Roanuk to decide, not something this trial decides.

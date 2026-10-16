@@ -31,17 +31,23 @@ SUMMARY_LEADS = [
     "Cautions, and how to check.",
 ]
 BYLINE = "Roanuk Zaman \u00b7 Product teardown of a tool I designed, directed and shipped"
-# The MCP section (index.html#mcp): the live run and build it reports, and the limits it must state.
+# The MCP section (index.html#mcp): the live runs and builds it reports, and the limits it must state.
+# The first live brief, run by a test program through the official client.
 MCP_RUN = "t-bc31dd881bff44c4"
 MCP_BUILD = "17427277685ed433"
+# The live brief in Claude Desktop, on the build with decision 105's fixes.
+MCP_DESKTOP_RUN = "t-7f23f74a338140bd"
+MCP_DESKTOP_BUILD = "841df66ad9669ef8"
 MCP_EXPLAINED = "MCP, the Model Context Protocol, is an open standard that lets an AI assistant call outside tools"
 MCP_LIMITS = (
-    "No assistant has yet run a live, paid brief, and Claude Desktop has not been tried",
+    "Claude Desktop has run one live, paid brief, but no live brief through an assistant has yet carried steps"
+    " to try first or safety flags",
     "unverified which apps show MCP forms to the person, and without them both the owner's confirmation of the"
     " unit and the \"proceed\" pass through the assistant",
+    "the pause to confirm the unit has not been put to an assistant since",
     "never set these tools to always allow",
     "that retelling is outside the tool's control",
-    "shown on the recorded cases, not on this live run",
+    "shown on the recorded cases, not on a live run",
 )
 # Attributes whose text a reader sees or hears (tooltips, alt text, labels).
 VISIBLE_ATTRS = ("alt", "title", "aria-label", "placeholder", "value")
@@ -325,13 +331,16 @@ def _element_text(page: str, element_id: str) -> str:
 def test_mcp_section_names_its_run_build_and_limits() -> None:
     """The MCP section is the address a resume links to (index.html#mcp), so it must stand on
     its own: one element carries the anchor, MCP is explained where the page first names it and
-    again inside the section, the section names the live run and the build it ran on, and it
-    states every limit the evidence leaves open; Appendix B defines MCP. Mutations
+    again inside the section, the section names each live run (the test program's and Claude
+    Desktop's) and the build it ran on, and it states every limit the evidence leaves open;
+    Appendix B defines MCP. Mutations
     teardown_mcp_anchor_renamed, teardown_mcp_first_use_unexplained,
     teardown_mcp_section_unexplained, teardown_mcp_run_dropped, teardown_mcp_build_dropped,
+    teardown_mcp_desktop_run_dropped, teardown_mcp_desktop_build_dropped,
     teardown_mcp_limit_apps_dropped, teardown_mcp_limit_forms_dropped,
-    teardown_mcp_limit_always_allow_dropped, teardown_mcp_limit_retelling_dropped,
-    teardown_mcp_limit_live_flags_dropped and teardown_terms_drop_mcp."""
+    teardown_mcp_limit_pause_dropped, teardown_mcp_limit_always_allow_dropped,
+    teardown_mcp_limit_retelling_dropped, teardown_mcp_limit_live_flags_dropped and
+    teardown_terms_drop_mcp."""
     page = _page()
     assert page.count('id="mcp"') == 1, "index.html#mcp must name exactly one element"
     text = re.sub(r"\s+", " ", visible_text(page))
@@ -342,6 +351,7 @@ def test_mcp_section_names_its_run_build_and_limits() -> None:
     section = _element_text(page, "mcp")
     assert MCP_EXPLAINED in section
     assert f"run {MCP_RUN}" in section and f"build {MCP_BUILD}" in section
+    assert f"run {MCP_DESKTOP_RUN}" in section and f"build {MCP_DESKTOP_BUILD}" in section
     missing = [limit for limit in MCP_LIMITS if limit not in section]
     assert not missing, f"the MCP section no longer states: {missing}"
     assert "MCP: the Model Context Protocol, an open standard" in _text(_section("terms"))

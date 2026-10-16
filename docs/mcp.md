@@ -13,8 +13,8 @@ The server is a thin layer over the same code `advisor ask` and `advisor resume`
 run. The spend ledger and its caps, the citations, the refusals, Jev's safety
 check (Jev is a second model, from TypeSafe, that flags safety steps) and the
 warranty dates written by code all apply exactly as they do on the command line.
-Decisions 97 to 104 in DECISION-LOG.md record why it is built this way; decision
-99 covers the shared code.
+Decisions 97 to 105 in DECISION-LOG.md record why it is built this way; decision
+99 covers the shared code, and decision 106 records the Claude Desktop trial.
 
 ## Status, 16 October 2026
 
@@ -29,24 +29,50 @@ What has been shown, and what has not:
   Code's settings, and only the three tools it needed were allowed in advance.
   The `claude mcp add` command and the `/mcp` check below have not been run.
 - **One live brief, through the official client, with no person in it.** The
-  one live, paid brief ran through the client of the official MCP library for
+  first live, paid brief ran through the client of the official MCP library for
   Python, driven by a test program that played the owner, on the protocol's
-  2026-07-28 version without forms. No assistant has yet run a live, paid
-  brief, and no research brief has run live through the server.
-- **Claude Desktop has not been tried.**
+  2026-07-28 version without forms. It was answered from memory, with no
+  search.
+- **One live brief in Claude Desktop, with me as the owner.** Claude Desktop
+  2.42304.0 on macOS ran the server from its own settings file, with `--live`
+  and `ADVISOR_MODE=cheap`, on build `841df66ad9669ef8`. I approved the money
+  in advance, then read the preflight and typed `proceed` in the chat myself.
+  The server sent Desktop no form, taking the path for apps without forms:
+  Desktop put the preflight in the chat as text, and my `proceed` reached the
+  server through the assistant, with the preflight's `confirmation_id`.
+  Desktop's log does not record which protocol version it used.
+  The brief researched the property's water heater for $0.0061 and ended with
+  no reliable answer, because the only manuals found were for sibling models
+  with different suffixes. Desktop was set back to replay after the trial.
+- **No live brief through an assistant has carried steps to try first or
+  safety flags yet.** The Desktop brief ended with no reliable answer, and the
+  test program's live brief had neither, so safety flags reaching the response
+  are shown only on recorded cases, not on a live run.
+- **The pause to confirm the unit has not been put to an assistant since
+  decision 105**, which tells the assistant never to fill in a field itself:
+  the Desktop brief had no plate photo, so there was no unit to confirm.
 - **Form support per app is unverified.** The server sent Claude Code a form to
   confirm the unit, and Claude Code's non-interactive session canceled it, so
-  the brief stayed paused until the assistant called `resume_brief`. A form has
-  been answered only in the offline tests, and the protocol's earlier 2025-11-25
-  version has run only there.
+  the brief stayed paused until the assistant called `resume_brief`. The
+  server sent Claude Desktop no form for the preflight, so whether Desktop
+  shows forms was not tested. A form has been answered only in the offline
+  tests. Claude Desktop's log does not record which protocol version it used,
+  so whether the protocol's earlier 2025-11-25 version has run outside those
+  tests is not known.
 - **The assistant retells the brief.** The tool's response carries every
   citation and safety flag word for word, but an assistant may leave out
   citations or safety flags it was given, or add its own reading, as Claude
-  Code did.
+  Code did. Claude Desktop reported the brief's refusal and its reason
+  correctly, then filled the gap the tool had refused to fill, with warranty
+  terms of related models and troubleshooting it labeled as general knowledge,
+  not the advisor's.
 
 The evidence is kept out of the public repository: the Claude Code session in
-`data/evidence/claude_code_replay_20261016/`, and the test program's script and
-logs in `data/runs/t-bc31dd881bff44c4.client/`. DECISION-LOG.md gives the
+`data/evidence/claude_code_replay_20261016/`, the test program's script and
+logs in `data/runs/t-bc31dd881bff44c4.client/`, and the Claude Desktop trial in
+`data/evidence/claude_desktop_live_20261016/` (the chat, Desktop's log of the
+server's messages, the server entry it ran and the ledger's readout), with its
+run record `data/runs/t-7f23f74a338140bd.json`. DECISION-LOG.md gives the
 details.
 
 ## The command that starts it
@@ -77,9 +103,11 @@ outside a live mode, as `advisor` refuses.
 
 ## Adding it to Claude Desktop
 
-Not yet tried. Open `~/Library/Application Support/Claude/claude_desktop_config.json`
-and add an entry under `mcpServers`. This one replays the recorded hot tub FLO
-case and spends nothing:
+Tried with Claude Desktop 2.42304.0 on macOS, which ran the live entry
+described below for one brief on 16 October 2026. Open
+`~/Library/Application Support/Claude/claude_desktop_config.json` and add an
+entry under `mcpServers`. This one replays the recorded hot tub FLO case and
+spends nothing:
 
 ```json
 {
@@ -97,6 +125,17 @@ case and spends nothing:
 
 Quit Claude Desktop completely and open it again. Its log for the server is
 `~/Library/Logs/Claude/mcp-server-property-advisor.log`.
+
+Claude Desktop may rewrite this settings file from its own copy while it runs,
+which can undo an edit made with it open. Edit the file with Desktop closed,
+or check it after quitting and edit it again; the change takes effect when
+Desktop next starts.
+
+In the trial on 16 October 2026, the server sent Claude Desktop 2.42304.0 no
+form for the preflight; it took the path for apps without forms (see "What asks
+first, and how" below). Desktop showed the preflight in the chat as text and
+asked me to type proceed there, and the assistant passed the answer to the
+server. Whether Desktop can show a form was not tested.
 
 For live runs, drop the `--cassette` pair, add `"--live"` to `args`, and add
 `"env": {"ADVISOR_MODE": "cheap"}` to the entry. The keys are read as `advisor`
@@ -185,7 +224,8 @@ goes ahead.
   preflight and a `confirmation_id`. The server tells the assistant to call
   again with the same arguments plus `confirm="proceed"` and that id only after
   the owner has read the preflight and typed `proceed`, but it cannot check who
-  typed it.
+  typed it. Claude Desktop took this path on 16 October 2026: it showed the
+  preflight in the chat as text, and I typed `proceed` there.
 
 A confirmation id works once, for the same tool, the same arguments and the same
 preflight lines, within ten minutes. If the spend shown has changed by then, the
@@ -197,8 +237,9 @@ owner's only check that what the assistant sends is what the owner said. Keep it
 on for `get_service_brief`, `resume_brief` and `check_product_recalls`, so the
 owner sees the confirmed fields and the `confirm` the assistant sends, and never
 set these tools to always allow. How each app shows that prompt has not been
-verified: in the Claude Code session, the three tools it used were allowed in
-advance for that one replay session, so no prompt was shown.
+verified, Claude Desktop's included: in the Claude Code session, the three tools
+it used were allowed in advance for that one replay session, so no prompt was
+shown.
 
 ## What it never does
 

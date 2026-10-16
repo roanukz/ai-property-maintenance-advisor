@@ -133,12 +133,18 @@ REPLAY_NEEDS_CASSETTE = (f"replay needs a cassette: start the server with --cass
                          f"{config.ENV_CASSETTE}. Replay spends nothing.")
 ONE_SOURCE = "give exactly one of photo_path, appliance_id or identity"
 
+# What the assistant must do when a brief pauses for the unit: the server cannot tell who supplied the fields
+# resume_brief receives, so it asks the assistant to leave them to the owner (decision 105).
+ASK_OWNER = ("Show the owner what was read and ask them to confirm or correct it; never fill in or change a field "
+             "yourself.")
+
 INSTRUCTIONS = (
     "Property Maintenance Advisor v2. A brief comes only from documented sources the advisor's code checks, and "
     "a no_reliable_answer brief is a success state, not an error. Report safety flagged steps first and word for "
     "word, with their sources. Paid or outbound calls (a live brief, the CPSC product recall check) always show a "
     "preflight first; pass confirm=\"proceed\" only after the person has read that preflight and typed proceed "
-    "themselves, and never decide it for them. property_status is offline and free."
+    "themselves, and never decide it for them. When a brief pauses for the owner to confirm the unit: "
+    + ASK_OWNER + " property_status is offline and free."
 )
 
 
@@ -718,6 +724,18 @@ def brief_view(brief: Mapping[str, Any], safety: Mapping[str, Any] | None, signa
     )
 
 
+def counted(n: int, one: str, many: str) -> str:
+    """"1 step", "2 steps": a count with its noun, singular when the count is 1."""
+    return f"{n} {one if n == 1 else many}"
+
+
+def brief_counts(steps: int, flagged: int, candidates: int) -> str:
+    """The brief's counts as the result message says them, singular when a count is 1."""
+    flags = "flagged as a safety step" if flagged == 1 else "flagged as safety steps"
+    return (f"{counted(steps, 'step', 'steps')} to try first, {flagged} {flags}; "
+            f"{counted(candidates, 'documented candidate', 'documented candidates')}")
+
+
 def _cite(source: Source | None) -> str:
     return f" [{source.number}]" if source is not None else " (uncited)"
 
@@ -1026,8 +1044,8 @@ class Advisor:
         identity = values.get("identity") or {}
         unit = " ".join(str(v) for v in (identity.get("manufacturer"), identity.get("model")) if v) or "the unit"
         flagged = len(view.safety_flags)
-        message = (f"Brief for {unit}: status {status}; {len(view.try_first)} steps to try first, {flagged} flagged "
-                   f"as safety steps; {len(view.candidates)} documented candidates. Run {seg.run_id}.")
+        message = (f"Brief for {unit}: status {status}; "
+                   f"{brief_counts(len(view.try_first), flagged, len(view.candidates))}. Run {seg.run_id}.")
         if note:
             message = f"{note} {message}"
         html_path = values.get("html_path")
@@ -1050,7 +1068,8 @@ class Advisor:
                       extraction=payload.get("extraction"), missing=list(payload.get("missing") or []),
                       code_shown=payload.get("observed_code_candidate"), prompt=str(payload.get("prompt") or ""))
         code = pause.code_shown
-        step = (f"Call {TOOL_RESUME} with thread_id \"{seg.thread_id}\" and the confirmed manufacturer and model (the "
+        step = (f"{ASK_OWNER} Then call {TOOL_RESUME} with thread_id \"{seg.thread_id}\" and the confirmed "
+                "manufacturer and model (the "
                 "model is required), with serial and manufacture_date when known. Leave code out to confirm "
                 + (f"the code shown ({code})" if code else "that no code is shown")
                 + ", or pass the code the display shows; an empty code clears it.")
@@ -1376,7 +1395,8 @@ class Advisor:
         page = Link(path=str(config.PROPERTY_OUT_DIR / f"{property_id}.html"),
                     file_uri=(config.PROPERTY_OUT_DIR / f"{property_id}.html").resolve().as_uri(),
                     resource_uri=PROPERTY_URI.format(property_id=property_id))
-        message = (f"Property {property_id}: {len(out)} appliances as of {as_of.isoformat()} (UTC), from the registry, "
+        message = (f"Property {property_id}: {counted(len(out), 'appliance', 'appliances')} as of {as_of.isoformat()} "
+                   f"(UTC), from the registry, "
                    f"the graph at {graph_path} and the stored product recall checks. Nothing was sent or spent.")
         response = PropertyStatusResponse(property_id=property_id, label=prop.get("label"),
                                           synthetic=bool(prop.get("synthetic")), as_of=as_of.isoformat(),
