@@ -181,7 +181,12 @@
               answers sealed before any score, and Claude Haiku 5.5 was asked
               the same question as Jev, a judgment model from TypeSafe that
               flags safety steps, in a comparison whose settings were fixed before it ran
-              (<a href="#safety">Part 9</a>).
+              (<a href="#safety">Part 9</a>). Asking from inside an AI assistant
+              was tested replay first: offline tests and a first connection in
+              replay, then one live brief that I approved in advance, run by a
+              test program through the official client software rather than by
+              an assistant, and afterward a free replay session in which Claude
+              Code called the advisor's tools (<a href="#mcp">Part 7</a>).
             </li>
             <li>
               <strong>The results.</strong> On Claude Haiku 5.5 (build
@@ -208,6 +213,16 @@
               maker names, verified no successor for any of the three real
               units, and the product recall check found no product recall
               naming any of their exact models (<a href="#features">Part 7</a>).
+              Through a new MCP server (MCP, the Model Context Protocol, is an
+              open standard that lets an AI assistant call outside tools),
+              Claude Code called the advisor's tools in a free replay session,
+              reported the recorded brief's safety flag word for word with each
+              step's source, and added a reading of its own. The one live brief,
+              run by a test program and held at each paid step for "proceed",
+              answered the hot tub's code question from memory for $0.0014,
+              about the same as the $0.0015 it cost from the command line on 14
+              October. Claude Desktop is untried, and no assistant has run a
+              live, paid brief yet (<a href="#mcp">Part 7</a>).
               Offline, v1's and v2's validators agreed on all 180 test briefs.
               Jev flagged 30 of the 31 safety
               steps the model readers marked in the half of the labeled set kept
@@ -263,14 +278,16 @@
               (jev-1.13.0), not to a build; the Claude comparison ran on 15
               October 2026 on build 179b4295c98a3143, which differs from
               d24ed7c475dcd813 only in a command that prints memory statistics;
-              v1's come from its own live run of 18 August 2026; and the whole
-              build spend also counts runs on earlier builds. The safety step
+              the live MCP brief ran on 16 October 2026 on build 17427277685ed433,
+              which adds only the MCP server to build 179b4295c98a3143; v1's
+              come from its own live run of 18 August 2026; and the whole build
+              spend also counts runs on other builds. The safety step
               labels came first from three model readers, which were Claude
               models and may favor Claude in the comparison. The check against a
               person's labels has now been run, but the person is me, one
               labeler and not a technician, and 26 safety steps is a small
-              sample. On 16 October 2026, all 3,562 offline tests passed on
-              the code of build 179b4295c98a3143, with the network blocked, no
+              sample. On 16 October 2026, all 3,650 offline tests passed on
+              the code of build 17427277685ed433, with the network blocked, no
               key and no cost (<a href="#method">Appendix A</a>).
             </li>
           </ul>
@@ -751,10 +768,11 @@
             build. Every live run on build d24ed7c475dcd813 stayed under its
             cap: the highest, one of the ten first lookups, cost $0.0098. The
             runs on that build cost $0.1301 and 71 Tavily credits in total. The
-            whole build has spent $1.5457 of its $5 and 242 of its 300 Tavily
+            whole build has spent $1.5471 of its $5 and 242 of its 300 Tavily
             credits, a total that counts every live run on every build, the
-            safety step work of 29 and 30 September and the Claude comparison
-            of 15 October included (<a href="#safety">Part 9</a>). On
+            safety step work of 29 and 30 September, the Claude comparison of
+            15 October (<a href="#safety">Part 9</a>) and the MCP brief of 16
+            October (<a href="#mcp">Part 7</a>) included. On
             credits, a first pass uses at
             most 8 (5 searches and 3 fetches) and the one smaller retry up to 2
             more, so a brief uses at most 10, and 1,000 free credits cover about
@@ -807,8 +825,8 @@
             the success state when the documents do not support an answer,
             though for the three real unit cases (3, 4 and 5) each also counts
             as a miss in <a href="#results">Part 8</a>. It
-            shows warranty status on case 8, but not the replacement sweep or
-            the product recall check.
+            shows warranty status on case 8, but not the replacement sweep,
+            the product recall check or the MCP server.
           </p>
 
           <div class="decision">
@@ -1022,6 +1040,224 @@
               <li><span class="k">Why</span><span>A false match on a safety notice either frightens an owner for nothing or teaches them to ignore the next one.</span></li>
             </ul>
           </div>
+
+          <div id="mcp">
+            <div class="decision">
+              <span class="decision-num">Feature 9</span>
+              <h3>The advisor inside an AI assistant (MCP)</h3>
+              <p class="decision-risk">For: the owner who already asks an AI assistant for help</p>
+              <p>
+                The advisor turns a photo of an equipment data plate, the label
+                with its make, model and serial number, and a symptom into a
+                service brief that cites every claim to a documented source, or
+                says plainly that it does not know. It now also runs as an
+                MCP server. MCP, the Model Context Protocol, is an open standard
+                that lets an AI assistant call outside tools. It is built so
+                that an owner can ask an assistant, such as Claude Desktop or
+                Claude Code, for a brief in plain words, and the assistant
+                receives the advisor's own cited brief: every step to try first
+                with its source, every safety flag word for word, the documented
+                candidates for what is wrong, the warranty coverage line, the
+                cost, the run ID, and the location of the brief's page on the
+                owner's computer, the file to send the technician. So far,
+                Claude Code has called the tools in a free session in replay
+                mode, which answers from recorded model replies, and one live,
+                paid brief has run through the official MCP library's own
+                client, driven by a test program. Claude Desktop is untried, and
+                no assistant has run a live, paid brief yet.
+              </p>
+              <p>
+                The server runs on the owner's own computer. The app starts it
+                and talks to it over standard input and output, a direct
+                connection between two programs on one computer, so there is no
+                hosted service to sign up for and no network port; a live brief
+                still uses the owner's own keys for the paid services, as the
+                command line does. The server is built on the official MCP
+                library for Python, version 2.2.0, and offers four tools.
+                <code>get_service_brief</code> and <code>resume_brief</code> run
+                the same pipeline as asking and resuming from the command line.
+                <code>property_status</code> gives a property's warranty
+                coverage, each unit's age and any successor model the tool has
+                verified, and its stored product recall checks, free and
+                offline. <code>check_product_recalls</code> runs the product
+                recall check against the free recall service of the U.S.
+                Consumer Product Safety Commission (CPSC), which costs nothing
+                but asks first, because it sends requests to an outside service.
+                The server also offers two pages for the assistant to open: the
+                brief and the property page.
+              </p>
+              <p>
+                <strong>What the build keeps.</strong> The tools run the same
+                graph of steps through the same pieces as the command line, so
+                its rules apply unchanged: the citations, the refusals, the
+                warranty dates written by code, the safety check by Jev, a second
+                model that flags safety steps, and the spending ledger, which
+                reserves every paid call against a $0.15 cap per brief and $5 for
+                the whole build before the call is made. The server is part of
+                the build fingerprint, the fingerprint of the code that every run
+                record carries, so a run it starts names a build that covers the
+                code that confirmed its spend. Every call that costs money or
+                goes to an outside service first shows its preflight: the planned
+                calls and, for a paid one, their typical and worst case cost
+                against the $0.15 cap. It goes ahead only on the answer "proceed".
+                A confirmation is used once, bound to the tool, its exact
+                arguments and the exact preflight lines, and expires after ten
+                minutes; a preflight that changed before it was confirmed is
+                shown again, and nothing is sent.
+              </p>
+              <p>
+                <strong>Tested offline, then connected in replay.</strong> The
+                server's 29 test cases run with the network blocked, and 26 of
+                them go through the official library's own client (a client is
+                the part of an app that calls a server's tools; in these tests a
+                test program plays the app): 25 inside one
+                process and 1 over real standard input and output. They use the
+                protocol's 2026-07-28 version, and the earlier 2025-11-25 version
+                in the 4 cases on how the server asks the person. They show that
+                the same recorded case through the command line and through the
+                tools writes the same run record; that, in offline tests against
+                fake paid services, a live call refuses every missing, wrong,
+                reused, foreign or changed confirmation, with nothing sent and no
+                ledger row; and that every citation and safety flag reaches the
+                tool's response on nine recorded cases. MCP forms (elicitation,
+                in which the server asks the app to show the person a form to
+                fill in) have been answered only in these tests, and the
+                2025-11-25 version has run only here. The strictest test setting
+                fails any run that leaves out or skips one of the server's tests,
+                and all 46 planted bugs added for the server and that setting
+                (deliberate small breaks, used to check that the tests notice
+                them) were caught. Then, on 16 October 2026 and before any money
+                was spent, a test program made the first real connection through
+                the official client, in replay mode and at no cost. On the
+                recorded hot tub case it listed
+                all four tools, the brief paused, resumed and came back with 2
+                steps to try first, both cited, and 1 safety flag, and
+                <code>property_status</code> returned the property's 3
+                appliances.
+              </p>
+              <p>
+                <strong>One live brief, with a test program as the owner.</strong>
+                Then, in run t-bc31dd881bff44c4 on build 17427277685ed433, the
+                same test program started the server with live spending allowed
+                and talked to it through the official client over standard input
+                and output, the way Claude Desktop and Claude Code connect to a
+                local server, on the protocol's 2026-07-28 version and without
+                forms. No person was in the run. The test program played the
+                owner, under my approval given in advance at about $0.01: it
+                answered "proceed" only to a preflight whose typical cost was at
+                most $0.02 and whose worst case was at most the $0.15 cap, and
+                it confirmed the unit the plate shows. Asked for a brief from
+                the hot tub's clear plate photo and "panel shows FLO", the server
+                returned its preflight (typical $0.0109, worst case $0.15) and
+                sent nothing. On "proceed", it read the plate exactly (Sundance
+                Spas, Optima 880, serial 100915742, dated 06/2014) and paused for
+                the owner to confirm the unit and the code FLO, which came from
+                the owner's words, not from the plate. Resuming with the
+                confirmed unit returned its own preflight (typical $0.0105, worst
+                case $0.1497), and on a second "proceed" the brief finished. The
+                four tool calls took 15.95 seconds (0.35, 5.37, 0.20 and 10.03);
+                the whole session, from starting the server to closing it, took
+                17.82 seconds.
+              </p>
+              <p>
+                The brief was answered from memory, that is from facts an earlier
+                lookup had verified, with no web search, and held one confirmed
+                candidate: FLO, "Flow Switch Error: Water flow is restricted or
+                the switch is stuck.", cited to a dealer page. It cost $0.0014 by
+                the ledger, inside the $0.15 cap, about the same as the $0.0015
+                the same question cost from memory through the command line on
+                14 October. The difference is the length of what the model wrote
+                in the brief writing call, 1,080 output tokens against 1,274 (a
+                token is a word fragment, the unit models are billed by), not the
+                server's: both runs sent the model the same input. The run record gives
+                12.97 seconds of processing, against 9.8 seconds on 14 October,
+                12.96 of them in the two model calls. The run made no search and
+                no Jev call, so a research brief has not yet run live through the
+                server.
+              </p>
+              <p>
+                <strong>Then an AI assistant, in replay.</strong> Later that day,
+                Claude Code 2.1.299, running Claude Opus 5.5, was given the
+                server for one session only, in replay on the same build, so no
+                money was spent. Nothing was added to Claude Code's settings. The
+                session was non-interactive, with no person to answer questions,
+                and only the three advisor tools it needed were allowed, set in
+                advance, so no approval prompt was shown. The request was written
+                as an owner would write it: a guest says the hot tub's panel
+                shows FLO; here is the plate photo; if asked to confirm the unit,
+                confirm what the plate shows; check the property; report what to
+                try first with each step's source, any safety flags word for
+                word, the cost and the run ID. Claude Code connected, found the
+                four tools, and on its own asked for the brief and for the
+                property's status. The brief paused for the owner to confirm the
+                unit. The server asked by a form, which Claude Code canceled
+                automatically because the session was non-interactive, so the
+                run stayed paused. Claude then sent the confirmed unit itself,
+                taken from the owner's request, through
+                <code>resume_brief</code>, the path for apps without forms. The
+                brief came back with 2 steps to try first, both cited to dealer
+                pages, and 1 safety flag, raised by the brief's writer, the model
+                that wrote it; Jev's check shows as not recorded, because this
+                older recording holds no Jev answers. Claude's answer gave both
+                steps with their sources, the safety flag word for word and that
+                the writer raised it, that Jev's check was not recorded, the cost
+                labeled as replay with no real money spent, the run ID
+                t-7ecdeb193c584be8, and the property's warranty, product recall
+                and replacement status. It also added its own reading: it noted
+                that the plate's serial differs from the property's synthetic
+                record, and it called two lines in the brief contradictory and
+                said which to trust. That contradiction is a replay artifact,
+                since the recorded model text predates the unit details given in
+                this session, and it is the retelling the tool does not control.
+                The session took 34.5 seconds and cost the project nothing.
+              </p>
+              <ul class="tradeoff">
+                <li><span class="k">Gets</span><span>The advisor's cited brief, its refusals and its spending checks, from inside an AI assistant.</span></li>
+                <li><span class="k">Why</span><span>An owner who turns to an assistant first should get the documented answer there, not a guess, and should still confirm every paid call.</span></li>
+              </ul>
+            </div>
+            <p class="callout callout-warning">
+              <strong>What it cannot show yet.</strong> No assistant has yet run
+              a live, paid brief, and Claude Desktop has not been tried; the
+              setup guide,
+              <a href="https://github.com/Roanukz/ai-property-maintenance-advisor/blob/main/docs/mcp.md">docs/mcp.md</a>,
+              shows how to connect both apps. It is still unverified which apps
+              show MCP forms to the person, and without them both the owner's
+              confirmation of the unit and the "proceed" pass through the
+              assistant: the server cannot tell who supplied them, and the
+              assistant could send either without asking, even a model number
+              the plate did not show. In the Claude Code session, the assistant
+              did send the unit details itself, taken from the owner's request.
+              The app's own approval prompt before each tool call is then the
+              owner's only check: keep it on, and never set these tools to
+              always allow. How each app shows that prompt has not been
+              verified. The assistant retells the brief in its own words, and
+              that retelling is outside the tool's control: the tool's response
+              carries every citation and safety flag word for word, but the
+              assistant may leave some out, or add a reading of its own, as
+              Claude Code did. The live brief came from memory, so it had no
+              steps to try first and no safety flags; that safety flags reach
+              the response is shown on the recorded cases, not on this live
+              run.
+            </p>
+            <p>
+              <strong>Where each number comes from.</strong> The live brief's
+              cost, route and processing time come from its run record,
+              data/runs/t-bc31dd881bff44c4.json, and the spending ledger. The
+              per call times, both preflights and what the replay connection
+              showed come only from the test program's own logs, kept with its
+              script in data/runs/t-bc31dd881bff44c4.client/; the replay log
+              ends with the test script's own crash on its final summary line,
+              after every call had printed, and the script was fixed before the
+              live part. The Claude Code session is kept in
+              data/evidence/claude_code_replay_20261016/: every event of the
+              session, its one session settings, and two earlier attempts that
+              stopped before Claude Code was signed in. Its run record and brief
+              are data/runs/t-7ecdeb193c584be8.json and
+              data/briefs/t-7ecdeb193c584be8.html. These folders are kept out of
+              the public repository.
+            </p>
+          </div>
         </section>
 
         <section id="results">
@@ -1045,7 +1281,8 @@
             <li>v1's and v2's validators agree on the decision, the reason and the cleaned brief for all 180 differential test briefs: 16 from v1's guardrail tests and 164 new edge cases. The test needs v1's private source, so it skips on a fresh copy of the repository.</li>
             <li>A refusal or a budget stop clears candidates, steps, upgrade options and maintenance items; tier labels can be lowered by code, never raised; an observed code still narrows the answer.</li>
             <li>A stored fact needs a word for word evidence sentence from its page; a fact that fails is dropped, not downgraded.</li>
-            <li>On 16 October 2026, on the code of build 179b4295c98a3143, all 3,562 offline tests passed with the network blocked. A full run the same day caught all 1,599 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
+            <li>The MCP server keeps them too: the same recorded case through the command line and through its tools writes the same run record, and in offline tests against fake paid services a live call refuses every missing, wrong, reused, foreign or changed confirmation, with nothing sent and no ledger row (<a href="#mcp">Part 7</a>).</li>
+            <li>On 16 October 2026, on the code of build 17427277685ed433, all 3,650 offline tests passed with the network blocked. A full run the same day caught all 1,656 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
           </ul>
 
           <h3>Criteria, bars and results</h3>
@@ -1073,7 +1310,7 @@
                 <tr><td>Safety labels checked against a person's (SC12c)</td><td>One person labels the held out steps blind, sealed before scoring; nothing retuned; reported either way</td><td>Done: 162 of 175 agree with the model readers (Cohen's kappa 0.728; kappa is agreement corrected for chance, where 1 is perfect and 0 is no better than chance); by the person's labels Jev caught 22 of 26, inside overlapping intervals with both word lists and Claude (Part 9)</td><td>Offline from recorded answers; the Claude comparison live on 15 October 2026 (build 179b4295c98a3143)</td></tr>
                 <tr><td>Plate reading</td><td>Clear plate read; blurry plate left empty, not guessed</td><td class="yes">Pass: clear plate read exactly; blurry plate's model, serial and date marked unreadable</td><td>Live</td></tr>
                 <tr><td>Every run within its cap (SC11)</td><td>$0.15 or less per cheap mode run</td><td class="yes">Pass on every live run; highest $0.0098</td><td>Live, from the ledger</td></tr>
-                <tr><td>Whole build spend</td><td>$5 or less</td><td class="yes">$1.5457, counting every live run on every build and the safety step work, the Claude comparison included (Part 9); the runs on build d24ed7c475dcd813 cost $0.1301</td><td>Live, from the ledger</td></tr>
+                <tr><td>Whole build spend</td><td>$5 or less</td><td class="yes">$1.5471, counting every live run on every build and the safety step work, the Claude comparison (Part 9) and the MCP brief (Part 7) included; the runs on build d24ed7c475dcd813 cost $0.1301</td><td>Live, from the ledger</td></tr>
                 <tr><td>Time for a research brief</td><td>No target; reported</td><td>40.1 s; ten first lookups, median 41.3 s; refusals on the invented model 21.6 s to 27.2 s. Haiku 4.5 (build da738a1559ced359): 28.7 s and 25.8 s</td><td>Live, measured</td></tr>
                 <tr><td>Time for a brief from memory, and for a top up</td><td>No target; reported</td><td>9.8 s and 7.7 s from memory alone; 26.5 s for the short top up. Haiku 4.5 (build da738a1559ced359): 4.3 s and 5.5 s; 15.6 s and 15.7 s</td><td>Live, measured</td></tr>
               </tbody>
@@ -1610,8 +1847,9 @@
             <li>The build ran in phases. Replay phases came first, at no cost; live phases ran only after a typed "proceed", with the planned calls and spend printed first.</li>
             <li>The ledger reserves each call before it is made, against a $5 cap for the whole build.</li>
             <li>Every library name was checked against the current release before use.</li>
-            <li>Planted bugs test the tests: a full run on 16 October 2026, on the code of build 179b4295c98a3143, caught all 1,599.</li>
-            <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to its build: the live evaluation and the demo to build d24ed7c475dcd813, the product recall check to build ad11e6e15a55d30a, Haiku 4.5's comparison figures to builds da738a1559ced359 and 9a64835e86a5a6c8, and the labeled set scores to Jev calls on 30 September under the locked settings and model jev-1.13.0, and the Claude comparison to build 179b4295c98a3143. The whole build spend is the one total that also counts runs on earlier builds.</li>
+            <li>Planted bugs test the tests: a full run on 16 October 2026, on the code of build 17427277685ed433, caught all 1,656.</li>
+            <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to its build: the live evaluation and the demo to build d24ed7c475dcd813, the product recall check to build ad11e6e15a55d30a, Haiku 4.5's comparison figures to builds da738a1559ced359 and 9a64835e86a5a6c8, the labeled set scores to Jev calls on 30 September under the locked settings and model jev-1.13.0, the Claude comparison to build 179b4295c98a3143, and the live MCP brief to build 17427277685ed433. The whole build spend is the one total that also counts runs on other builds.</li>
+            <li>The MCP server was built and tested offline first, in replay and against fake versions of the paid services. Its first real connection ran in replay, at no cost. Only then did one live brief run, which I approved in advance at about $0.01. No person was in that run: a test program played the owner, answering "proceed" to each of its two preflights only because each was within limits set beforehand (a typical cost of at most $0.02 and a worst case of at most the $0.15 cap), and confirming the unit the plate shows. Later the same day, Claude Code called the tools in a free replay session.</li>
             <li>The safety check was scored on a labeled set built before any scoring, with its settings locked and its choice rule written before the held out half was scored once.</li>
             <li>The check of those labels against a person's ran blind on 15 October 2026. A local labeling page showed me each held out step with the instructions, worked examples and hazard choices the model readers had, and no reader's vote or check's flag; an answer could be changed until sealing, and the latest one stands. The answers were then sealed by a hash (a fingerprint of a file's contents that changes if one byte does) before any score existed. Once they were sealed, the labeling page would not start again, and the scorers check that the labels still match the seal. The 3 answers I changed after seeing the disagreements are kept in a separate file and scored nowhere. The locked settings file and Jev's settings were not touched, and nothing was retuned. Eleven of my yes answers named only "other" as the hazard, which the protocol counts as no, exactly as it counts the readers' votes.</li>
             <li>The Claude comparison was registered before it ran: its settings were written down and fixed in code (settings fingerprint 658f072743accb13), with Claude Haiku 5.5 asked Jev's exact question and criteria, one call per step, effort low, a single true or false answer, and no thinking, sampling or fallback setting; a true answer is a flag, with no threshold and no tuning; a decline would count as not flagged and be reported apart; one run only, retried only on a lost connection; scored against my sealed labels and the readers' majority, beside Jev and both word lists. It was planned at about $0.02 and capped at $0.15, and cost $0.0182. Its run record names build 179b4295c98a3143, and its spend is ledger run claude-judge-152437a0a5ed, both of 15 October 2026.</li>
@@ -1633,6 +1871,7 @@
             <li>The product recall check matches model names, not serial ranges, and has run live once.</li>
             <li>Cost comparisons with v1 are estimates computed from v1's logged usage, not measurements of v1's bill.</li>
             <li>The safety step labels came from three model readers and one person, me; no technician has labeled them, and the readers were Claude models, which may favor Claude in the comparison.</li>
+            <li>The MCP server has run one live brief, through the official library's own client driven by a test program, with no person in it and no search or Jev call. Claude Code has called its tools only in replay, Claude Desktop has not been tried, and an assistant's retelling of a brief is outside the tool's control.</li>
           </ul>
         </section>
 
@@ -1655,7 +1894,7 @@
             <li><strong>Ledger:</strong> the running record of spend, checked before every paid call.</li>
             <li><strong>Planted bug:</strong> a deliberate small break in the code, used to check that the tests notice it.</li>
             <li><strong>Token:</strong> a word fragment; models are billed per million tokens.</li>
-            <li><strong>Build:</strong> a single frozen version of the code, identified by a fingerprint stored in every run record. The live evaluation and the demo ran on build d24ed7c475dcd813, the product recall check on build ad11e6e15a55d30a and the Claude comparison on build 179b4295c98a3143; Haiku 4.5's comparison figures come from builds da738a1559ced359 and 9a64835e86a5a6c8; "the whole build" spend is the project's total.</li>
+            <li><strong>Build:</strong> a single frozen version of the code, identified by a fingerprint stored in every run record. The live evaluation and the demo ran on build d24ed7c475dcd813, the product recall check on build ad11e6e15a55d30a, the Claude comparison on build 179b4295c98a3143 and the MCP brief on build 17427277685ed433; Haiku 4.5's comparison figures come from builds da738a1559ced359 and 9a64835e86a5a6c8; "the whole build" spend is the project's total.</li>
             <li><strong>Research effort:</strong> a setting for how much the model thinks and how long it keeps researching; high for the research step here.</li>
             <li><strong>Warranty status:</strong> whether each warranty component is active on the run's date, worked out by code from its term and the install or purchase date.</li>
             <li><strong>Successor model:</strong> the model a maker names as replacing a discontinued one.</li>
@@ -1672,6 +1911,8 @@
             <li><strong>Paired test:</strong> a test that compares two checks step by step on the same steps, counting only the steps where they disagree; here, McNemar's exact test.</li>
             <li><strong>p value:</strong> the chance of a split at least as lopsided as the one seen, if the two checks were equally good; the smaller it is, the harder the split is to put down to chance, and when many comparisons are run, a small one can still turn up by chance.</li>
             <li><strong>Hash:</strong> a short fingerprint of a file's contents that changes if one byte changes; sealing the labels by hash shows they were not edited after scoring began.</li>
+            <li><strong>MCP:</strong> the Model Context Protocol, an open standard that lets an AI assistant, such as Claude Desktop or Claude Code, call outside tools; here, the advisor's four tools, served from the owner's own computer.</li>
+            <li><strong>Preflight:</strong> what a command or tool shows before a call that costs money or goes to an outside service: the planned calls and, for a paid call, their typical and worst case cost, the run cap and the spend so far. Nothing goes out until the answer is exactly "proceed".</li>
           </ul>
         </section>
       </main>

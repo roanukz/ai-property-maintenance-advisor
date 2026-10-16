@@ -13572,3 +13572,533 @@ search = '''            tries chance alone can produce a lopsided split; a commo
 replace = '''            tries chance alone can produce a lopsided split. How the test was run is in'''
 tests = ["agent/tests/test_teardown.py::test_paired_section_gives_both_sides_of_every_jev_split_by_roanuks_labels"]
 why = "the page sorts splits by the 0.05 bar but leaves out that a correction for its 24 comparisons leaves none under it"
+
+[[mutation]]
+id = "mcp_resume_tool_renamed"
+file = "agent/mcp_server.py"
+search = '''TOOL_RESUME = "resume_brief"'''
+replace = '''TOOL_RESUME = "resume_thread"'''
+tests = ["agent/tests/test_mcp_server.py::test_tools_their_schemas_and_resources"]
+why = "resume_brief is listed under another name, so a client following a paused result cannot find it"
+
+[[mutation]]
+id = "mcp_status_tool_not_read_only"
+file = "agent/mcp_server.py"
+search = '''annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False, idempotent_hint=True))'''
+replace = '''annotations=ToolAnnotations(read_only_hint=False, open_world_hint=False, idempotent_hint=True))'''
+tests = ["agent/tests/test_mcp_server.py::test_tools_their_schemas_and_resources"]
+why = "property_status loses the read only hint that tells a client it changes nothing"
+
+[[mutation]]
+id = "mcp_brief_identity_schema_open"
+file = "agent/mcp_server.py"
+search = '''    model_config = ConfigDict(extra="forbid")
+
+    manufacturer: str | None = Field(None, description="Manufacturer, as printed on the data plate")'''
+replace = '''    model_config = ConfigDict(extra="ignore")
+
+    manufacturer: str | None = Field(None, description="Manufacturer, as printed on the data plate")'''
+tests = ["agent/tests/test_mcp_server.py::test_tools_their_schemas_and_resources"]
+why = "the typed identity accepts any key, so a misspelled field is dropped without a word"
+
+[[mutation]]
+id = "mcp_paused_drops_thread_id"
+file = "agent/mcp_server.py"
+search = '''                                 thread_id=seg.thread_id, run_id=seg.run_id, pause=pause,'''
+replace = '''                                 thread_id=None, run_id=seg.run_id, pause=pause,'''
+tests = ["agent/tests/test_mcp_server.py::test_replay_brief_pauses_then_resume_brief_finishes_it"]
+why = "a paused result does not say which thread to resume"
+
+[[mutation]]
+id = "mcp_resume_ignores_confirmed_fields"
+file = "agent/mcp_server.py"
+search = '''    args = argparse.Namespace(manufacturer=fields.get("manufacturer"), model=fields.get("model"),
+                              serial=fields.get("serial"), date=fields.get("manufacture_date"),'''
+replace = '''    args = argparse.Namespace(manufacturer=None, model=None,
+                              serial=None, date=None,'''
+tests = ["agent/tests/test_mcp_server.py::test_replay_brief_pauses_then_resume_brief_finishes_it"]
+why = "the plate's text is confirmed in place of the owner's answer"
+
+[[mutation]]
+id = "mcp_brief_resource_wrong_folder"
+file = "agent/mcp_server.py"
+search = '''        root = config.BRIEFS_OUT_DIR.resolve()'''
+replace = '''        root = config.PAGES_DIR.resolve()'''
+tests = ["agent/tests/test_mcp_server.py::test_replay_brief_pauses_then_resume_brief_finishes_it"]
+why = "the brief resource reads outside the folder the runs write their briefs to"
+
+[[mutation]]
+id = "mcp_ask_drops_photo"
+file = "agent/mcp_server.py"
+search = '''        data = intake_input(symptom=req.symptom, photo_path=req.photo_path, identity=req.identity,'''
+replace = '''        data = intake_input(symptom=req.symptom, photo_path=None, identity=req.identity,'''
+tests = ["agent/tests/test_mcp_server.py::test_replay_runs_match_advisor_ask_and_resume"]
+why = "the plate photo never reaches intake, so the tool runs a different graph input than advisor ask"
+
+[[mutation]]
+id = "mcp_ask_drops_typed_identity"
+file = "agent/mcp_server.py"
+search = '''        data = intake_input(symptom=req.symptom, photo_path=req.photo_path, identity=req.identity,'''
+replace = '''        data = intake_input(symptom=req.symptom, photo_path=req.photo_path, identity=None,'''
+tests = ["agent/tests/test_mcp_server.py::test_replay_runs_match_advisor_ask_and_resume"]
+why = "a typed identity never reaches intake, so the tool pauses where advisor ask answers"
+
+[[mutation]]
+id = "mcp_modern_client_asked_mid_call"
+file = "agent/mcp_server.py"
+search = '''        if version is not None and is_version_at_least(version, RETURNED_QUESTIONS_VERSION):
+            return cls(returns=True)'''
+replace = '''        if False:
+            return cls(returns=True)'''
+tests = ["agent/tests/test_mcp_server.py::test_elicitation_asks_the_identity_question_and_finishes_in_one_call"]
+why = "a 2026-07-28 client is treated as one that takes a request mid call, which it cannot, so it is never asked"
+
+[[mutation]]
+id = "mcp_returned_identity_question_dropped"
+file = "agent/mcp_server.py"
+search = '''            if asker.returns:
+                pending_id = self.pending.add(Pending(kind=KEY_IDENTITY,'''
+replace = '''            if False:
+                pending_id = self.pending.add(Pending(kind=KEY_IDENTITY,'''
+tests = ["agent/tests/test_mcp_server.py::test_elicitation_asks_the_identity_question_and_finishes_in_one_call"]
+why = "a 2026-07-28 client that declared elicitation is handed the pause instead of being asked"
+
+[[mutation]]
+id = "mcp_identity_form_not_prefilled"
+file = "agent/mcp_server.py"
+search = '''        model=(str, Field(default=_text(proposed.get("model")),'''
+replace = '''        model=(str, Field(default="",'''
+tests = ["agent/tests/test_mcp_server.py::test_elicitation_asks_the_identity_question_and_finishes_in_one_call"]
+why = "the identity form drops the model the plate read, so the owner retypes what is already known"
+
+[[mutation]]
+id = "mcp_returned_decline_resumes"
+file = "agent/mcp_server.py"
+search = '''            if not isinstance(answer, ElicitResult) or answer.action != "accept":
+                return self.paused(view, mode, note=f"The identity question was {asked_result(answer)}.")'''
+replace = '''            if not isinstance(answer, ElicitResult) or answer.action == "cancel":
+                return self.paused(view, mode, note=f"The identity question was {asked_result(answer)}.")'''
+tests = ["agent/tests/test_mcp_server.py::test_a_declined_identity_question_leaves_the_thread_paused"]
+why = "a declined returned question resumes the run with the plate's text"
+
+[[mutation]]
+id = "mcp_pushed_decline_resumes"
+file = "agent/mcp_server.py"
+search = '''                if answer.action != "accept":
+                    return self.paused(seg, mode, note=f"The identity question was {asked_result(answer)}.")'''
+replace = '''                if answer.action == "cancel":
+                    return self.paused(seg, mode, note=f"The identity question was {asked_result(answer)}.")'''
+tests = ["agent/tests/test_mcp_server.py::test_a_declined_identity_question_leaves_the_thread_paused"]
+why = "a declined request mid call goes on as if it were accepted"
+
+[[mutation]]
+id = "mcp_writer_flags_dropped"
+file = "agent/mcp_server.py"
+search = '''             for s in steps if s.safety_flag]'''
+replace = '''             for s in steps if s.safety_flag and s.raised_by != "writer"]'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "safety steps the writer flagged are left out of safety_flags"
+
+[[mutation]]
+id = "mcp_citation_number_off_by_one"
+file = "agent/mcp_server.py"
+search = '''    return Source(number=index + 1, url=s["url"],'''
+replace = '''    return Source(number=index, url=s["url"],'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "a cited source is numbered as its neighbor, so the response's [n] differs from the brief page's"
+
+[[mutation]]
+id = "mcp_text_drops_safety_label"
+file = "agent/mcp_server.py"
+search = '''            lines.append(f"  {s.position}. {'SAFETY: ' if s.safety_flag else ''}{s.step}{_cite(s.source)}")'''
+replace = '''            lines.append(f"  {s.position}. {s.step}{_cite(s.source)}")'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "the text a model reads no longer marks a safety step"
+
+[[mutation]]
+id = "mcp_text_drops_step_citation"
+file = "agent/mcp_server.py"
+search = '''            lines.append(f"  {s.position}. {'SAFETY: ' if s.safety_flag else ''}{s.step}{_cite(s.source)}")'''
+replace = '''            lines.append(f"  {s.position}. {'SAFETY: ' if s.safety_flag else ''}{s.step}")'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "the text a model reads drops each step's source"
+
+[[mutation]]
+id = "mcp_candidate_source_dropped"
+file = "agent/mcp_server.py"
+search = '''                  source=_source(sources, c.get("source_index")))
+        for c in brief.get("candidates") or [] if isinstance(c, Mapping)]'''
+replace = '''                  source=None)
+        for c in brief.get("candidates") or [] if isinstance(c, Mapping)]'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "documented candidates lose their source citation"
+
+[[mutation]]
+id = "mcp_coverage_line_dropped"
+file = "agent/mcp_server.py"
+search = '''            age_statement=warranty.get("age_statement"), coverage_statement=warranty.get("coverage_statement"),'''
+replace = '''            age_statement=warranty.get("age_statement"), coverage_statement=None,'''
+tests = ["agent/tests/test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response"]
+why = "the warranty coverage line code wrote is left out of the response"
+
+[[mutation]]
+id = "mcp_gate_accepts_any_confirm"
+file = "agent/mcp_server.py"
+search = '''                if not confirmed(confirm):
+                    return False, None'''
+replace = '''                if not confirm:
+                    return False, None'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed"]
+why = "a typed line other than exactly proceed spends"
+
+[[mutation]]
+id = "mcp_gate_confirm_without_preflight"
+file = "agent/mcp_server.py"
+search = '''        note = None
+        if confirm is not None and confirmation_id:'''
+replace = '''        note = None
+        if confirm == "proceed" and not confirmation_id:
+            return True, None
+        if confirm is not None and confirmation_id:'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed"]
+why = "confirm=proceed spends on the first call, before any preflight was shown"
+
+[[mutation]]
+id = "mcp_pending_reusable"
+file = "agent/mcp_server.py"
+search = '''            pending = self._items.pop(ident, None)'''
+replace = '''            pending = self._items.get(ident)'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed", "agent/tests/test_mcp_server.py::test_pending_answers_are_used_once_bound_to_their_call_and_expire"]
+why = "a confirmation can be used again after it was answered"
+
+[[mutation]]
+id = "mcp_pending_ignores_arguments"
+file = "agent/mcp_server.py"
+search = '''        if pending.tool != tool or pending.digest != digest or pending.kind not in kinds:'''
+replace = '''        if pending.tool != tool or pending.kind not in kinds:'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed", "agent/tests/test_mcp_server.py::test_pending_answers_are_used_once_bound_to_their_call_and_expire"]
+why = "a confirmation shown for other arguments spends on this call"
+
+[[mutation]]
+id = "mcp_elicited_proceed_not_checked"
+file = "agent/mcp_server.py"
+search = '''    from agent.live.preflight import confirmed
+
+    if isinstance(answer, ElicitResult):'''
+replace = '''    def confirmed(line: str) -> bool:
+        return True
+
+    if isinstance(answer, ElicitResult):'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed"]
+why = "any accepted elicitation spends, whatever the person typed"
+
+[[mutation]]
+id = "mcp_preflight_drops_keys_line"
+file = "agent/mcp_server.py"
+search = '''        lines.insert(1, f"keys: {keys} (values are never shown)")
+        return lines'''
+replace = '''        return lines'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed"]
+why = "the preflight the tool shows differs from the one advisor ask prints"
+
+[[mutation]]
+id = "mcp_resume_preflight_skipped"
+file = "agent/mcp_server.py"
+search = '''            if mode in config.LIVE_MODES:
+                session, lines = await self._work(self.resume_preflight, view.thread_id, mode)
+                pending_id = self.pending.add(Pending(kind=STAGE_RESUME,'''
+replace = '''            if False:
+                session, lines = await self._work(self.resume_preflight, view.thread_id, mode)
+                pending_id = self.pending.add(Pending(kind=STAGE_RESUME,'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_by_elicitation_confirms_each_paid_segment"]
+why = "after the identity answer, the rest of a live run spends without its own preflight"
+
+[[mutation]]
+id = "mcp_live_session_confirm_never_refuses"
+file = "agent/mcp_server.py"
+search = '''        if self.approved is None or lines != self.approved:
+            raise PreflightChanged(lines)'''
+replace = '''        if False:
+            raise PreflightChanged(lines)'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_brief_by_elicitation_confirms_each_paid_segment"]
+why = "a live run whose preflight nobody confirmed still spends"
+
+[[mutation]]
+id = "mcp_gate_ignores_changed_lines"
+file = "agent/mcp_server.py"
+search = '''                if list(pending.lines) == lines:
+                    return True, None'''
+replace = '''                if True:
+                    return True, None'''
+tests = ["agent/tests/test_mcp_server.py::test_a_preflight_that_moved_after_it_was_shown_is_shown_again"]
+why = "a confirmation of an old preflight spends after the build spend moved"
+
+[[mutation]]
+id = "mcp_live_failure_not_redacted"
+file = "agent/mcp_server.py"
+search = '''                                   session.secrets)) from None'''
+replace = '''                                   [])) from None'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_failure_is_reported_without_a_key"]
+why = "a live failure's text reaches the model with a key value in it"
+
+[[mutation]]
+id = "mcp_thread_mode_check_off"
+file = "agent/mcp_server.py"
+search = '''        if values.get("mode") != mode:
+            raise cli.CliRefusal(f"thread {thread_id} ran in {values.get('mode')!r} mode, not {mode!r}")'''
+replace = '''        if False:
+            raise cli.CliRefusal(f"thread {thread_id} ran in {values.get('mode')!r} mode, not {mode!r}")'''
+tests = ["agent/tests/test_mcp_server.py::test_resume_brief_refuses_what_advisor_resume_refuses_and_never_reruns_a_finished_thread"]
+why = "a replay thread is resumed as a live one"
+
+[[mutation]]
+id = "mcp_finished_thread_resumed"
+file = "agent/mcp_server.py"
+search = '''        if not view.paused:
+            return self.finished(view, mode, note="This thread is not paused, so nothing was run; this is the brief "'''
+replace = '''        if False:
+            return self.finished(view, mode, note="This thread is not paused, so nothing was run; this is the brief "'''
+tests = ["agent/tests/test_mcp_server.py::test_resume_brief_refuses_what_advisor_resume_refuses_and_never_reruns_a_finished_thread"]
+why = "a finished thread is handled as a paused one instead of shown as it was written"
+
+[[mutation]]
+id = "mcp_status_wall_clock"
+file = "agent/mcp_server.py"
+search = '''        as_of = cli._today()
+        appliances = registry.list_appliances(property_id)'''
+replace = '''        as_of = datetime.now(UTC).date()
+        appliances = registry.list_appliances(property_id)'''
+tests = ["agent/tests/test_mcp_server.py::test_property_status_is_offline_and_shows_what_the_property_page_shows"]
+why = "property_status computes statuses for the wall clock, not the one pinned UTC date"
+
+[[mutation]]
+id = "mcp_status_coverage_rows_from_other_appliance"
+file = "agent/mcp_server.py"
+search = '''            rows = coverage_rule.coverage_rows(registry.warranty_coverage(a["id"]), a, as_of)'''
+replace = '''            rows = coverage_rule.coverage_rows(registry.warranty_coverage("appl-softener"), a, as_of)'''
+tests = ["agent/tests/test_mcp_server.py::test_property_status_is_offline_and_shows_what_the_property_page_shows"]
+why = "an appliance shows another appliance's warranty coverage"
+
+[[mutation]]
+id = "mcp_property_page_wrong_date"
+file = "agent/mcp_server.py"
+search = '''                                    generated_at=cli._today().isoformat(), recalls_dir=config.RECALLS_DIR)'''
+replace = '''                                    generated_at=datetime.now(UTC).date().isoformat(), recalls_dir=config.RECALLS_DIR)'''
+tests = ["agent/tests/test_mcp_server.py::test_property_status_is_offline_and_shows_what_the_property_page_shows"]
+why = "the property page resource is dated differently from the page advisor property show writes"
+
+[[mutation]]
+id = "mcp_pending_never_expires"
+file = "agent/mcp_server.py"
+search = '''        if pending is None or pending.expires <= self.clock():
+            return None'''
+replace = '''        if pending is None:
+            return None'''
+tests = ["agent/tests/test_mcp_server.py::test_pending_answers_are_used_once_bound_to_their_call_and_expire"]
+why = "a confirmation outlives CONFIRMATION_TTL_S"
+
+[[mutation]]
+id = "mcp_pending_ignores_tool"
+file = "agent/mcp_server.py"
+search = '''        if pending.tool != tool or pending.digest != digest or pending.kind not in kinds:'''
+replace = '''        if pending.digest != digest or pending.kind not in kinds:'''
+tests = ["agent/tests/test_mcp_server.py::test_pending_answers_are_used_once_bound_to_their_call_and_expire"]
+why = "a confirmation shown for one tool answers another"
+
+[[mutation]]
+id = "mcp_recalls_send_before_gate"
+file = "agent/mcp_server.py"
+search = '''        lines = await self._work(self.recalls_preflight, appliances)
+        approved = False'''
+replace = '''        lines = await self._work(self.recalls_preflight, appliances)
+        await self._work(self.send_recall_checks, appliances)
+        approved = False'''
+tests = ["agent/tests/test_mcp_server.py::test_check_product_recalls_sends_nothing_until_proceed"]
+why = "the product recall requests go out before the person confirms"
+
+[[mutation]]
+id = "mcp_recalls_proceed_bypass"
+file = "agent/mcp_server.py"
+search = '''        if not approved:
+            approved, out = await self.gate(ctx, asker, stage=STAGE_RECALLS,'''
+replace = '''        if confirm == "proceed":
+            approved = True
+        if not approved:
+            approved, out = await self.gate(ctx, asker, stage=STAGE_RECALLS,'''
+tests = ["agent/tests/test_mcp_server.py::test_check_product_recalls_sends_nothing_until_proceed"]
+why = "confirm=proceed sends the product recall requests on the first call"
+
+[[mutation]]
+id = "mcp_recalls_query_synthetic_makers"
+file = "agent/mcp_server.py"
+search = '''                if product_recalls.is_synthetic_maker(a):
+                    result = product_recalls.stored_result(None, a)'''
+replace = '''                if False:
+                    result = product_recalls.stored_result(None, a)'''
+tests = ["agent/tests/test_mcp_server.py::test_check_product_recalls_sends_nothing_until_proceed"]
+why = "an invented maker is sent to CPSC"
+
+[[mutation]]
+id = "mcp_recalls_elicited_answer_not_checked"
+file = "agent/mcp_server.py"
+search = '''                if not proceed_answered((ctx.input_responses or {}).get(KEY_PROCEED)):
+                    return self.recalls_not_confirmed(targets, lines)'''
+replace = '''                if False:
+                    return self.recalls_not_confirmed(targets, lines)'''
+tests = ["agent/tests/test_mcp_server.py::test_check_product_recalls_sends_nothing_until_proceed"]
+why = "a returned question's answer sends the requests whatever the person typed"
+
+[[mutation]]
+id = "mcp_recalls_drop_model_number"
+file = "agent/mcp_server.py"
+search = '''                    check = product_recalls.check_appliance(a)'''
+replace = '''                    check = product_recalls.check_appliance({**a, "model_number": None})'''
+tests = ["agent/tests/test_mcp_server.py::test_the_recall_check_stores_what_advisor_property_recalls_live_stores"]
+why = "the tool checks without the model number the command compares, so it stores a different check"
+
+[[mutation]]
+id = "build_info_excludes_mcp_server"
+file = "agent/build_info.py"
+search = '''    "safety_eval/",
+})'''
+replace = '''    "safety_eval/",
+    "mcp_server.py",
+})'''
+tests = ["agent/tests/test_mcp_server.py::test_the_server_is_in_the_build_fingerprint_and_imports_nothing_it_leaves_out"]
+why = "the MCP server drops out of the build, so an edit to the code that gates live spend is not a new build"
+
+[[mutation]]
+id = "mcp_main_prints_to_stdout"
+file = "agent/mcp_server.py"
+search = '''    build_server(live=args.live, cassette=args.cassette).run("stdio")'''
+replace = '''    print("advisor-mcp: serving over stdio", flush=True)
+    build_server(live=args.live, cassette=args.cassette).run("stdio")'''
+tests = ["agent/tests/test_mcp_server.py::test_the_server_starts_over_stdio_from_its_entry_point"]
+why = "a line printed before serving lands on the stdio wire and corrupts the protocol"
+
+[[mutation]]
+id = "mcp_main_skips_mode_check"
+file = "agent/mcp_server.py"
+search = '''        mode = cli.resolve_mode(os.environ, live=args.live)
+        cli.resolve_cassette(args.cassette, os.environ, mode=mode)'''
+replace = '''        mode = "replay"
+        cli.resolve_cassette(args.cassette, os.environ, mode=mode)'''
+tests = ["agent/tests/test_mcp_server.py::test_the_entry_point_refuses_a_live_mode_without_live"]
+why = "the server starts in a live mode without --live, and --live starts a replay server"
+
+[[mutation]]
+id = "mcp_live_run_without_session"
+file = "agent/mcp_server.py"
+search = '''        if mode in config.LIVE_MODES and (session is None or session.approved is None):'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_run_never_starts_without_a_confirmed_session"]
+why = "a live run segment starts with no confirmed session when a code path forgets the confirmation"
+
+[[mutation]]
+id = "gate_requirements_mcp_test_dropped"
+file = "agent/tests/gate_requirements.json"
+search = '''        "test_mcp_gate.py::test_phase_7_requires_every_mcp_test_and_nothing_missing"
+'''
+replace = '''        "test_mcp_server.py::test_a_declined_identity_question_leaves_the_thread_paused"
+'''
+tests = ["agent/tests/test_mcp_gate.py::test_phase_7_requires_every_mcp_test_and_nothing_missing"]
+why = "a gate run could leave out an MCP server test"
+
+# ---------------------------------------------------------------------------
+# test_teardown.py: the MCP section, the address a resume links to (index.html#mcp)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "teardown_mcp_anchor_renamed"
+file = "index.html"
+search = '<div id="mcp">'
+replace = '<div id="mcp-server">'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the anchor a resume links to, index.html#mcp, lands nowhere"
+
+[[mutation]]
+id = "teardown_mcp_first_use_unexplained"
+file = "index.html"
+search = '''Through a new MCP server (MCP, the Model Context Protocol, is an
+              open standard that lets an AI assistant call outside tools),'''
+replace = '''Through a new MCP server,'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the Summary names MCP first, with no plain explanation of what it is"
+
+[[mutation]]
+id = "teardown_mcp_section_unexplained"
+file = "index.html"
+search = 'MCP server. MCP, the Model Context Protocol, is an open standard'
+replace = 'MCP server. It is an open standard'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "a reader who lands on index.html#mcp from a resume meets MCP unexplained"
+
+[[mutation]]
+id = "teardown_mcp_run_dropped"
+file = "index.html"
+search = 'run t-bc31dd881bff44c4 on build 17427277685ed433'
+replace = 'run on build 17427277685ed433'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer names the live run its figures come from"
+
+[[mutation]]
+id = "teardown_mcp_build_dropped"
+file = "index.html"
+search = 'run t-bc31dd881bff44c4 on build 17427277685ed433'
+replace = 'run t-bc31dd881bff44c4'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer names the build its live run ran on"
+
+[[mutation]]
+id = "teardown_mcp_limit_apps_dropped"
+file = "index.html"
+search = '''No assistant has yet run
+              a live, paid brief, and Claude Desktop has not been tried; the'''
+replace = '''An assistant has run
+              a live, paid brief, and Claude Desktop works; the'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer says that no assistant has run a live, paid brief and that Claude Desktop is untried"
+
+[[mutation]]
+id = "teardown_mcp_limit_forms_dropped"
+file = "index.html"
+search = 'shows how to connect both apps. It is still unverified which apps'
+replace = 'shows how to connect both apps. It is known which apps'
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section claims it is known which apps show MCP forms, which no run has checked, and stops saying that without them the unit's confirmation and the proceed pass through the assistant"
+
+[[mutation]]
+id = "teardown_mcp_limit_always_allow_dropped"
+file = "index.html"
+search = '''owner's only check: keep it on, and never set these tools to
+              always allow.'''
+replace = '''owner's only check.'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section stops telling the reader to keep the app's approval prompt on and never to always allow the tools"
+
+[[mutation]]
+id = "teardown_mcp_limit_retelling_dropped"
+file = "index.html"
+search = '''that retelling is outside the tool's control: the tool's response'''
+replace = '''the tool's response'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section no longer says the assistant's retelling of a brief is outside the tool's control"
+
+[[mutation]]
+id = "teardown_mcp_limit_live_flags_dropped"
+file = "index.html"
+search = '''that safety flags reach
+              the response is shown on the recorded cases, not on this live
+              run.'''
+replace = '''and safety flags reach
+              the response on every run.'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "the MCP section claims the live run showed safety flags reaching the response; only the recorded cases show it"
+
+[[mutation]]
+id = "teardown_terms_drop_mcp"
+file = "index.html"
+search = '''            <li><strong>MCP:</strong> the Model Context Protocol, an open standard'''
+replace = '''            <li><strong>MCP:</strong> a standard'''
+tests = ["agent/tests/test_teardown.py::test_mcp_section_names_its_run_build_and_limits"]
+why = "Appendix B no longer says what MCP stands for or what it does"

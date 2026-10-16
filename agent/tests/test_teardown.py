@@ -31,6 +31,18 @@ SUMMARY_LEADS = [
     "Cautions, and how to check.",
 ]
 BYLINE = "Roanuk Zaman \u00b7 Product teardown of a tool I designed, directed and shipped"
+# The MCP section (index.html#mcp): the live run and build it reports, and the limits it must state.
+MCP_RUN = "t-bc31dd881bff44c4"
+MCP_BUILD = "17427277685ed433"
+MCP_EXPLAINED = "MCP, the Model Context Protocol, is an open standard that lets an AI assistant call outside tools"
+MCP_LIMITS = (
+    "No assistant has yet run a live, paid brief, and Claude Desktop has not been tried",
+    "unverified which apps show MCP forms to the person, and without them both the owner's confirmation of the"
+    " unit and the \"proceed\" pass through the assistant",
+    "never set these tools to always allow",
+    "that retelling is outside the tool's control",
+    "shown on the recorded cases, not on this live run",
+)
 # Attributes whose text a reader sees or hears (tooltips, alt text, labels).
 VISIBLE_ATTRS = ("alt", "title", "aria-label", "placeholder", "value")
 
@@ -273,3 +285,63 @@ def test_paired_section_gives_both_sides_of_every_jev_split_by_roanuks_labels() 
             assert cited in text, f"{pair['first']} against {pair['second']}, {kind}: {cited} missing"
     assert text.count("A common bar is a p value under 0.05.") == 1, text
     assert "dividing the 0.05 bar by the 24 comparisons, leaves none of them under it" in text, text
+
+
+class _ElementText(HTMLParser):
+    """The text inside the one element with a given id, however its tags nest."""
+
+    def __init__(self, element_id: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self.element_id = element_id
+        self.tag: str | None = None
+        self.depth = 0
+        self.closed = False
+        self.chunks: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if self.tag is None and dict(attrs).get("id") == self.element_id:
+            self.tag, self.depth = tag, 1
+        elif tag == self.tag and not self.closed:
+            self.depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == self.tag and not self.closed:
+            self.depth -= 1
+            self.closed = self.depth == 0
+
+    def handle_data(self, data: str) -> None:
+        if self.tag is not None and not self.closed:
+            self.chunks.append(data)
+
+
+def _element_text(page: str, element_id: str) -> str:
+    parser = _ElementText(element_id)
+    parser.feed(page)
+    assert parser.tag is not None, f"index.html has no element with id={element_id!r}"
+    assert parser.closed, f"the element with id={element_id!r} is never closed"
+    return re.sub(r"\s+", " ", "".join(parser.chunks)).strip()
+
+
+def test_mcp_section_names_its_run_build_and_limits() -> None:
+    """The MCP section is the address a resume links to (index.html#mcp), so it must stand on
+    its own: one element carries the anchor, MCP is explained where the page first names it and
+    again inside the section, the section names the live run and the build it ran on, and it
+    states every limit the evidence leaves open; Appendix B defines MCP. Mutations
+    teardown_mcp_anchor_renamed, teardown_mcp_first_use_unexplained,
+    teardown_mcp_section_unexplained, teardown_mcp_run_dropped, teardown_mcp_build_dropped,
+    teardown_mcp_limit_apps_dropped, teardown_mcp_limit_forms_dropped,
+    teardown_mcp_limit_always_allow_dropped, teardown_mcp_limit_retelling_dropped,
+    teardown_mcp_limit_live_flags_dropped and teardown_terms_drop_mcp."""
+    page = _page()
+    assert page.count('id="mcp"') == 1, "index.html#mcp must name exactly one element"
+    text = re.sub(r"\s+", " ", visible_text(page))
+    first = re.search(r"\bMCP\b", text)
+    assert first is not None, "index.html no longer mentions MCP"
+    assert "the Model Context Protocol, is an open standard" in text[first.start():first.start() + 120], \
+        text[first.start():first.start() + 120]
+    section = _element_text(page, "mcp")
+    assert MCP_EXPLAINED in section
+    assert f"run {MCP_RUN}" in section and f"build {MCP_BUILD}" in section
+    missing = [limit for limit in MCP_LIMITS if limit not in section]
+    assert not missing, f"the MCP section no longer states: {missing}"
+    assert "MCP: the Model Context Protocol, an open standard" in _text(_section("terms"))

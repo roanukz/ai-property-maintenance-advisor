@@ -20,10 +20,12 @@ dependencies = [
     "networkx==3.6.1",
     "pydantic==2.13.5",
     "typesafe-sdk==0.7.2",
+    "mcp==2.2.0",
 ]
 
 [project.scripts]
 advisor = "agent.cli:main"
+advisor-mcp = "agent.mcp_server:main"
 
 [dependency-groups]
 dev = [

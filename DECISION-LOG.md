@@ -1854,3 +1854,376 @@ spent $1.5457 of its $5 cap.
   `179b4295c98a3143`.
 
 **Cost:** $0. The build has spent $1.5457 of its $5 cap.
+
+---
+
+## The advisor as an MCP server: built offline, run once live, then called by Claude Code in replay, 16 October 2026
+
+The advisor now also runs as a local MCP server. MCP, the Model Context
+Protocol, is an open standard that lets an AI assistant call outside tools.
+`agent/mcp_server.py` serves four tools over stdio (standard input and output,
+a direct connection between two programs on one computer): `get_service_brief`,
+`resume_brief`, `property_status` and `check_product_recalls`. Every guarantee
+stays in the advisor's own code. The server was built and tested offline, in
+replay and on the live path's fake clients. Then a test program drove the
+official SDK's client against it, first in replay at no cost and then for one
+live brief that Roanuk approved in advance, with no person in the run. Later
+the same day, Claude Code called the tools in a free replay session. Claude
+Desktop has not been tried, and no assistant has yet run a live, paid brief.
+Roanuk took the recommended option at each choice and said to publish when done
+(decision 104). A review, confirmed by a second reader, then found that the
+section and the Summary implied an assistant had used the server before one
+had; the pages, `README.md` and `docs/mcp.md` were rewritten around what is
+shown (Pages, below).
+
+**Decided** (97 to 102 as proposed, each taken by Roanuk on 16 October; 103 and
+104 added then):
+- **97. The official MCP Python SDK, pinned at 2.2.0.** It is the newest release
+  at least two weeks old: 2.3.0 was uploaded on 2 October, under two weeks
+  before. v2 is the SDK's stable line (v1.x now takes only critical bug fixes
+  and security patches), and one v2 server answers both protocol eras:
+  2026-07-28 connections, on which a tool returns its question in place of
+  asking mid call, and every handshake era app up to 2025-11-25. `mcp==2.2.0`
+  sits beside the other exact pins in `pyproject.toml` and is locked in
+  `uv.lock`. It was installed into `.venv` with pip (bootstrapped with the
+  standard library's ensurepip, since the uv made environment had none), from
+  hashes exported from the lock. The lock gains 17 packages, the SDK and 16
+  dependencies (pywin32 on Windows only). cryptography is held at 48.0.1, the
+  newest with an Intel macOS wheel (49 and later ship arm64 only, and building
+  it from source with Rust was ruled out on this Mac), and four are held at
+  their newest release at least two weeks old: opentelemetry-api 1.45.0,
+  pycparser 3.0, rpds-py 2026.6.3 and starlette 1.7.0.
+- **98. One module inside the build fingerprint.** The server is
+  `agent/mcp_server.py`, and `build_info` covers it. It decides whether a live
+  run may spend (the preflight and the confirmation) and what reaches intake, as
+  `agent/cli.py` does, and decision 35 asks that a published number trace to
+  the code that produced it. The trade off: every edit to the adapter is a new
+  build. The build moves from `179b4295c98a3143` to `17427277685ed433`; the
+  published demo and every PRD 2 result stay on `d24ed7c475dcd813`, as they did
+  after decision 93. The alternative, listing it in `build_info.EXCLUDED`,
+  keeps `179b4295c98a3143` but lets a run started through MCP carry a build id
+  that does not cover the code that confirmed its spend.
+- **99. The same graph through the same pieces, with `agent/cli.py`
+  unchanged.** The tools call `intake_input`, `run_context`, the SQLite
+  checkpointer and `run_until_pause_or_end` as `cmd_ask` and `cmd_resume` do,
+  and a live run is wrapped in `LiveSession`: the key, ledger, budget, Haiku
+  date and registry drift refusals, the keys in the environment for the run
+  only, the capture, the scrub and the SC11 record. One step differs: the typed
+  "proceed" comes from the confirmation, never from stdin, which carries the
+  protocol. `cli.py` is not edited, because 99 planted bugs anchor on its text;
+  the orchestration lines are repeated, and parity tests hold them equal. The
+  server never creates a ledger, and a live mode needs both `ADVISOR_MODE` and
+  the server's own `--live`.
+- **100. How the two questions are asked.** The identity confirmation pauses
+  where `advisor ask` pauses, and every paid or outbound call first shows the
+  command's own preflight. An app that declared form elicitation is asked by
+  elicitation: a request mid call on a handshake era connection, a returned
+  question on a 2026-07-28 connection. Otherwise a pause returns the thread id,
+  the identity read and what is missing, finished with `resume_brief`, and a
+  preflight returns a confirmation id, answered on a second call with
+  `confirm="proceed"` and that id. A confirmation is used once, bound to the
+  tool, its arguments and the exact preflight lines, and kept for ten minutes in
+  the server process only; a preflight that changed before it was used is shown
+  again. A live resume shows its own preflight. A live run segment refuses to
+  start without a confirmed session, whatever code calls it.
+- **101. What a brief returns.** Structured content with the status, every
+  step to try first with its cited source, every safety flag word for word with
+  the layer that raised it, the notice line when the check failed, the
+  candidates with their sources, the warranty coverage line, the cost from the
+  ledger and the run id, and the brief exactly as the run recorded it; the same
+  in plain text; and the location of the HTML brief on the owner's computer, as
+  a path and a file URI (the file to send the technician), readable as the
+  resource `advisor://briefs/<run id>`.
+- **102. `check_product_recalls` mirrors `advisor property recalls --live`.**
+  It reads no `ADVISOR_MODE` and opens no ledger, so it also works on a replay
+  server, but it always shows `product_recalls.plan_lines` first and sends
+  nothing until the confirmation. `property_status` is offline and writes no
+  file: the property page is a resource rendered when it is read.
+- **103. Gate phase 7 requires every MCP test.** `gate_requirements.json`
+  gains phase 7: the 20 test functions of `test_mcp_server.py` and
+  `test_mcp_gate.py`. A run under `ADVISOR_GATE=7`, which also enforces phases
+  2 to 6, fails when any of them is not collected, is deselected, skips or is
+  marked to fail; with the earlier phases it requires 390 node ids, against
+  370 at phase 6, which is unchanged. `test_mcp_gate.py` fails when a test
+  function in those files is missing from phase 7, when one is required before
+  phase 7, or when phase 7 names a test that does not exist. No phase lists the
+  page tests (`test_teardown.py`, `test_published_pages.py`, `test_style.py`,
+  `test_build_demo.py`), so the page test added below is in no phase either.
+- **104. The options Roanuk took.** On 16 October Roanuk said to publish when
+  done, and the builder's recommended option was taken at each choice: the
+  server inside the build fingerprint (decision 98), not listed in
+  `build_info.EXCLUDED`; both confirmation paths kept, elicitation and the
+  confirmation id (decision 100), with the tools never set to always allow, so
+  that in an app without forms the app's own tool approval prompt stays the
+  person's check; `check_product_recalls` mirroring
+  `advisor property recalls --live` (decision 102); the first real connection
+  made in replay, then one live brief, approved at about $0.01; and gate phase
+  7 (decision 103).
+
+**Measured, offline:**
+- 29 test cases in `agent/tests/test_mcp_server.py`, with the network blocked.
+  26 of them go through the SDK's own client: 25 in process, and 1 that starts
+  the server over real stdio in a guarded child process. The other 3 call the
+  server's code directly (the store of pending confirmations, the build
+  fingerprint and the entry point's mode check). They run on protocol version
+  2026-07-28, and on the earlier 2025-11-25 (the client's `mode="legacy"`) in
+  the 4 cases on how the server asks the person. They show parity (the same
+  case through `advisor ask` and `advisor resume` and through the tools writes
+  the same run record); in offline tests against fake paid services, a live
+  call refusing every missing, wrong, reused, foreign or changed confirmation,
+  with nothing sent and no ledger row; every citation and safety flag a brief
+  holds reaching the response, on nine recorded cases; and a real stdio round
+  trip. A form (elicitation) has been answered only in these tests, and the
+  2025-11-25 version has run only here.
+- 57 planted bugs were added: 46 for the server and its gate (44 on
+  `agent/mcp_server.py`, 1 on `build_info` and 1 on the gate file) and 11 for
+  the page test below, 1,656 in all. Each was first confirmed caught with
+  `mutate.py --only`, and a fresh full mutation run on 16 October 2026, on the
+  code of build `17427277685ed433`, caught all 1,656; none survived.
+- The offline suite, 3,650 tests, passes with the network blocked and
+  `V1_BRIEFCASE_DIR` set, in normal mode and under `ADVISOR_GATE=5`, `6` and
+  `7` (phase 6: 370 required node ids, 4 SC1b cases; phase 7: 390 required
+  node ids). Phase 6 is unchanged: `test_round2_sweep_gate.py` requires PRD 2's
+  test files only, and phase 7 lists the MCP tests (decision 103).
+  `build_info.build_id()` is `17427277685ed433`.
+
+**Measured, the first real connection, in replay (free):** a test program,
+`mcp_evidence.py`, drove the official SDK's client, which launched the server
+over stdio with the recorded FLO case, on protocol version 2026-07-28. All four
+tools were listed; the replayed brief paused (2.56 s) and resumed (0.49 s), and
+came back with 2 steps to try first, both cited, and 1 safety flag;
+`property_status` returned the property's 3 appliances (0.07 s). Only the replay
+ledger was written, and no money was spent. Source:
+`data/runs/t-bc31dd881bff44c4.client/mcp_evidence_replay.log`, kept with the
+script, the only record of this connection's calls. The log ends with the test
+script's own crash on its final summary line (it read the protocol version after
+the client had closed), after every call had printed; the script was fixed
+before the live part. The log names no run ID; the replayed brief is most likely
+`data/runs/t-dc8de46ef5f0488c.json`, the one replay run on this build before the
+live run, written at 13:41:19 UTC.
+
+**Measured, live** (run `t-bc31dd881bff44c4` on build `17427277685ed433`, 16
+October 2026, finished 13:42 UTC; sources: `data/runs/t-bc31dd881bff44c4.json`
+and `advisor ledger --run t-bc31dd881bff44c4` for the cost, route and
+processing time, and `data/runs/t-bc31dd881bff44c4.client/`, the script and
+`mcp_evidence_live.log`, the only source of the per call times and both
+preflights):
+- Who connected: the same test program, through the official SDK's client over
+  stdio on protocol version 2026-07-28, the way Claude Desktop and Claude Code
+  connect to a local server. The client declared no forms, so the server used
+  confirmation ids.
+- No person was in the run. The test program played the owner, under Roanuk's
+  approval given in advance at about $0.01: it answered "proceed" only to a
+  preflight whose typical estimate was at most $0.02 and whose worst case was
+  at most the $0.15 run cap, and it confirmed the unit the plate shows
+  (Sundance Spas, Optima 880, serial 100915742, 06/2014) and the code FLO.
+- The sequence: (1) `get_service_brief` with the hot tub's clear plate photo
+  and "panel shows FLO" returned `confirmation_required` with the preflight,
+  typical $0.0109, worst case $0.15, the run cap, in 0.35 s, and nothing was
+  sent. (2) After "proceed" it read the plate exactly (SUNDANCE SPAS, OPTIMA
+  880, serial 100915742, 06/2014) and paused for the owner to confirm the unit
+  and the code FLO, in 5.37 s. The code came from the owner's words ("panel
+  shows FLO"), not from the plate. (3) `resume_brief` returned its own
+  preflight, typical $0.0105, worst case $0.1497, noting the $0.0003 the plate
+  reading had spent, in 0.20 s. (4) After "proceed" it finished with status ok
+  in 10.03 s.
+- The brief: answered from memory, from facts an earlier lookup verified
+  (route graph, 0 searches, 0 Tavily credits), with one confirmed candidate,
+  the FLO meaning "Flow Switch Error: Water flow is restricted or the switch is
+  stuck.", cited to a dealer page. It had no steps to try first, so the safety
+  check was skipped and no Jev call was made.
+- Totals: $0.0014 by the ledger ($0.0003 for the plate reading and $0.0011
+  for the writing), inside the $0.15 cap (SC11 pass). The four tool calls took
+  15.95 s (0.35 + 5.37 + 0.20 + 10.03); the whole session, from starting the
+  server to closing it, 17.82 s. The run record's processing time is 12.97 s,
+  12.96 s of it in the two model calls (3.25 s reading the plate, 9.70 s
+  writing).
+- Comparator: the same question answered from memory through the command line
+  on 14 October (the FLO repeat, `t-d644c199cbd74532`, build
+  `d24ed7c475dcd813`) cost $0.0015 and took 9.8 s. Both runs sent the same
+  input (2,862 and 5,317 input tokens); the writer's output was 1,080 tokens
+  against 1,274, which accounts for the cost difference, and the server makes
+  no paid call of its own. The extra time is in the two model calls (3.25 s
+  against 2.02 s for the plate, 9.70 s against 7.74 s for the writing).
+- What it does not show: the run made no search and no Jev call, so a
+  research brief has not yet run live through the server, and it had no steps
+  and no safety flags.
+
+**Measured, Claude Code in replay (free; 16 October 2026, 14:55 UTC, about 73
+minutes after the live run):**
+- Setup: Claude Code 2.1.299, running Claude Opus 5.5, was given the server
+  for one session only, started with `--cassette agent/tests/cassettes/flo.json`,
+  so it answered from recorded model replies and spent no money. The session
+  used a one session config, `--mcp-config` with `--strict-mcp-config`, so
+  nothing was added to Claude Code's settings. It was non-interactive (`-p`),
+  and the only tools allowed were the three advisor tools it needed
+  (`get_service_brief`, `resume_brief` and `property_status`); each call shows
+  as accepted by a config rule, so no approval prompt was shown.
+- The prompt was written as an owner would write it: a guest says the hot tub's
+  panel shows FLO; the plate photo path; "if it asks me to confirm the unit, I
+  confirm what the plate shows: Sundance Spas, Optima 880, serial 100915742,
+  made 06/2014, and the code FLO"; then check property prop-a; report what to
+  try first with each step's source, any safety flags word for word, the cost
+  and the run ID. The kept stream holds the session's events, not the prompt.
+- What happened, from `stream.jsonl`: (1) the session connected to the server
+  ("status": "connected") and discovered its four tools as
+  `mcp__property-advisor__*`. (2) On its own, Claude called `get_service_brief`
+  (the photo path, the symptom, code FLO, property prop-a) and
+  `property_status` (prop-a). (3) The brief paused for the unit. The server's
+  form question (elicitation) was canceled automatically, because the session
+  was non-interactive, so the run stayed paused ("The identity question was
+  canceled"). The stream does not record which protocol version the session
+  used. (4) Claude then called `resume_brief` with the confirmed unit taken
+  from the owner's request: the fallback path for apps without forms, shown
+  working with a real assistant. (5) The brief came back with status ok: 2
+  steps to try first, both cited to dealer pages, and 1 safety flag set by the
+  brief's writer. Jev's check shows `not_recorded`, because this older
+  recording holds no Jev answers. (6) Claude's answer reported both steps with
+  their sources; the safety flag word for word, and that the writer raised it;
+  that Jev's check was not recorded; the cost labeled as the replay ledger,
+  `real_money` false; the run ID `t-7ecdeb193c584be8`; and the property's
+  warranty, product recall and replacement status. It also added its own
+  reading. It noted that the plate's serial differs from the synthetic registry
+  record, and it called two lines in the brief contradictory and said which to
+  trust. That contradiction is a replay artifact: the recorded model text
+  predates the unit details given in this session. It is exactly the retelling
+  the tool does not control.
+- The session took 34.5 s and 5 turns. It cost the project $0: replay, with
+  no row in the spending ledger (the replay ledger priced the recorded case at
+  $0.0828, labeled as no money spent). Claude Code's own session reported
+  $0.2456 of usage on Roanuk's Claude plan, outside the project's ledger; it is
+  not a project cost.
+- Evidence, untracked and kept out of the public repository:
+  `data/evidence/claude_code_replay_20261016/` holds `stream.jsonl` (every
+  event), `mcp_config.json`, an empty `stderr.txt`, and two earlier attempts
+  that stopped at "Not logged in", before the command line copy of Claude Code
+  was signed in. The run record is `data/runs/t-7ecdeb193c584be8.json` and the
+  brief `data/briefs/t-7ecdeb193c584be8.html`.
+
+**Pages** (16 October 2026, in the working tree only; nothing is committed or
+published):
+- `index.html`: Feature 9 in Part 7, "The advisor inside an AI assistant
+  (MCP)", sits inside the element with `id="mcp"`, so
+  `https://roanukz.github.io/ai-property-maintenance-advisor/#mcp` lands on it.
+  A reader arriving there from a resume can follow it without the rest of the
+  page: it opens with one sentence on what the advisor does, explains MCP and
+  says what has been shown so far; it explains standard input and output, the
+  CPSC product recall check, Jev, the build fingerprint, the preflight, replay
+  and "from memory" where each first appears. Then come what the build keeps,
+  the tests and the replay connection, the live brief with the test program as
+  the owner, Claude Code in replay, a warning box with the limits, and where
+  each number comes from, with each evidence folder named by its path inside
+  the repository and marked as kept out of the public repo. It is a feature,
+  not a new numbered part: a new part would renumber Parts 8 to 11, and the
+  recorded demo, which is rebuilt only from a frozen build, names "Part 8 of
+  the teardown". Appendix B defines MCP and preflight.
+- The Summary's method gains a sentence on how this evidence was gathered:
+  replay first, then the one approved live brief, run by a test program
+  through the official client, then Claude Code in replay. It is kept free of
+  the word MCP, so that the first use stays in the results, where the page test
+  expects it. The results sentence says what Claude Code did in replay, that
+  the live brief cost $0.0014, about the same as the $0.0015 from the command
+  line, and that Claude Desktop is untried and no assistant has run a live,
+  paid brief. The cautions name the live MCP brief's build. The TL;DR is
+  unchanged: it is already at 100 words, and the server is a new way in, not a
+  new finding.
+- The whole build spend reads $1.5471 in Parts 6 and 8. Part 8's line on the
+  server says its refusals were shown in offline tests against fake paid
+  services. The counts read 3,650 tests and 1,656 planted bugs on the code of
+  build `17427277685ed433` in the Summary, Part 8 and Appendix A. Appendix A
+  records the replay first order, the test program as the owner and the
+  Claude Code session, its limits line says what has and has not run, and the
+  list of builds lost a stray "and". `index.html` was re-hashed in the
+  published manifest.
+- `README.md`: the bullet defines MCP, preflight and SDK and says what has been
+  shown; the results row for the MCP server reads "Shown, with no bar set
+  before the build" and gives the replay parity, the live brief and the Claude
+  Code session, with the limits and the evidence folders; the results intro
+  says the MCP row had no bar; the suite row (3,650 tests, gate phases 5, 6
+  and 7), the planted bug count (1,656) and the whole build spend ($1.5471)
+  are updated; the live rows that come from other builds name the MCP brief's;
+  the section on using the advisor from an assistant states the same limits;
+  and the repository list names `agent/mcp_server.py` and `docs/mcp.md`.
+- `docs/mcp.md` defines MCP at the start and gives a dated status paragraph:
+  Claude Code connected and called the tools in replay; one live brief ran
+  through the official client, driven by a test program; Claude Desktop is
+  untried; form support per app is unverified (Claude Code's non-interactive
+  session canceled the form); an assistant may leave out citations or safety
+  flags it was given. It now cites decisions 97 to 104 (decision 99 for the
+  shared code), says "With neither" for replay mode, says the recall check
+  keeps only recalls that print the exact model, explains elicitation forms,
+  says a new checkout creates the ledger once with a live `advisor` command
+  and `--new-ledger`, says the server cannot tell whether the owner or the
+  assistant supplied the confirmed fields or typed "proceed", and says the
+  app's approval prompt is the owner's only check, to keep on and never set to
+  always allow, with how each app asks unverified. It uses
+  `/path/to/ai-property-maintenance-advisor` in place of this Mac's path.
+  `test_style.py` scans only `agent/` and `seed/`; adding `docs/mcp.md` would
+  add a planted bug and change the measured counts, so it waits for the next
+  round.
+- A page test, `test_teardown.py::test_mcp_section_names_its_run_build_and_limits`:
+  exactly one element carries `id="mcp"`; MCP is explained where the page
+  first names it and inside the section; the section names run
+  `t-bc31dd881bff44c4` and build `17427277685ed433` and states five limits (no
+  assistant has yet run a live, paid brief, and Claude Desktop is untried;
+  form support unverified, and without forms the unit's confirmation and the
+  "proceed" pass through the assistant; never set the tools to always allow;
+  the assistant's retelling outside the tool's control; safety flags shown on
+  the recorded cases, not on the live run); and Appendix B defines MCP. 11
+  planted bugs pair with it: `teardown_mcp_anchor_renamed`,
+  `teardown_mcp_first_use_unexplained`, `teardown_mcp_section_unexplained`,
+  `teardown_mcp_run_dropped`, `teardown_mcp_build_dropped`,
+  `teardown_mcp_limit_apps_dropped`, `teardown_mcp_limit_forms_dropped`,
+  `teardown_mcp_limit_always_allow_dropped`,
+  `teardown_mcp_limit_retelling_dropped`,
+  `teardown_mcp_limit_live_flags_dropped` and `teardown_terms_drop_mcp`. When
+  the section was rewritten, the test's expected limits changed and the search
+  texts of eight of them moved with the text; each of the 11 was confirmed
+  caught again with `mutate.py --only`. No test function or planted bug was
+  added or removed, so the counts above stand.
+- `test_mcp_server.py`'s fingerprint test now cites decision 98.
+
+**Worth recording:**
+- A line printed to stdout before serving reaches the stdio wire, and the SDK's
+  client only logs it. The stdio test therefore records any line that is not
+  the protocol and requires none.
+- The paid call sites already redact keys from their errors
+  (`agent/redaction.py`); the server's redaction of a failed live run's message
+  is a backstop behind them.
+- The SDK creates OpenTelemetry spans, but only the OpenTelemetry API is
+  installed, with nothing to collect or export them.
+- Still open, and stated on the pages: no assistant has yet run a live, paid
+  brief, and Claude Desktop has not been tried; `docs/mcp.md` shows how to
+  connect each. Which apps show MCP forms to the person is unverified: Claude
+  Code's non-interactive session canceled the form it was sent. Without forms,
+  the owner's confirmation of the unit passes through the assistant, just as
+  the "proceed" does: the server cannot tell who supplied either, and the
+  assistant could send either without asking, even a model number the plate
+  did not show. In the Claude Code session the assistant did send the unit
+  details, taken from the owner's request. So the app's own tool approval
+  prompt is the owner's only check, and how each app shows it is unverified;
+  the Claude Code session allowed its three tools in advance, so none was
+  shown. The assistant retells a brief in its own words, outside the tool's
+  control: the structured response carries every citation and safety flag word
+  for word, but the assistant may leave some out, or add its own reading, as
+  Claude Code did. The live brief came from memory, so it had no steps to try
+  first and no safety flags; that safety flags reach the response is shown on
+  the recorded cases, not on the live run, and a research brief has not yet
+  run live through the server.
+- The `advisor-mcp` script appears after the next `uv sync`;
+  `python -m agent.mcp_server` works now.
+
+**Next steps, held for the next build:** any edit to `agent/mcp_server.py`
+changes the build id that the live run and every result above name, so two
+small changes found in review wait for the next build:
+- The brief's text summary says "1 documented candidates"; one candidate
+  should read in the singular.
+- The server's instructions tell the assistant to pass "proceed" only after
+  the person has typed it, but say nothing about the unit's confirmed fields.
+  They should also tell it never to fill in a field itself: only to pass on
+  what the owner confirmed.
+
+**Cost:** $0.0014 for the live MCP brief, with 0 Tavily credits; the replay
+connection, the Claude Code replay session and every test spent nothing from
+the project's ledger. The build has spent $1.5471 of its $5 cap and 242 of its
+300 Tavily credits.

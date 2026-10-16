@@ -381,6 +381,31 @@
         "test_render.py::test_coverage_line_is_drawn_in_v2_only_and_labels_synthetic_rows",
         "test_prompts.py::test_warranty_rule_says_code_writes_every_warranty_date"
       ]
+    },
+    "7": {
+      "_about": "The local MCP server (16 October 2026, decisions 97 onward): every test in test_mcp_server.py and test_mcp_gate.py. Run with ADVISOR_GATE=7, which also enforces phases 2 to 6. test_mcp_gate.py fails when a test in those files is missing here.",
+      "node_ids": [
+        "test_mcp_server.py::test_a_declined_identity_question_leaves_the_thread_paused",
+        "test_mcp_server.py::test_a_live_brief_by_elicitation_confirms_each_paid_segment",
+        "test_mcp_server.py::test_a_live_brief_sends_nothing_and_writes_no_ledger_row_until_confirmed",
+        "test_mcp_server.py::test_a_live_failure_is_reported_without_a_key",
+        "test_mcp_server.py::test_a_live_run_never_starts_without_a_confirmed_session",
+        "test_mcp_server.py::test_a_preflight_that_moved_after_it_was_shown_is_shown_again",
+        "test_mcp_server.py::test_check_product_recalls_sends_nothing_until_proceed",
+        "test_mcp_server.py::test_elicitation_asks_the_identity_question_and_finishes_in_one_call",
+        "test_mcp_server.py::test_every_citation_and_safety_flag_the_brief_holds_reaches_the_response",
+        "test_mcp_server.py::test_pending_answers_are_used_once_bound_to_their_call_and_expire",
+        "test_mcp_server.py::test_property_status_is_offline_and_shows_what_the_property_page_shows",
+        "test_mcp_server.py::test_replay_brief_pauses_then_resume_brief_finishes_it",
+        "test_mcp_server.py::test_replay_runs_match_advisor_ask_and_resume",
+        "test_mcp_server.py::test_resume_brief_refuses_what_advisor_resume_refuses_and_never_reruns_a_finished_thread",
+        "test_mcp_server.py::test_the_entry_point_refuses_a_live_mode_without_live",
+        "test_mcp_server.py::test_the_recall_check_stores_what_advisor_property_recalls_live_stores",
+        "test_mcp_server.py::test_the_server_is_in_the_build_fingerprint_and_imports_nothing_it_leaves_out",
+        "test_mcp_server.py::test_the_server_starts_over_stdio_from_its_entry_point",
+        "test_mcp_server.py::test_tools_their_schemas_and_resources",
+        "test_mcp_gate.py::test_phase_7_requires_every_mcp_test_and_nothing_missing"
+      ]
     }
   }
 }
