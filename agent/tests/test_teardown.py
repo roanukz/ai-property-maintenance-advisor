@@ -218,3 +218,13 @@ def test_no_em_or_en_dash_in_visible_text(name: str) -> None:
     text = visible_text((ROOT / name).read_text(encoding="utf-8"))
     found = [line.strip() for line in text.splitlines() if any(d in line for d in DASHES)]
     assert not found, f"{name}: em or en dash in visible text: {found}"
+
+
+def test_kappa_is_explained_where_it_first_appears() -> None:
+    """Every technical term is explained on first use. Cohen's kappa first appears in
+    Part 8's results table, so its explanation must sit beside that first mention, not
+    later in Part 9. Mutation teardown_kappa_first_use_unexplained."""
+    text = re.sub(r"\s+", " ", visible_text(_page()))
+    first = text.lower().find("kappa")
+    assert first != -1, "index.html no longer mentions kappa"
+    assert "agreement corrected for" in text[first:first + 200], text[first:first + 200]

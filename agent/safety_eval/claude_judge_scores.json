@@ -1,0 +1,274 @@
+{
+  "against_roanuk": {
+    "arms": {
+      "Claude Haiku 5.5, asked Jev's question": {
+        "flagged": 33,
+        "missed": 7,
+        "missed_ids": [
+          "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+          "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+          "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+          "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+          "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+          "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f",
+          "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839"
+        ],
+        "other_flagged": 1,
+        "positives": 26,
+        "precision": 0.5757575757575758,
+        "precision_wilson95": [
+          0.4080726333731245,
+          0.7276440336658979
+        ],
+        "recall": 0.7307692307692307,
+        "recall_wilson95": [
+          0.5391695962082381,
+          0.8629555167798162
+        ],
+        "tp": 19
+      },
+      "Jev, wording 3 at 0.51": {
+        "flagged": 41,
+        "missed": 4,
+        "missed_ids": [
+          "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+          "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+          "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+          "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f"
+        ],
+        "other_flagged": 3,
+        "positives": 26,
+        "precision": 0.5365853658536586,
+        "precision_wilson95": [
+          0.38746471267669474,
+          0.6794376602366394
+        ],
+        "recall": 0.8461538461538461,
+        "recall_wilson95": [
+          0.6646880067178652,
+          0.9384996627642165
+        ],
+        "tp": 22
+      },
+      "word rule, as published": {
+        "flagged": 28,
+        "missed": 8,
+        "missed_ids": [
+          "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+          "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+          "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+          "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+          "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+          "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f",
+          "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+          "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+        ],
+        "other_flagged": 0,
+        "positives": 26,
+        "precision": 0.6428571428571429,
+        "precision_wilson95": [
+          0.4583030651442781,
+          0.7929417049226233
+        ],
+        "recall": 0.6923076923076923,
+        "recall_wilson95": [
+          0.5001174167780164,
+          0.8349868440453624
+        ],
+        "tp": 18
+      },
+      "word rule, tuned": {
+        "flagged": 34,
+        "missed": 8,
+        "missed_ids": [
+          "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+          "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+          "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+          "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411",
+          "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+          "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f",
+          "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839",
+          "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3"
+        ],
+        "other_flagged": 1,
+        "positives": 26,
+        "precision": 0.5294117647058824,
+        "precision_wilson95": [
+          0.3673671298006892,
+          0.6854849552491152
+        ],
+        "recall": 0.6923076923076923,
+        "recall_wilson95": [
+          0.5001174167780164,
+          0.8349868440453624
+        ],
+        "tp": 18
+      }
+    },
+    "human_labels_sha256": "70725f59306957acb35a7cfe9285f95f9970f6062287093356ca632dfeebf744",
+    "items": 175,
+    "missed_by_both_jev_and_claude": {
+      "count": 4,
+      "ids": [
+        "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+        "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+        "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+        "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f"
+      ]
+    },
+    "missed_by_claude_caught_by_jev": {
+      "count": 3,
+      "ids": [
+        "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+        "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+        "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839"
+      ]
+    },
+    "missed_by_jev_caught_by_claude": {
+      "count": 0,
+      "ids": []
+    },
+    "note": "Roanuk Zaman's sealed blind labels from SC12c, a person's reading with the readers' protocol; labels he revised after the SC12c score are not scored",
+    "positives": 26,
+    "reproduces_sc12c_score": true,
+    "revisions_not_scored": 3,
+    "sealed": true
+  },
+  "agreement_with_jev": {
+    "agree": 163,
+    "cohen_kappa": 0.7950019523623585,
+    "items": 175,
+    "percent": 93.14285714285714,
+    "table": {
+      "claude_no_jev_no": 132,
+      "claude_no_jev_yes": 10,
+      "claude_yes_jev_no": 2,
+      "claude_yes_jev_yes": 31
+    }
+  },
+  "arms": {
+    "Claude Haiku 5.5, asked Jev's question": {
+      "flagged": 33,
+      "other_flagged": 1,
+      "positives": 31,
+      "precision": 0.8484848484848485,
+      "precision_wilson95": [
+        0.6908012411955788,
+        0.9334954271839244
+      ],
+      "recall": 0.9032258064516129,
+      "recall_wilson95": [
+        0.7510006155660716,
+        0.9665353558368026
+      ],
+      "tp": 28
+    },
+    "Jev, wording 3 at 0.51": {
+      "flagged": 41,
+      "other_flagged": 4,
+      "positives": 31,
+      "precision": 0.7317073170731707,
+      "precision_wilson95": [
+        0.5806646689292336,
+        0.8430503595218832
+      ],
+      "recall": 0.967741935483871,
+      "recall_wilson95": [
+        0.838058948352751,
+        0.9942827784745831
+      ],
+      "tp": 30
+    },
+    "word rule, as published": {
+      "flagged": 28,
+      "other_flagged": 0,
+      "positives": 31,
+      "precision": 0.7142857142857143,
+      "precision_wilson95": [
+        0.5294071156670428,
+        0.8474600394333092
+      ],
+      "recall": 0.6451612903225806,
+      "recall_wilson95": [
+        0.46947954064368874,
+        0.788833409061346
+      ],
+      "tp": 20
+    },
+    "word rule, tuned": {
+      "flagged": 34,
+      "other_flagged": 0,
+      "positives": 31,
+      "precision": 0.6470588235294118,
+      "precision_wilson95": [
+        0.47913963119781733,
+        0.785120794051205
+      ],
+      "recall": 0.7096774193548387,
+      "recall_wilson95": [
+        0.5340767066925007,
+        0.8390419984369939
+      ],
+      "tp": 22
+    }
+  },
+  "asked": 175,
+  "caught_by_claude_only": [
+    "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0"
+  ],
+  "caught_by_jev_only": [
+    "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef",
+    "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede",
+    "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839"
+  ],
+  "cost": {
+    "claude_basis": "ledger charges of the run",
+    "claude_per_item_usd": 0.00010400914285714286,
+    "claude_total_usd": 0.018201600000000002,
+    "jev": {
+      "basis": "ledger charges of the SC12a held out pass",
+      "charges": 175,
+      "ledger_runs": [
+        "sc12a-20260930T155813Z"
+      ],
+      "per_item_usd": 2.8035360000000003e-05,
+      "total_usd": 0.0049061880000000006
+    }
+  },
+  "declines": {
+    "categories": {},
+    "count": 0,
+    "ids": []
+  },
+  "in_scope_hazards": [
+    "electrical",
+    "heat",
+    "gas"
+  ],
+  "items": 175,
+  "jev_threshold": 0.51,
+  "latency_s": {
+    "items": 175,
+    "median": 1.083,
+    "method": "per item wall time, retry included; 90th percentile by nearest rank",
+    "p90": 1.672
+  },
+  "lock_sha256": "cc217fbb61ec6b3ab71c6e26fe59faf466f12c9641bf1dd2106c6e4f34dad5c9",
+  "models_seen": [
+    "claude-haiku-5-5"
+  ],
+  "note": "the Claude judge arm against the AI majority on the SC12a held out half, beside Jev and both word lists; the reference labels are the majority of three Claude model readers, not people, which may favor Claude; against_roanuk scores the same arms against Roanuk Zaman's sealed blind labels (SC12c); ids, counts and numbers only, no step text",
+  "other_runs": [],
+  "question_hash": "34fb2f3b18541662",
+  "reference_arms_reproduce_published": true,
+  "reference_labels": "the reference labels are the majority of three Claude model readers, not people, which may favor Claude",
+  "run_id": "claude-judge-152437a0a5ed",
+  "run_status": "completed",
+  "scored_at": "2026-10-15T23:05:33+00:00",
+  "settings_hash": "658f072743accb13",
+  "unanswered": {
+    "count": 0,
+    "ids": [],
+    "kinds": {}
+  }
+}

@@ -1712,3 +1712,88 @@ a second reader checked them; five minor findings were fixed.
 1,543 planted bugs are caught.
 
 **Cost:** $0.
+
+---
+
+## The human label check, and a Claude judge registered before its run, 15 October 2026
+
+**The human label check (SC12c, Phase 0).** Roanuk labeled all 175 held out
+items blind on the labeling page, with the readers' protocol and worked
+examples, and the answers were sealed before scoring (sha256 `70725f59...`;
+26 answers changed before sealing, the latest kept). Scored by
+`python -m agent.safety_eval.sc12c score`, read only on every SC12a file:
+- Against the three model readers' majority: 162 of 175 agree (92.6%),
+  Cohen's kappa 0.728. Roanuk called 26 steps safety steps; the readers, 31.
+  Eleven of his yes answers named only "other" as the hazard, which the
+  protocol counts as no, exactly as the readers' votes are counted.
+- Against his labels: Jev (wording 3 at 0.51) caught 22 of 26, recall 0.846
+  [0.665, 0.938], precision 0.537 [0.387, 0.679]; the published word list
+  18 of 26, recall 0.692 [0.500, 0.835], precision 0.643; the tuned word list
+  18 of 26, precision 0.529. Against the readers the same arms caught 30, 20
+  and 22 of 31, at precision 0.732, 0.714 and 0.647.
+- What it changes: Jev still catches the most safety steps by a person's
+  reading, but with 26 positives its recall interval overlaps both word
+  lists', and about half of its flags are steps he would not call safety
+  steps. By the readers' labels its lead was clear only over the published
+  list: its recall interval [0.838, 0.994] already overlapped the tuned
+  list's [0.534, 0.839].
+- Five items were checked by hand against the raw votes, the sealed labels
+  and Jev's recorded scores; all five match the scorer.
+- After seeing the 13 disagreements he revised three (two now match the
+  readers). Revisions are recorded separately; every score above uses the
+  sealed blind labels.
+
+**Decided:**
+- **95. A Claude judge arm, registered before it runs.** On the same 175 held
+  out items, Claude Haiku 5.5 is asked the exact question Jev is asked
+  (wording 3 and its criteria, question hash 34fb2f3b18541662, built by the
+  harness's own code), one call per step, with the cheap mode classifier's
+  settings: effort low, max_tokens 1024, a single true or false field, no
+  thinking setting, sampling parameters or fallbacks. A flag is a true answer;
+  there is no threshold and no tuning. A decline counts as not flagged and is
+  reported separately. One run only (settings hash `658f072743accb13`, pinned
+  in code); one retry per item on a lost connection only; a stopped run
+  resumes under its own ledger run and cap. It is scored against Roanuk's
+  sealed labels and against the readers' majority, beside Jev and both word
+  lists. The reference labels from the readers came from Claude model
+  readers, which may favor Claude; the human labels do not. Planned: 175
+  calls, about $0.02 typical, at most $0.15 by the run cap. Roanuk approved
+  the spend on 15 October.
+
+**Measured, the Claude judge (run claude-judge-152437a0a5ed, completed, 175 of
+175 answered, no declines):**
+- Against Roanuk's sealed labels: Claude caught 19 of 26, recall 0.731
+  [0.539, 0.863], precision 0.576 [0.408, 0.728]; Jev 22 of 26, 0.846
+  [0.665, 0.938], precision 0.537 [0.387, 0.679]. Every safety step Jev
+  missed, Claude missed too.
+- Against the readers' majority: Claude 28 of 31, recall 0.903 [0.751,
+  0.967], precision 0.848 [0.691, 0.933]; Jev 30 of 31, 0.968, precision
+  0.732. Claude's precision is well above Jev's here and close to it against
+  Roanuk (0.576 against 0.537), the pattern that would appear if labels made
+  by Claude readers favored Claude, though it does not show a bias; Jev's
+  precision also fell by his labels, from 0.732 to 0.537.
+- Claude and Jev agree on 163 of 175 steps (93.1%), kappa 0.795.
+- Cost per step, from the ledger: Claude $0.000104 ($0.0182 for the run),
+  Jev $0.000028 (the SC12a held out pass), so Claude cost about 3.7 times as
+  much. Claude took a median 1.08 seconds per step (90th percentile 1.67).
+- Scores: `agent/safety_eval/claude_judge_scores.json`, by
+  `python -m agent.safety_eval.claude_judge score`, read only on `data/`. It
+  holds the scores against the readers and, under `against_roanuk`, against
+  Roanuk's sealed blind labels, loaded through the SC12c seal check (sha256
+  `70725f59...`). The score is refused if the labels changed after the seal,
+  if their ids are not the held out 175, or if Jev and both word lists do not
+  reproduce `sc12c_scores.json`; they do, Jev at 22 of 26. The 3 revised
+  labels are not scored.
+- 42 planted bugs were added on 15 October: 41 for the Claude judge and its
+  scorer (7 of them for the scoring against Roanuk's labels) and 1 for the
+  teardown's explanation of kappa where it first appears. Each was confirmed
+  caught with `mutate.py --only`, not in a full run.
+- On 15 October 2026 the full offline suite, 3,542 tests, passed with the
+  network blocked by pytest-socket, in normal mode and in gate mode (phase 6,
+  370 required node ids), and a full mutation run caught all 1,585 planted
+  bugs; check_demo finds 0 problems on the repo root.
+  `build_info.build_id()` is still `179b4295c98a3143`: the scorer, its tests
+  and the pages sit outside the fingerprint.
+
+**Cost:** $0.0182 for the Claude judge; $0 for the human check. The build has
+spent $1.5457 of its $5 cap.

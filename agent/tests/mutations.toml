@@ -7557,15 +7557,15 @@ tests = ["agent/tests/test_teardown.py::test_tldr_fits_five_sentences_and_100_wo
 [[mutation]]
 id = "teardown_tldr_two_numbers"
 file = "index.html"
-search = 'A newer Claude model cut the cost of a run'
-replace = 'Claude Haiku 5.5 cut the cost of a run'
+search = 'Claude model cut a run'
+replace = 'Claude Haiku 5.5 cut a run'
 tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
 
 [[mutation]]
 id = "teardown_tldr_link"
 file = "index.html"
-search = 'flags safety steps, and spending caps'
-replace = 'flags <a href="#decisions">safety steps</a>, and spending caps'
+search = 'stay in code; a second model flags'
+replace = 'stay in code; a second model <a href="#decisions">flags</a>'
 tests = ["agent/tests/test_teardown.py::test_tldr_has_at_most_one_number_and_no_links"]
 
 [[mutation]]
@@ -13091,3 +13091,366 @@ search = '''    return SEARCHED.format(maker=result.get("maker"), date='''
 replace = '''    return SEARCHED.format(maker=result.get("model"), date='''
 tests = ["agent/tests/test_product_recalls_live_fixture.py::test_live_check_says_no_product_recall_names_the_exact_model[appl-optima880]"]
 why = "the no match statement names the maker searched"
+
+# ---------------------------------------------------------------------------
+# The Claude judge arm: Claude Haiku 5.5 asked Jev's question on the SC12a held
+# out half (agent/safety_eval/claude_judge.py, agent/tests/test_claude_judge.py)
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "claude_judge_payload_leaks_the_half"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    return {key: item[key] for key in JEV_STATE_KEYS}'''
+replace = '''    return {**{key: item[key] for key in JEV_STATE_KEYS}, "half": item.get("half")}'''
+tests = ["agent/tests/test_claude_judge.py::test_payload_is_the_jev_state_and_the_exact_jev_question"]
+why = "the step JSON Claude sees carries a key Jev was never sent"
+
+[[mutation]]
+id = "claude_judge_state_reads_the_reader_keys"
+file = "agent/safety_eval/claude_judge.py"
+search = '''JEV_STATE_KEYS = ("appliance", "step", "detail")'''
+replace = '''JEV_STATE_KEYS = harness.READER_KEYS'''
+tests = ["agent/tests/test_claude_judge.py::test_question_and_state_are_what_the_sc12a_held_out_pass_sent_jev"]
+why = "the state is the readers' packet (id included), not what the SC12a held out pass sent Jev"
+
+[[mutation]]
+id = "claude_judge_items_include_tune"
+file = "agent/safety_eval/claude_judge.py"
+search = '''if i["half"] == SETTINGS["half"]),'''
+replace = '''if i["half"] in (SETTINGS["half"], "tune")),'''
+tests = ["agent/tests/test_claude_judge.py::test_the_tune_half_is_never_sent"]
+why = "the tune half is sent to Claude"
+
+[[mutation]]
+id = "claude_judge_items_unsorted"
+file = "agent/safety_eval/claude_judge.py"
+search = '''                  key=lambda i: i["id"])'''
+replace = '''                  key=lambda i: 0)'''
+tests = ["agent/tests/test_claude_judge.py::test_the_tune_half_is_never_sent"]
+why = "the held out items are asked in the file's order, not item id order"
+
+[[mutation]]
+id = "claude_judge_hash_skips_the_system_prompt"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    return hashlib.sha256(harness.canonical(dict(SETTINGS if settings is None else settings)).encode("utf-8")'''
+replace = '''    return hashlib.sha256(harness.canonical({k: v for k, v in (SETTINGS if settings is None else settings).items() if k != "system_prompt"}).encode("utf-8")'''
+tests = ["agent/tests/test_claude_judge.py::test_settings_are_frozen_and_their_hash_moves_with_every_setting"]
+why = "a changed system prompt would keep the settings hash, so a second run would be allowed"
+
+[[mutation]]
+id = "claude_judge_sends_temperature"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    chat = chat_factory(**prepared.kwargs)'''
+replace = '''    chat = chat_factory(**prepared.kwargs, temperature=0)'''
+tests = ["agent/tests/test_claude_judge.py::test_model_is_built_as_the_cheap_classifier_and_refused_when_config_moves"]
+why = "a sampling parameter is sent to Claude Haiku 5.5"
+
+[[mutation]]
+id = "claude_judge_settings_check_skipped"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if kwargs != expected or set(kwargs) & set(NEVER_SENT):'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_model_is_built_as_the_cheap_classifier_and_refused_when_config_moves"]
+why = "a classifier effort moved in config is sent instead of refused"
+
+[[mutation]]
+id = "claude_judge_plan_forgets_the_retry"
+file = "agent/safety_eval/claude_judge.py"
+search = '''                max_calls=len(items) * ATTEMPTS,'''
+replace = '''                max_calls=len(items),'''
+tests = ["agent/tests/test_claude_judge.py::test_plan_prints_counts_and_cost_with_no_key_and_no_network"]
+why = "the plan's call ceiling leaves out the one transport retry per item"
+
+[[mutation]]
+id = "claude_judge_skips_proceed"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        if not ask_to_proceed(lines, stdin if stdin is not None else sys.stdin, sys.stdout):'''
+replace = '''        if not ask_to_proceed(lines, stdin if stdin is not None else sys.stdin, sys.stdout) and False:'''
+tests = ["agent/tests/test_claude_judge.py::test_run_refuses_without_the_key_or_a_typed_proceed"]
+why = "the run spends without the typed proceed"
+
+[[mutation]]
+id = "claude_judge_progress_every_item"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            if n % PROGRESS_EVERY == 0 or n == total:'''
+replace = '''            if True:'''
+tests = ["agent/tests/test_claude_judge.py::test_run_records_each_reply_with_its_fields_and_prints_progress"]
+why = "progress prints after every item, not every 25"
+
+[[mutation]]
+id = "claude_judge_second_run_allowed"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        if state.refusal is not None:
+            raise EvalRefusal(state.refusal)'''
+replace = '''        pass'''
+tests = ["agent/tests/test_claude_judge.py::test_run_refuses_a_second_run"]
+why = "a completed run is not refused before the plan and the typed proceed"
+
+[[mutation]]
+id = "claude_judge_cap_refusal_skips_the_item"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            return (done() if line["attempts"] else None), exc.reason'''
+replace = '''            return (done() if line["attempts"] else None), None'''
+tests = ["agent/tests/test_claude_judge.py::test_run_stops_at_the_cap"]
+why = "a call the cap refused skips its item and the run goes on instead of stopping"
+
+[[mutation]]
+id = "claude_judge_reserves_once_per_item"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            reservation = ledger.reserve(run_id, mode=MODE, node=NODE, model=SETTINGS["model"],'''
+replace = '''            reservation = reservation if attempt > 1 else ledger.reserve(run_id, mode=MODE, node=NODE, model=SETTINGS["model"],'''
+tests = ["agent/tests/test_claude_judge.py::test_run_reserves_before_every_call"]
+why = "a transport retry is sent with no reservation of its own"
+
+[[mutation]]
+id = "claude_judge_decline_category_dropped"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            line.update(declined=True, flag=False, category=exc.category, error=None,'''
+replace = '''            line.update(declined=True, flag=False, category=None, error=None,'''
+tests = ["agent/tests/test_claude_judge.py::test_a_decline_counts_as_not_flagged_and_keeps_its_category"]
+why = "a decline's category is not recorded"
+
+[[mutation]]
+id = "claude_judge_retries_any_error"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        except _timeout_errors():
+            line["usd"] += ledger.charge_timeout(reservation)'''
+replace = '''        except Exception:
+            line["usd"] += ledger.charge_timeout(reservation)'''
+tests = ["agent/tests/test_claude_judge.py::test_only_a_transport_error_is_retried_and_only_once"]
+why = "an error that is not a transport error is retried"
+
+[[mutation]]
+id = "claude_judge_score_skips_the_reproduction_check"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if got != PUBLISHED_AI_ARMS:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_score_reproduces_the_published_jev_and_word_list_numbers"]
+why = "score prints a comparison against Jev replies that no longer give the published numbers"
+
+[[mutation]]
+id = "claude_judge_table_cells_swapped"
+file = "agent/safety_eval/claude_judge.py"
+search = '''"claude_yes_jev_no": table[0][1],'''
+replace = '''"claude_yes_jev_no": table[1][0],'''
+tests = ["agent/tests/test_claude_judge.py::test_score_computes_the_claude_arm_agreement_and_costs_on_a_synthetic_set"]
+why = "the 2x2 table reports Jev only flags as Claude only flags"
+
+[[mutation]]
+id = "claude_judge_caught_lists_swapped"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        "caught_by_claude_only": [k for k in ids if positive[k] and claude[k] and not jev[k]],'''
+replace = '''        "caught_by_claude_only": [k for k in ids if positive[k] and jev[k] and not claude[k]],'''
+tests = ["agent/tests/test_claude_judge.py::test_score_computes_the_claude_arm_agreement_and_costs_on_a_synthetic_set"]
+why = "the steps Claude alone caught are the ones Jev alone caught"
+
+[[mutation]]
+id = "claude_judge_p90_rounds_down"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    rank = max(1, -(-percent * len(ordered) // 100))'''
+replace = '''    rank = max(1, percent * len(ordered) // 100)'''
+tests = ["agent/tests/test_claude_judge.py::test_score_computes_the_claude_arm_agreement_and_costs_on_a_synthetic_set"]
+why = "the nearest rank percentile rounds its rank down"
+
+[[mutation]]
+id = "claude_judge_scores_carry_the_step"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        "caught_by_jev_only": [k for k in ids if positive[k] and jev[k] and not claude[k]],'''
+replace = '''        "caught_by_jev_only": [{"id": k, "step": next(i["step"] for i in held if i["id"] == k)} for k in ids if positive[k] and jev[k] and not claude[k]],'''
+tests = ["agent/tests/test_claude_judge.py::test_score_writes_no_step_text"]
+why = "the committed scores carry held out step text"
+
+[[mutation]]
+id = "claude_judge_run_appends_a_jev_reply"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    held = {i["id"] for i in prepared.items}
+'''
+replace = '''    harness.append_reply(prepared.lock["question_hash"], {"item_id": "planted"})
+    held = {i["id"] for i in prepared.items}
+'''
+tests = ["agent/tests/test_claude_judge.py::test_every_sc12a_file_is_unchanged_byte_for_byte"]
+why = "the run writes to an SC12a file (the test's copy of the Jev replies, never the real one)"
+
+[[mutation]]
+id = "claude_judge_fingerprinted"
+file = "agent/build_info.py"
+search = '''    "safety_eval/",
+})'''
+replace = '''})'''
+tests = ["agent/tests/test_claude_judge.py::test_claude_judge_files_stay_outside_the_build_fingerprint"]
+why = "the Claude judge arm's files change the build fingerprint"
+
+# The Claude judge arm, one run: resume under the same run id, the pinned settings
+# hash, other runs, the run lock and unexpected errors (review findings C1 to C4,
+# S1 and S2)
+
+[[mutation]]
+id = "claude_judge_resume_reasks_recorded_items"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    to_ask = [] if refusal is not None else [dict(i) for i in items if i["id"] not in recorded]'''
+replace = '''    to_ask = [] if refusal is not None else [dict(i) for i in items]'''
+tests = ["agent/tests/test_claude_judge.py::test_a_stopped_run_resumes_under_its_own_run_id_and_never_reasks"]
+why = "a resume asks items that already have a reply line"
+
+[[mutation]]
+id = "claude_judge_resume_mints_a_new_run_id"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    run_id = state.record["run_id"] if state.record is not None else f"{RUN_ID_PREFIX}{uuid.uuid4().hex[:12]}"'''
+replace = '''    run_id = f"{RUN_ID_PREFIX}{uuid.uuid4().hex[:12]}"'''
+tests = ["agent/tests/test_claude_judge.py::test_a_stopped_run_resumes_under_its_own_run_id_and_never_reasks", "agent/tests/test_claude_judge.py::test_a_run_stopped_at_its_cap_stays_stopped_on_resume"]
+why = "a resume gets a new ledger run id, and with it a fresh run cap"
+
+[[mutation]]
+id = "claude_judge_score_takes_a_stopped_run"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if record.get("status") != COMPLETED:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_score_refuses_a_run_that_is_not_complete"]
+why = "score writes the head to head for a run that stopped"
+
+[[mutation]]
+id = "claude_judge_score_takes_a_short_run"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if missing:
+        raise EvalRefusal(f"run {record.get('run_id')} has no reply line'''
+replace = '''    if False:
+        raise EvalRefusal(f"run {record.get('run_id')} has no reply line'''
+tests = ["agent/tests/test_claude_judge.py::test_score_refuses_a_run_that_is_not_complete"]
+why = "score counts an item with no reply line as not flagged"
+
+[[mutation]]
+id = "claude_judge_score_keeps_duplicate_lines"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        if key in replies:'''
+replace = '''        if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_score_refuses_a_run_that_is_not_complete"]
+why = "an item with two reply lines under the run id silently keeps the last"
+
+[[mutation]]
+id = "claude_judge_registered_hash_unchecked"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if digest != REGISTERED_SETTINGS_HASH:'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_moved_settings_refuse_plan_run_and_score"]
+why = "a setting moved since the registration goes unnoticed and its new folder allows a second run"
+
+[[mutation]]
+id = "claude_judge_other_folders_unchecked"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if runs_dir().is_dir():'''
+replace = '''    if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_a_run_under_other_settings_blocks_run_unless_superseded"]
+why = "a run under another settings folder does not block a new run"
+
+[[mutation]]
+id = "claude_judge_ledger_runs_unchecked"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    for run_id in ledger_run_ids():'''
+replace = '''    for run_id in ():'''
+tests = ["agent/tests/test_claude_judge.py::test_a_ledger_run_with_the_prefix_blocks_run"]
+why = "a ledger run with this arm's prefix that is not the registered run does not block a new run"
+
+[[mutation]]
+id = "claude_judge_lock_not_taken"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)'''
+replace = '''            pass'''
+tests = ["agent/tests/test_claude_judge.py::test_run_rechecks_under_its_lock_after_proceed"]
+why = "two runs side by side both spend, since the run lock is never taken"
+
+[[mutation]]
+id = "claude_judge_no_recheck_after_proceed"
+file = "agent/safety_eval/claude_judge.py"
+search = '''                if again.refusal is not None or again.signature() != state.signature():'''
+replace = '''                if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_run_rechecks_under_its_lock_after_proceed"]
+why = "a run that finished while the plan waited for proceed is run again"
+
+[[mutation]]
+id = "claude_judge_unexpected_error_escapes"
+file = "agent/safety_eval/claude_judge.py"
+search = '''                except Exception as exc:
+                    return cli._live_failure(f"{SUITE} run", exc)'''
+replace = '''                except ZeroDivisionError as exc:
+                    return cli._live_failure(f"{SUITE} run", exc)'''
+tests = ["agent/tests/test_claude_judge.py::test_an_unexpected_error_stops_the_run_and_is_reported_redacted"]
+why = "an unexpected error escapes run unredacted instead of being reported as a live failure"
+
+[[mutation]]
+id = "claude_judge_unexpected_stop_unrecorded"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        stop = f"unexpected: {type(exc).__name__}"'''
+replace = '''        stop = None'''
+tests = ["agent/tests/test_claude_judge.py::test_an_unexpected_error_stops_the_run_and_is_reported_redacted"]
+why = "the run record does not say an unexpected error stopped the run"
+
+# The Claude judge score against Roanuk's sealed blind labels from SC12c
+# (agent/safety_eval/claude_judge.py, agent/tests/test_claude_judge.py)
+
+[[mutation]]
+id = "claude_judge_roanuk_absent_refuses"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    if not labels_file.is_file() or not seal_file.is_file():
+        missing ='''
+replace = '''    if False:
+        missing ='''
+tests = ["agent/tests/test_claude_judge.py::test_score_says_so_when_roanuk_labels_are_not_sealed"]
+why = "score refuses when Roanuk's labels are not sealed here, instead of saying so and scoring the rest"
+
+[[mutation]]
+id = "claude_judge_roanuk_positive_counts_other"
+file = "agent/safety_eval/claude_judge.py"
+search = '''{"positive": sc12c.positive_vote(v), "hazard": v["hazard"]}'''
+replace = '''{"positive": v["safety"] == "yes", "hazard": v["hazard"]}'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_matches_hand_counts_on_a_synthetic_set", "agent/tests/test_claude_judge.py::test_score_against_roanuk_reproduces_sc12c_and_the_decision_log_on_the_real_files"]
+why = "a yes naming only the other hazard counts as a safety step, unlike sc12c's positive rule"
+
+[[mutation]]
+id = "claude_judge_roanuk_both_missed_is_either"
+file = "agent/safety_eval/claude_judge.py"
+search = '''_ids([k for k in ids if k in jev_missed and k in claude_missed])'''
+replace = '''_ids([k for k in ids if k in jev_missed or k in claude_missed])'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_matches_hand_counts_on_a_synthetic_set"]
+why = "the steps both Jev and Claude missed are counted as the steps either missed"
+
+[[mutation]]
+id = "claude_judge_roanuk_claude_misses_by_jev"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        CLAUDE_ARM: lambda i: claude[i["id"]],
+        JEV_ARM:'''
+replace = '''        CLAUDE_ARM: lambda i: stats.jev_raises(i["noul"], threshold),
+        JEV_ARM:'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_matches_hand_counts_on_a_synthetic_set"]
+why = "Claude's missed steps are read from Jev's flags, so the missed ids are wrong while the count holds"
+
+[[mutation]]
+id = "claude_judge_roanuk_seal_unchecked"
+file = "agent/safety_eval/claude_judge.py"
+search = '''    human = sc12c.require_sealed()["labels"]'''
+replace = '''    human = harness.read_json(labels_file)["labels"]'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_matches_hand_counts_on_a_synthetic_set"]
+why = "a labels file changed after its seal is scored instead of refused"
+
+[[mutation]]
+id = "claude_judge_roanuk_reproduction_unchecked"
+file = "agent/safety_eval/claude_judge.py"
+search = '''            if got != want:'''
+replace = '''            if False:'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_reproduces_sc12c_and_the_decision_log_on_the_real_files"]
+why = "Jev and the word lists against Roanuk's labels are reported even when they no longer reproduce the SC12c score"
+
+[[mutation]]
+id = "claude_judge_roanuk_lines_drop_missed"
+file = "agent/safety_eval/claude_judge.py"
+search = '''        lines.append(f"{harness.arm_line(name, c)}; missed {s['missed']} of {s['positives']}")'''
+replace = '''        lines.append(harness.arm_line(name, c))'''
+tests = ["agent/tests/test_claude_judge.py::test_score_against_roanuk_matches_hand_counts_on_a_synthetic_set", "agent/tests/test_claude_judge.py::test_score_against_roanuk_reproduces_sc12c_and_the_decision_log_on_the_real_files"]
+why = "the printout leaves out how many of Roanuk's safety steps each arm missed"
+
+[[mutation]]
+id = "teardown_kappa_first_use_unexplained"
+file = "index.html"
+search = "(Cohen's kappa 0.728; kappa is agreement corrected for chance, where 1 is perfect and 0 is no better than chance)"
+replace = "(kappa 0.728)"
+tests = ["agent/tests/test_teardown.py::test_kappa_is_explained_where_it_first_appears"]
+why = "Part 8 names kappa before Part 9 explains it, so a reader meets the term unexplained"

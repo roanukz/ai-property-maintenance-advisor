@@ -1,0 +1,583 @@
+{
+  "ai_majority_reproduces_published": true,
+  "answers_after_seal": 0,
+  "answers_log_matches_seal": true,
+  "arms": {
+    "against_ai_majority": {
+      "Jev, wording 3 at 0.51": {
+        "flagged": 41,
+        "other_flagged": 4,
+        "positives": 31,
+        "precision": 0.7317073170731707,
+        "precision_wilson95": [
+          0.5806646689292336,
+          0.8430503595218832
+        ],
+        "recall": 0.967741935483871,
+        "recall_wilson95": [
+          0.838058948352751,
+          0.9942827784745831
+        ],
+        "tp": 30
+      },
+      "word rule, as published": {
+        "flagged": 28,
+        "other_flagged": 0,
+        "positives": 31,
+        "precision": 0.7142857142857143,
+        "precision_wilson95": [
+          0.5294071156670428,
+          0.8474600394333092
+        ],
+        "recall": 0.6451612903225806,
+        "recall_wilson95": [
+          0.46947954064368874,
+          0.788833409061346
+        ],
+        "tp": 20
+      },
+      "word rule, tuned": {
+        "flagged": 34,
+        "other_flagged": 0,
+        "positives": 31,
+        "precision": 0.6470588235294118,
+        "precision_wilson95": [
+          0.47913963119781733,
+          0.785120794051205
+        ],
+        "recall": 0.7096774193548387,
+        "recall_wilson95": [
+          0.5340767066925007,
+          0.8390419984369939
+        ],
+        "tp": 22
+      }
+    },
+    "against_roanuk": {
+      "Jev, wording 3 at 0.51": {
+        "flagged": 41,
+        "other_flagged": 3,
+        "positives": 26,
+        "precision": 0.5365853658536586,
+        "precision_wilson95": [
+          0.38746471267669474,
+          0.6794376602366394
+        ],
+        "recall": 0.8461538461538461,
+        "recall_wilson95": [
+          0.6646880067178652,
+          0.9384996627642165
+        ],
+        "tp": 22
+      },
+      "word rule, as published": {
+        "flagged": 28,
+        "other_flagged": 0,
+        "positives": 26,
+        "precision": 0.6428571428571429,
+        "precision_wilson95": [
+          0.4583030651442781,
+          0.7929417049226233
+        ],
+        "recall": 0.6923076923076923,
+        "recall_wilson95": [
+          0.5001174167780164,
+          0.8349868440453624
+        ],
+        "tp": 18
+      },
+      "word rule, tuned": {
+        "flagged": 34,
+        "other_flagged": 1,
+        "positives": 26,
+        "precision": 0.5294117647058824,
+        "precision_wilson95": [
+          0.3673671298006892,
+          0.6854849552491152
+        ],
+        "recall": 0.6923076923076923,
+        "recall_wilson95": [
+          0.5001174167780164,
+          0.8349868440453624
+        ],
+        "tp": 18
+      }
+    }
+  },
+  "disagreements": [
+    {
+      "ai_majority": {
+        "hazard": "none",
+        "label": "no",
+        "safety_step": false,
+        "votes": {
+          "reader-1": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-2": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-3": {
+            "hazard": "none",
+            "safety": "no"
+          }
+        }
+      },
+      "id": "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+      "roanuk": {
+        "hazard": "electrical",
+        "safety": "yes",
+        "safety_step": true
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "no",
+        "safety_step": false,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "no"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "no"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "no"
+          }
+        }
+      },
+      "id": "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a",
+      "roanuk": {
+        "hazard": "electrical",
+        "safety": "yes",
+        "safety_step": true
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "none",
+        "label": "no",
+        "safety_step": false,
+        "votes": {
+          "reader-1": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-2": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-3": {
+            "hazard": "none",
+            "safety": "no"
+          }
+        }
+      },
+      "id": "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202",
+      "roanuk": {
+        "hazard": "electrical",
+        "safety": "yes",
+        "safety_step": true
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "none",
+        "label": "no",
+        "safety_step": false,
+        "votes": {
+          "reader-1": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-2": {
+            "hazard": "none",
+            "safety": "no"
+          },
+          "reader-3": {
+            "hazard": "none",
+            "safety": "no"
+          }
+        }
+      },
+      "id": "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f",
+      "roanuk": {
+        "hazard": "heat",
+        "safety": "yes",
+        "safety_step": true
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "heat",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "heat",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "heat",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "heat",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "heat",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "heat",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "heat",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "heat",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806",
+      "roanuk": {
+        "hazard": "other",
+        "safety": "yes",
+        "safety_step": false
+      }
+    },
+    {
+      "ai_majority": {
+        "hazard": "electrical",
+        "label": "yes",
+        "safety_step": true,
+        "votes": {
+          "reader-1": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-2": {
+            "hazard": "electrical",
+            "safety": "yes"
+          },
+          "reader-3": {
+            "hazard": "electrical",
+            "safety": "yes"
+          }
+        }
+      },
+      "id": "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1",
+      "roanuk": {
+        "hazard": "none",
+        "safety": "no",
+        "safety_step": false
+      }
+    }
+  ],
+  "hazard_agreement": {
+    "agree": 152,
+    "categories": [
+      "electrical",
+      "heat",
+      "gas",
+      "other",
+      "none",
+      "split"
+    ],
+    "cohen_kappa": 0.682270287338175,
+    "items": 175,
+    "percent": 86.85714285714286,
+    "table": [
+      [
+        21,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        9,
+        1,
+        0
+      ],
+      [
+        7,
+        5,
+        0,
+        6,
+        120,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "human_labels_sha256": "70725f59306957acb35a7cfe9285f95f9970f6062287093356ca632dfeebf744",
+  "in_scope_hazards": [
+    "electrical",
+    "heat",
+    "gas"
+  ],
+  "items": 175,
+  "jev_threshold": 0.51,
+  "lock_sha256": "cc217fbb61ec6b3ab71c6e26fe59faf466f12c9641bf1dd2106c6e4f34dad5c9",
+  "note": "SC12c: Roanuk Zaman's sealed blind labels on the SC12a held out half against the AI majority and the arms against both (decision 70); ids and numbers only, no text",
+  "question_hash": "34fb2f3b18541662",
+  "revisions": [
+    {
+      "agrees_with_ai_majority": true,
+      "at": "2026-10-15T20:05:02+00:00",
+      "blind": {
+        "hazard": "electrical",
+        "safety": "yes"
+      },
+      "hazard": "none",
+      "id": "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+      "safety": "no"
+    },
+    {
+      "agrees_with_ai_majority": true,
+      "at": "2026-10-15T20:06:18+00:00",
+      "blind": {
+        "hazard": "none",
+        "safety": "no"
+      },
+      "hazard": "electrical",
+      "id": "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+      "safety": "yes"
+    },
+    {
+      "agrees_with_ai_majority": false,
+      "at": "2026-10-15T20:06:55+00:00",
+      "blind": {
+        "hazard": "none",
+        "safety": "no"
+      },
+      "hazard": "electrical",
+      "id": "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+      "safety": "no"
+    }
+  ],
+  "safety_step_agreement": {
+    "agree": 162,
+    "cohen_kappa": 0.7279684323807246,
+    "items": 175,
+    "percent": 92.57142857142857,
+    "table": {
+      "roanuk_no_ai_no": 140,
+      "roanuk_no_ai_yes": 9,
+      "roanuk_yes_ai_no": 4,
+      "roanuk_yes_ai_yes": 22
+    }
+  },
+  "scored_at": "2026-10-15T20:07:36+00:00"
+}

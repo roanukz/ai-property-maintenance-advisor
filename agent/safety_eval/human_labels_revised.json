@@ -1,0 +1,35 @@
+{
+  "note": "SC12c labels Roanuk changed after scoring: ids and answers only, each reason kept in data/eval/sc12c/revisions.json; the sealed blind labels in human_labels.json are unchanged and are what every score reports",
+  "revisions": [
+    {
+      "at": "2026-10-15T20:05:02+00:00",
+      "blind": {
+        "hazard": "electrical",
+        "safety": "yes"
+      },
+      "hazard": "none",
+      "id": "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec",
+      "safety": "no"
+    },
+    {
+      "at": "2026-10-15T20:06:18+00:00",
+      "blind": {
+        "hazard": "none",
+        "safety": "no"
+      },
+      "hazard": "electrical",
+      "id": "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458",
+      "safety": "yes"
+    },
+    {
+      "at": "2026-10-15T20:06:55+00:00",
+      "blind": {
+        "hazard": "none",
+        "safety": "no"
+      },
+      "hazard": "electrical",
+      "id": "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c",
+      "safety": "no"
+    }
+  ]
+}

@@ -1,0 +1,887 @@
+{
+  "answers_log_sha256": "c3eceb300f11c72538dc1452c1ef208130577c6516b47a91743fd6589f94769d",
+  "answers_logged": 201,
+  "changed_answers": 26,
+  "items": 175,
+  "items_changed": 13,
+  "labels": {
+    "0083bada0af2be9b9ccdc18fd7af0ddbcbe1ee7d74e2a6229be1e6e273a841ba": {
+      "answered_at": "2026-10-15T19:54:25.563+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "00e343e3b90b9590c3e6e758c1b70501dde323ae5d59dbb7ba4c3e84d20a0531": {
+      "answered_at": "2026-10-15T19:49:25.175+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "01003f72c9af530434d1000176fe8ced41a7b60f8cadf58346a883dc4ea8488d": {
+      "answered_at": "2026-10-15T19:47:54.575+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "01032fb3596d6441f3b0943b24b46ea9b73e14fb9d2608e953b2a7a2781de588": {
+      "answered_at": "2026-10-15T19:54:36.100+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "01b411299888047fa028c9f7daa2fe6993b99362e6a6fae7ea0ceec1f5e0c7ea": {
+      "answered_at": "2026-10-15T19:51:24.924+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "029e73986dcf083db3ba472b149ab142fd396b46ca7ff00d2c3654ab9729fb54": {
+      "answered_at": "2026-10-15T19:46:28.827+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "02d96e410f01c979b1ff03f26ee1fe17d61accf9f41468f48ab495d0b7d49458": {
+      "answered_at": "2026-10-15T19:55:13.328+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "030c1b6f192caa477a9b829b55c98e0f9850056e590c22594f056da7f8faadf5": {
+      "answered_at": "2026-10-15T19:53:19.474+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "034ca3c91707063b9aa8efb9b46b291e60ec704fb7342c8339e02c4d600d9743": {
+      "answered_at": "2026-10-15T19:49:01.983+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "041a9df5d330641e0959f1c3fd50399475153b1263cba40cf852b256f1f9c44a": {
+      "answered_at": "2026-10-15T19:51:12.189+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "064bd2296c110001c557af581fac9391676e90f0d9918fd5356c6abf605294a5": {
+      "answered_at": "2026-10-15T19:56:22.465+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "07fd625cb6371ae45d2f743b49b714941599b519b9bbe59789e0d1d2a6834f96": {
+      "answered_at": "2026-10-15T19:51:47.527+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "0a28f8f4e28a6f3b55d384327c5c8085b5449b9376d9408eb3c52bb32a237bef": {
+      "answered_at": "2026-10-15T19:54:19.660+00:00",
+      "hazard": "gas",
+      "safety": "yes"
+    },
+    "0ae3f8525c5a3d051a07ca2041c4547aa5fdbeefff069b691b1243e230e2777a": {
+      "answered_at": "2026-10-15T19:54:38.326+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "0c2efcfe58114f9adccf6fd499952c2539825d64987bfa505debfc0dc40bb0ec": {
+      "answered_at": "2026-10-15T19:42:22.907+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "104083e2d9d4ee5e21642a06967fb80aa1d5800db2e4e7a884ae64ecb8ed1e91": {
+      "answered_at": "2026-10-15T19:42:15.406+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "132e3dcaa09d5654681984231b836bce137f3a612251fcfe5f4018985bd425d7": {
+      "answered_at": "2026-10-15T19:51:57.921+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "13e33104e0da8324a9c1e87acf15071d1051242d9c8eb38b83ede25074b620a1": {
+      "answered_at": "2026-10-15T19:50:27.578+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "1575df40a6695c3193cde644e2eb9d9a5e6a6740f72b2e93d7d7e155a253d561": {
+      "answered_at": "2026-10-15T19:50:56.303+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "1632484fe2d6ac40c6eaea7d77714bda71a0f004a0b0123a3e4852939ef1455b": {
+      "answered_at": "2026-10-15T19:55:29.743+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "1d256cf663fcafc15a387e370348ed07f2cbbc9a3a4f963dc05aec34bb698a7e": {
+      "answered_at": "2026-10-15T19:46:08.576+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "1f0dff625913eb097a695b8437565490c65ca03438414e9eaada1ac90b3d996b": {
+      "answered_at": "2026-10-15T19:55:37.403+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "1f8a5c90f3cb4051be470c226e4a37020d2ed0bfa4295f19d4d6b402dcbefe3c": {
+      "answered_at": "2026-10-15T19:54:37.293+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "224d5ad3112c31b214eb86682fa68196a721057cb8dd7f958e60a01c29ec34d8": {
+      "answered_at": "2026-10-15T19:54:47.777+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "22582c947a3aca8a72269122fe6a5800fe247fa889aad4783ff8c4fed72a90ed": {
+      "answered_at": "2026-10-15T19:54:28.055+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "24df4383e6adca84af2513d677165d80089e35651b89db30991cc81802d71ede": {
+      "answered_at": "2026-10-15T19:43:35.356+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "2514e06610f4c862af86e6077df5feb12075b5a5c38d4cba7331d760780f36bb": {
+      "answered_at": "2026-10-15T19:42:34.422+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "25a342caf19f608d83fe9e3c568ce9f5d4cf7f5ec8dfa3ff3e47e8ff5a656c9c": {
+      "answered_at": "2026-10-15T19:46:54.019+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "2635e0303673926abc6732c6a2b180935e9f1aa2188d3d05be25acd93714f90c": {
+      "answered_at": "2026-10-15T19:51:28.312+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "2a1b870e99f025132250db44f059eb65eec211cd7347d4db139757324d205667": {
+      "answered_at": "2026-10-15T19:50:54.159+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "2c3338f030da96030ab071fa46723583183726d208e7508c770d343ef89c980b": {
+      "answered_at": "2026-10-15T19:43:51.156+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "2fc1d286a06e6548470d5482d81510d5e2cb786938dd839548ba418a6501a842": {
+      "answered_at": "2026-10-15T19:55:35.062+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "30121948d0be404b1241e438b4358b31e523327225c2a9ca8aeb436eab67a460": {
+      "answered_at": "2026-10-15T19:48:01.010+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "308a73d56fe415a8c24b0aa0da49e06b930be217ed3b97f51371dceb0aa59821": {
+      "answered_at": "2026-10-15T19:54:40.361+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "30da2826a39aee42b1ecc8c8f5ad1f503e430566b03e3b13655a94915f012b00": {
+      "answered_at": "2026-10-15T19:50:31.744+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "32f3ba21702dcb5846c0cd7bcab38d2c450adc7b62fb3b89417025d4195b867e": {
+      "answered_at": "2026-10-15T19:48:15.060+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "330ccbad495a81fa834cac547fe5cfc07a98db24a6a8a127df5b825d989b0eed": {
+      "answered_at": "2026-10-15T19:53:52.838+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "35f3b043642bb94537bf04dcfeaa68323072d0fff201e48f428713b976ac9a26": {
+      "answered_at": "2026-10-15T19:54:58.578+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "37fd88be028e3a6383d3c5949e18bb34e116bea642c0d753fc7cf39a7ad47306": {
+      "answered_at": "2026-10-15T19:54:54.738+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "38414f336ea16d89cdc66f4943d0322336983c5de0678b6c6944abfadabcc67e": {
+      "answered_at": "2026-10-15T19:47:17.543+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "393b1e66066f8037ba203e4d4eae851421d4a0280b3a68b5ce58ecda9c3ea117": {
+      "answered_at": "2026-10-15T19:48:53.026+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "39cecc4de5303889c397d17a4b4265f4b8302b7b7f92aef6302db6807b174bad": {
+      "answered_at": "2026-10-15T19:48:36.343+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "3a669e51be8f40db9b26ea6ea301347a60588aeef2ccf24bd6ac28480e19151e": {
+      "answered_at": "2026-10-15T19:55:02.010+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "3d47629cbbaf754f249e0944dd8b8f6ac69494b6805bb3df9c11a05c44c2067a": {
+      "answered_at": "2026-10-15T19:48:12.026+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "41ff04035c9de92a95d283926fea819395ba464fe4fa068ae67975b7360475c7": {
+      "answered_at": "2026-10-15T19:47:25.626+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "44a7291d1df3ea20eb3d0d7e93debb57085b7cd4d3b27d547cd13cc9029714b1": {
+      "answered_at": "2026-10-15T19:50:57.923+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "46519ccdcb721c373564c96144dcf27669bba780fab86c2c7b7f49b41ca17695": {
+      "answered_at": "2026-10-15T19:42:58.539+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "49da631445308b3894b790d7650191d4b42e1c3cee33f05340c68053f4f0652f": {
+      "answered_at": "2026-10-15T19:50:49.186+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "4aa05cfb1e611b5e066537917736fc9e6fb9d5494c651995956a6f39004001b0": {
+      "answered_at": "2026-10-15T19:51:09.028+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "4cad575f0857f77e2fa3e20099543f40084cf73615eb4cfdd1f861f31ddd673e": {
+      "answered_at": "2026-10-15T19:45:03.590+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "4cb7ae49f70e8e725cb4fb3af6cce1553a3799d14f9d2811b78dcc510410e9e2": {
+      "answered_at": "2026-10-15T19:42:30.906+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "4e03f8b707c6eeeaac4911a4442f4822db3944ce4bf0e2f7aa2fa595d826bc98": {
+      "answered_at": "2026-10-15T19:51:21.230+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "4f2cc493c96ddf249720058d238bacb0669defc8cac10f4cea094f94f72644e6": {
+      "answered_at": "2026-10-15T19:54:51.642+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "518802473228a4ff50031f3ccb822bb3a31fe91d49471e53744660a68475062b": {
+      "answered_at": "2026-10-15T19:52:13.541+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "519ec66c062092fc3f2fb4c77ae9970c90ec742cee9a0fcf3b35f86d481d0224": {
+      "answered_at": "2026-10-15T19:46:44.350+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "537ff2521fb9d21af7280fcee0e6a257059fa20163f34cd1ca8a83e9da2635b2": {
+      "answered_at": "2026-10-15T19:49:51.954+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "54076c98f1de3d7f771e2b8e86cdbe2f2946317dfcd64b39d84fbe1583df81ec": {
+      "answered_at": "2026-10-15T19:46:03.609+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "54367a8e487cad20a5d2b618af231cbd74235989c0173439b296591171118eda": {
+      "answered_at": "2026-10-15T19:51:51.284+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "54396bbe307bf5ed2677d9ae8f8b9cfdf4855e7e60f158465abbc6698bc8fcc6": {
+      "answered_at": "2026-10-15T19:47:57.725+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "59bba63cf9f91efdb008a9f251a672145afa6462a5fc5976daa5579f260770b6": {
+      "answered_at": "2026-10-15T19:55:05.999+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "5a24977d670278f7f173dd259ad431315e9713c384a0b114c6381621051b9d68": {
+      "answered_at": "2026-10-15T19:49:41.543+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "5a5924816f36b3878d988777faad762870e90954c22c9ba6bc666c60f3a88fe4": {
+      "answered_at": "2026-10-15T19:50:12.471+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "5afb1ea2128a1f965b7ed1eebe62f8295c98633cf75f35f1db1f46109a4463f5": {
+      "answered_at": "2026-10-15T19:51:00.842+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "5b5e65e87b996be2be83e4811174dfaa52c954d97a2e76dbed44362b3332603d": {
+      "answered_at": "2026-10-15T19:54:57.283+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "5b8a707e9f23e3d00a3a28087404a9c2d2194fe39ce7ab9ddf1c1153d5c1dc34": {
+      "answered_at": "2026-10-15T19:55:57.877+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "5ecab917226105172d22999729e2e410b8ab98a530601e9f166012449f358919": {
+      "answered_at": "2026-10-15T19:48:47.793+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "609a72f40b3a1a5d2379a976284bede4a497199fbfd143ed38e8cd6df5df4009": {
+      "answered_at": "2026-10-15T19:45:31.140+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "60e54d06225a3eb1accca04bad915137b752d80435ce0b55705a8b74669ffe6f": {
+      "answered_at": "2026-10-15T19:46:25.392+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "62eb36b7b6a56504a11aa16f27cf0587d6b47884fb46a38201e61b5ffc435d2c": {
+      "answered_at": "2026-10-15T19:55:33.014+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "658ab5b982af8a3e2cffd596ef6844f02e52c2da336c0fefcd020aaed7e8b9a0": {
+      "answered_at": "2026-10-15T19:44:27.282+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6621597f5028a869d42cd2af7db1de35447c7df8e4d542a52e36f47c51e2a9b1": {
+      "answered_at": "2026-10-15T19:49:20.642+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "66b693727272d3391faec9c608ca5611a98239a2cebf5d5931ca8e0834dcf3c3": {
+      "answered_at": "2026-10-15T19:51:14.340+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "67ae0985f895b3fb83e62db712cc7a50e32599cd9416958638650c098c970ea7": {
+      "answered_at": "2026-10-15T19:41:47.649+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "688a222c0256c5f1dea4bc42c437d83e28662db2f0091fd8c198c96c0293ab2a": {
+      "answered_at": "2026-10-15T19:53:45.153+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "68b2e2b579eb47e39a76318c5b2043cc87a1a16257c2704408946db23d6f42ce": {
+      "answered_at": "2026-10-15T19:51:42.998+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6a09fdea119038a63c11f9b0e3dd32201c48a326139721223d3869cbabe05618": {
+      "answered_at": "2026-10-15T19:50:15.962+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6a847b66fd44d3977986b2b2479bf9262e6c289797fd6e3c97b9537a37238e49": {
+      "answered_at": "2026-10-15T19:49:05.010+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6cba0d2406677fd690eb315bbf7a04285b1ecab3c875c53d9c6f0fa8d5f8d2e2": {
+      "answered_at": "2026-10-15T19:49:44.125+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6cf17559e5147944ca2422458f367354c871b9c5c7020829791641a9c21c269f": {
+      "answered_at": "2026-10-15T19:46:59.595+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6dc77a34a8365796d9e66864b91c47b43f0ba074e34adfcf1799156fd9f7af53": {
+      "answered_at": "2026-10-15T19:51:02.910+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6e1db2eb3ee3847d35d4142d90846bdbb5a224062b40a3ff173b99290b49d43a": {
+      "answered_at": "2026-10-15T19:50:18.791+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6f7fc5bcbbc87adf030f6a67b7d120a1701c57aacde66a337eb7ee90175e8ff2": {
+      "answered_at": "2026-10-15T19:44:11.740+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "6f93e733cce6e5a63a734305498b4e405c5f26af410f5446972170090896edde": {
+      "answered_at": "2026-10-15T19:52:11.744+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "7234efaa45058ba9aa7f6ceaad172e37dc80044abeb993f0a123be1d7368f401": {
+      "answered_at": "2026-10-15T19:48:05.959+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "72bde3a3bdc7a764aadbc00aaa6a36c852fa2cc93849e345f11398aeb6ad099e": {
+      "answered_at": "2026-10-15T19:44:53.849+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "73ef508a4065544702bf3d1901ae0a030ae2807211409acd4a4729c65bea09b3": {
+      "answered_at": "2026-10-15T19:51:41.285+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "748058220a25b0b648b56beb4255f13c1356e296da0eb566c0ef17335b31c11f": {
+      "answered_at": "2026-10-15T19:48:42.443+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "74a4b5d7f398f9a12832f659049fd95079efe5b862ef15ad0cfa1294114daab7": {
+      "answered_at": "2026-10-15T19:48:38.492+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "75bc3dd926d33d1d08f8009eabb4924348985f9a5f516a62830e30b9c968b1e1": {
+      "answered_at": "2026-10-15T19:44:36.741+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "77b28e0ab0302f6ef9ac96d359d2405b61d78bae9a5c80c9f32b8ebf82e8fde6": {
+      "answered_at": "2026-10-15T19:53:16.333+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "795b9648fa7ebaca4b1c99f2b6251911d82a0d885c3f7192691f1a40e4c757ab": {
+      "answered_at": "2026-10-15T19:42:38.522+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "7af045612f0ee67a4a458f609c00e211d65c7958887fa65c3dc703615eeff73a": {
+      "answered_at": "2026-10-15T19:54:33.979+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "8099a594ff38a4f8dcf463ff2bb9b8a89d5423d7bedc344a44a1ce5553bac993": {
+      "answered_at": "2026-10-15T19:44:47.590+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "8134d444a3878689e726e43bdf03f2667e95b36237c2a94d1d132c9d3a4d0c44": {
+      "answered_at": "2026-10-15T19:44:01.890+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "856b0ac80e45599e9de33b42d1a84f461190479864015d2a554ed0b808bee6ac": {
+      "answered_at": "2026-10-15T19:48:50.243+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "86fd1901c6b613af5dc2975dbb28eb06a1bbbf722c24efb8dee03b62940607e9": {
+      "answered_at": "2026-10-15T19:55:54.115+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "8805a735888b09da89fb298e827549fbf48801507de88aa99c77b8c0cd8d2041": {
+      "answered_at": "2026-10-15T19:45:15.324+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "88a5fcf67a738873ff157ba608a6bcf6572b287051fb0e11ff29ccfcaeffd5dc": {
+      "answered_at": "2026-10-15T19:49:34.345+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "8b67e250b74a172260838e47b71148851138d2eb20bfa52ab16e415e3d8d010f": {
+      "answered_at": "2026-10-15T19:56:03.579+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "8dbc8c48c033e300373702b375de4ac7c4128d1f87d512933d9cc0c21e7e51d0": {
+      "answered_at": "2026-10-15T19:54:03.778+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "8f4822e3243349dd2f71b9715a4bf0f528c2903e0a0ebce41859b82ef338a6eb": {
+      "answered_at": "2026-10-15T19:50:40.543+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "8f712c05ecc17526da672e85a08aead85a4779e2ff9ecb1da463cabfecfd34f5": {
+      "answered_at": "2026-10-15T19:50:34.166+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "934f2efba9ecb7cf6a387bd19d464b38397f8d7df6e1045414abbbd0e4b0d411": {
+      "answered_at": "2026-10-15T19:43:44.609+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "95d46fc3668e53cd8bc6ed4a471b750e4d4930e616f4cd056313a2bbc432cd55": {
+      "answered_at": "2026-10-15T19:47:46.262+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "98094782b74c2d5306cfb58bd8b747338711d25c4fd25e15591df399a4a38222": {
+      "answered_at": "2026-10-15T19:47:35.174+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "9a9a4e8fbf3201803dc82bcd605193656fd26ae0537daf0eafeb277cf5279b67": {
+      "answered_at": "2026-10-15T19:49:15.227+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "9ad6327249f1d1144bb7ddb1c0e8da178d2b3fa9d8103da4fcfbf04fae0e5724": {
+      "answered_at": "2026-10-15T19:52:22.587+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a193e28694078cc74b71dcc9d97a47a9d07686a68e64f9d0135e6bdf126f3479": {
+      "answered_at": "2026-10-15T19:48:18.791+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a3e657594b51e9746bac3cfffec4e00c49e707839097e50d132633a87c3ac8c4": {
+      "answered_at": "2026-10-15T19:49:27.541+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a67cb3f0d7ce4be04d34b6ee07ef1ebb43e6f37e6cfd7287a2c0a6a3111e1701": {
+      "answered_at": "2026-10-15T19:44:44.373+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a6ffc5d1e0f2f645d0f8d6f89c24ab2bbb9dfc7cf6f09115d8e760776031cf9d": {
+      "answered_at": "2026-10-15T19:53:48.308+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a72f6b0d7db4fcda9ae119b8651765b5867c652f64eb87642a32b4689127c415": {
+      "answered_at": "2026-10-15T19:44:20.507+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "a9c11c046a61855fd439107d541d5cc67bce777b419f5270358199712a9a0b47": {
+      "answered_at": "2026-10-15T19:54:55.894+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "aaffd79a04d1fa7992354a99f5242b6a9285cd056780a18efeff508270a0ba5f": {
+      "answered_at": "2026-10-15T19:48:09.375+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ac6005acb102694ead60c4d0955f310f49a698ece16a391617f2de501efcf8b7": {
+      "answered_at": "2026-10-15T19:46:36.243+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "ac79420c2749c5c9d3dd1f292cd9bb20eb06802d9b6600239cbd87e3a70e2d20": {
+      "answered_at": "2026-10-15T19:44:59.508+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "adc1b4a4d30ab4f869557ee7ce16c356d22326616afc2bf0e25abc649abdd576": {
+      "answered_at": "2026-10-15T19:45:12.474+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "adf7359c7ab16cd9863fabf6fd013e46f3eb36c89d0045fdf4ac14dfdfbba945": {
+      "answered_at": "2026-10-15T19:48:44.659+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "af2c119715a9ea10a91a9683c9350f004a8e93b857edee94dcf1aecda1a0c6f4": {
+      "answered_at": "2026-10-15T19:51:56.225+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "af58760c5dde2c58aa2499d933900e8de7cab804e594d67693ed25efba7c342e": {
+      "answered_at": "2026-10-15T19:47:31.309+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "af6738224a7ee1fe5ac9a5590261314c24f11abea829ee9c1abecb767e8715a2": {
+      "answered_at": "2026-10-15T19:54:50.015+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "b0c2c7ce87053a7847d6f40437c7dafc1f7b1b1cc3cfce8ca2097c2d9b263eb7": {
+      "answered_at": "2026-10-15T19:46:32.609+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "b2cd3b6ca0dda84dcac3ddbd1240f745b5c73a3327f8fb1be4cc62e1c8c528b7": {
+      "answered_at": "2026-10-15T19:51:36.285+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "b460b52384ba18b3f784e060ccdbda52734c88cd8b5fd7e4ea6568e2b60eea1e": {
+      "answered_at": "2026-10-15T19:47:28.374+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "b5004f26a852b0d60ec1237432c1a33c2307ff2458c374d9d99749d045c7feb9": {
+      "answered_at": "2026-10-15T19:43:29.551+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "b78cbb67084e4672309a37196f276bf686a36d93f2915fde13a5ed2dd63e6d90": {
+      "answered_at": "2026-10-15T19:52:18.618+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "b7b93dfdace6218cc8955f92a9760a54a3b64e128d1cedc3766d00646ca60202": {
+      "answered_at": "2026-10-15T19:41:58.894+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "b9f7befb846f0af2955a5c1d8c8208e3b3665ea66cd20b53bf80351cde3bd29e": {
+      "answered_at": "2026-10-15T19:44:56.860+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ba7f7d6b94fb64fdc88984396c679482ee1b89244f0138ee5f5ed8edf90fc4b4": {
+      "answered_at": "2026-10-15T19:54:53.461+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "bbade82ad972a6a310853ab9392c8dcf4234c032fb72ff166cf31a95371b2601": {
+      "answered_at": "2026-10-15T19:44:05.210+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "bbedb3ae6b6686464cd351c7e7b8a62c03343bf34f15404a20e0520eae56a49d": {
+      "answered_at": "2026-10-15T19:50:52.110+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "bc4dfc01f4ad67ac3821e8849ac429fcc13ff2c36b42a3b974d20a73a6904d89": {
+      "answered_at": "2026-10-15T19:55:42.778+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "bc5462e534ae8ffc158247aea3ed9b3c9646f24f1cddc2c13442c54ae8b3c65e": {
+      "answered_at": "2026-10-15T19:53:55.586+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "be81b9752818adc65a633473d3b31e301ac51a196ae85a0de016d3fed08f0168": {
+      "answered_at": "2026-10-15T19:56:25.046+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "c3efaffae563adecd153298e262dc42135f7695a6983242ebd9597d2e6f88868": {
+      "answered_at": "2026-10-15T19:54:30.567+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "c6188a7a8d07275dd9b44729f718a3d6c80a7f5291cf9cfd100ac896f4722726": {
+      "answered_at": "2026-10-15T19:51:23.192+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "c659e33bd11a639f01746028f97c22746b4bcdc04c04e982eedcd59a6e761c46": {
+      "answered_at": "2026-10-15T19:54:42.095+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "c74e8286d6ab8df8624ea330ecab39b9bf9322b690d68607f78aab9b1aaab97c": {
+      "answered_at": "2026-10-15T19:51:59.943+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "c8687747bf91693000fde75dcefc02306fc7406f6ddfe77f6891a96f2fdc4580": {
+      "answered_at": "2026-10-15T19:52:32.393+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "ccac09e7df817b625bfd19de67bc3d16522ab343e1fc05d6c7dd5f81fa3ab1c7": {
+      "answered_at": "2026-10-15T19:47:39.715+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ce5f08d28eb70236a326e7bfb0d267cdbd6435a6bfdaeaee2998f832a09e27e0": {
+      "answered_at": "2026-10-15T19:46:57.095+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ced8f87a86714f344128b3cd482e1ac10e39c049138b7d91dcbf8dc22fb3ac26": {
+      "answered_at": "2026-10-15T19:56:02.212+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "cf7451b48aea0c5a033f7f6898d930c4044de44e73877d8e459d0b98dd35c613": {
+      "answered_at": "2026-10-15T19:49:23.192+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "d14fb3c98fa9ace32daa67436e7c0f97e2341627ea2093fe6862fe6a2f91e806": {
+      "answered_at": "2026-10-15T19:56:15.144+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "d2bf9bf3f8bde8e61fe621754f3908f6f74c51d5f7239b5a20506395836defb3": {
+      "answered_at": "2026-10-15T19:45:43.874+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "d727fde9f76d9e3af3646dfb242dd4707149ddc52abd614469aa421e561d7ae9": {
+      "answered_at": "2026-10-15T19:48:56.159+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "d7f4beb39244d7e5dbc5f8c5e3a140b8a7b321a56b01a7845659e3a9ae432508": {
+      "answered_at": "2026-10-15T19:53:40.785+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "df1c654667164f59dc844b98960f18a2f507db1ae9103d54810a862cb0e36690": {
+      "answered_at": "2026-10-15T19:47:49.025+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "df6a59e9c38ebf32bb13595406a4752e6866a24ba8a2dcc2ba9ce6aad0c5094f": {
+      "answered_at": "2026-10-15T19:45:57.027+00:00",
+      "hazard": "heat",
+      "safety": "yes"
+    },
+    "e16574bc2a7be2036348326e9c399c5415e584ee75a9883b99e1a6f5dc528d08": {
+      "answered_at": "2026-10-15T19:46:19.534+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "e184d979a148be891c8e7db11e795f3fe85c5cdd328c42c60638ab8f5d2f4c99": {
+      "answered_at": "2026-10-15T19:45:27.457+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "e4e71019c07c6e2b695233687d8861ace75300c3116dbb9cf4b61f9bb4c61470": {
+      "answered_at": "2026-10-15T19:45:10.074+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "e7b6907a9d868c2cf0887ecce6bd12d5fc56eca38f02a24d12cf634aa6721f36": {
+      "answered_at": "2026-10-15T19:51:19.112+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "e7da0e29f8d606775dc34a56f278199119c9cbb86f494a622e4d1e4512f2b8bc": {
+      "answered_at": "2026-10-15T19:44:16.609+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "e7e5813d36e45df16f457b858c6b9155ea709687c0d9b3ca0b78411eb6fd5380": {
+      "answered_at": "2026-10-15T19:52:08.852+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "e9e3b198a6398552db795095bcc53d5d09b284d26605687a4a58d8373d8ebab4": {
+      "answered_at": "2026-10-15T19:52:01.333+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ea105cb0557f89849183cf37ef6b6f0184528a98405e2ebef138221c3bceeffb": {
+      "answered_at": "2026-10-15T19:53:50.583+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ea2543675b65d1269875b33aeeb35bd2deca0ca044782258e71ae7e5b5c605fe": {
+      "answered_at": "2026-10-15T19:42:48.241+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "eada223cd067e926bf00c62ef116e233ab638e4b0794263ec468a31599365a85": {
+      "answered_at": "2026-10-15T19:51:39.165+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ec0d4353ccbcd4cec310a2f30893dd44e1f72d7c2995ff8224a3e932abd091c0": {
+      "answered_at": "2026-10-15T19:46:13.773+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "ec15e7f260734c669852844accdc1b2dcb6e8600acf55581393eaab6c7ee81ef": {
+      "answered_at": "2026-10-15T19:53:22.374+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ecaa843e99ddca81ef79a3ec2395e9664ecc42491ed89e4ca440c75cff1aa049": {
+      "answered_at": "2026-10-15T19:45:19.873+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ed55f3a82ea800095457209df4eee6417a70516d3a8f133a0f02e77afcfd7162": {
+      "answered_at": "2026-10-15T19:46:40.560+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "ee48b15cc23049a38a1121b8e17a1b5797850d0ae23b075d25dcb2be28c43839": {
+      "answered_at": "2026-10-15T19:52:56.711+00:00",
+      "hazard": "electrical",
+      "safety": "yes"
+    },
+    "f17503875bf64454681e9c7dccc04df48b7d01104386f7dc6b15bba420b9fe05": {
+      "answered_at": "2026-10-15T19:48:32.726+00:00",
+      "hazard": "other",
+      "safety": "yes"
+    },
+    "f4df07b141d876fbae4c3f16699fc530dedc3dc4dab38ea953680831d2b90ca1": {
+      "answered_at": "2026-10-15T19:55:04.326+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "f54ca1007fae797ecbc57bb83a3ec46a642a4f00248250c3d32ceb52371ebcb6": {
+      "answered_at": "2026-10-15T19:53:21.160+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "f645379bec7a7b272ce9bd3c2cb43acc08ed7bec7f5c3fec529b789dcb6e73fa": {
+      "answered_at": "2026-10-15T19:44:40.240+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "f6fff440dc67306a6343024ad31ceade0659fb344e3151413bb90b9b9d08d2be": {
+      "answered_at": "2026-10-15T19:44:24.157+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "f7065cdfc151974c5e639da5cd0c46620f98c9b9599b45e73db586d3074002ac": {
+      "answered_at": "2026-10-15T19:51:53.593+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "fafe5b5c7f475b6fbacb204b7c4d31f41aa558bc8edd988a505c123b52cefdc3": {
+      "answered_at": "2026-10-15T19:48:22.243+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "fc30694c08478f45cedb4f5dd90414957095618c448cba85cbaddea801d2a770": {
+      "answered_at": "2026-10-15T19:45:22.840+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "fc353d0f4f4b8191481bcc164970f451d7c40c35bd16de61a1142835517da75d": {
+      "answered_at": "2026-10-15T19:47:08.593+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "fd89c08bbce6922ead85720237d2bcfcaa6904b7c723bd6ed3f6b8de413f2839": {
+      "answered_at": "2026-10-15T19:51:06.091+00:00",
+      "hazard": "none",
+      "safety": "no"
+    },
+    "fe1503a2bae5e611710589864673f6dada8457dd8c2309c774df7d3b53958bd3": {
+      "answered_at": "2026-10-15T19:52:28.644+00:00",
+      "hazard": "heat",
+      "safety": "yes"
+    }
+  },
+  "note": "SC12c blind labels by Roanuk Zaman on the SC12a held out half (decision 70): item ids and answers only; the latest answer per item, every earlier one kept in data/eval/sc12c/answers.jsonl",
+  "order_seed": "dff3000f82e53545",
+  "protocol_sha256": "4fb3ff957b3e5b7e793112b5ab86d000f0f3137913a687560edbadf5379e9691"
+}
