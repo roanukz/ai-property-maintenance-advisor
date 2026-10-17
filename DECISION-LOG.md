@@ -2420,3 +2420,268 @@ The build has spent $1.5532 of its $5 cap and 249 of its 300 Tavily credits.
 - Whether a sibling model's manual (the same line with a different suffix,
   here RH95 EC1 for an RH92 CL) can ever count for a unit. That is a rule
   change for Roanuk to decide, not something this trial decides.
+
+---
+
+## Others can connect their own copy, 16 October 2026
+
+Roanuk asked for the MCP server to be committed with a README section on how to
+connect it, so others can use it, without it costing his account when other
+people call it and without leaking his keys. The server and its setup guide
+were already committed and published (decisions 97 to 106); this entry adds
+the steps a stranger needs, the facts about who pays, and tests that hold
+both.
+
+**Decided:**
+- **107. Anyone can connect a copy of their own, at their own cost.**
+  `README.md`'s section "Use it from Claude Desktop or Claude Code (MCP)" keeps
+  its heading, since other text links to its anchor, and now tells a stranger
+  how to connect their own copy (clone, `uv sync`, `claude mcp add` with the
+  `advisor-mcp` entry point and the recorded FLO case, `claude mcp list`, or
+  the Claude Desktop entry on macOS, then a first question the replay
+  answers) and who pays and where the keys live. `docs/mcp.md` gains the same
+  facts near its top, the fresh clone check in its status list, `advisor-mcp`
+  as the simplest command, and the rule to keep keys out of app settings in
+  its live instructions. Each guarantee, and where it is enforced:
+  - **Standard input and output only.** `agent/mcp_server.py`'s `main()`
+    serves `build_server(...).run("stdio")` and has no transport, host or port
+    option, so nothing is hosted and no one can call another person's copy;
+    each person runs their own.
+  - **Keys are read only on the computer running the server**, from its
+    environment or the clone's gitignored `.env` (`agent/live/env.py`, through
+    `cli.open_live_ledger` and `cli.LiveSession`, which the server's live
+    session reuses), so a live brief spends on that person's own Anthropic,
+    Tavily and TypeSafe accounts, and no copy can use Roanuk's keys.
+  - **Replay by default.** With no `ADVISOR_MODE` the server is in replay
+    mode, which needs a cassette, needs no keys and spends nothing; without a
+    cassette a brief is refused and `property_status` still works offline.
+  - **Live refusals.** `--live` without a live `ADVISOR_MODE`, or a live mode
+    without `--live`, refuses to start; a live brief with any key missing is
+    refused before its preflight, naming each missing key, with nothing sent,
+    no confirmation handed out, no ledger row and no ledger file created; the
+    server never creates a ledger; and every paid call still shows its
+    preflight and waits for "proceed", under $0.15 per brief and $5 for the
+    whole build.
+  - **The repository holds no keys.** A new test module,
+    `agent/tests/test_no_keys.py`, fails the suite on a key shaped string in
+    any file git would commit, tracked or new and not ignored, and finds a
+    key with a fixed prefix (Anthropic, Tavily, TypeSafe, LangSmith) also
+    when it is split across two lines or inside base64 text (binary data
+    written as letters and digits, as in a recorded request body). It checks
+    with `git check-ignore` that the repository's own `.gitignore` ignores
+    `.env` and `.env.local` and not `.env.example`. It reads the working tree, not
+    history, so a key committed and later deleted would stay in history
+    unseen by it. A new test in `test_mcp_server.py` holds the keyless
+    refusal, and a new test in `test_teardown.py` holds the README section.
+  - **Keys stay out of app settings.** The pages say to keep keys in the
+    clone's `.env`, never in an app's settings file: an `env` block in
+    `claude_desktop_config.json`, or `-e` on `claude mcp add`, is plain text
+    outside the repository's `.gitignore`, so only `ADVISOR_MODE` goes there.
+    A second new test in `test_teardown.py` fails if `README.md` or
+    `docs/mcp.md` sets a key with `-e` or names one in an `env` block. Beyond
+    the pages this is advice, not code: nothing can stop a person from putting
+    a key in their own app's settings.
+  - **What the server cannot stop.** While an app's entry for the server has
+    `--live`, text that reaches the assistant (a web page, a file, an email,
+    another tool's reply) can ask it to start a brief and send
+    `confirm="proceed"` itself. In an app without forms the app's approval
+    prompt is the only check, and a mode or rule that approves tool calls
+    without asking, such as Claude Code's bypass permissions mode, its auto
+    mode or an always allow rule, removes it. The README and `docs/mcp.md`
+    say so, and to add a live entry only for a watched live run, in a session
+    that asks before each tool call, then switch back to replay.
+- No runtime code changed: nothing under `agent/` outside `agent/tests/` was
+  edited, and `build_info.build_id()` is still `841df66ad9669ef8`.
+  `agent/tests/mutate.py` now names the repository's own `.git` to its copies,
+  read only, in `ADVISOR_GIT_DIR`, so the repository scan also runs in a
+  mutation copy, which leaves `.git` out; elsewhere the scan skips cleanly
+  when git or the `.git` folder is unavailable. The scan starts git through
+  the one child launcher every test uses, `spawn_offline_child` in
+  `agent/tests/helpers.py`, which gained a `git` kind: the first full run on
+  17 October failed `test_offline_guard.py`, which forbids a test module from
+  starting a child process directly, because the first version called git
+  with `subprocess`. A git child gets the scrubbed environment, with every key
+  variable removed, and is run only on local repositories.
+
+**Measured** (16 October 2026, with no live or paid call):
+1. Keys. A script read the three key values in the build machine's `.env`
+   without printing them and searched all 814 git objects (every commit, tree
+   and blob on every local and remote branch, so the published pages too) and
+   all 366 tracked or unignored working tree files: 0 exact matches. A scan for
+   key shaped strings (Anthropic, Tavily, GitHub, AWS, Google, Slack,
+   LangSmith, bearer tokens, API key fields and headers) found 0.
+   `.gitignore` ignores `.env`, and `.env.*` except `.env.example`, which
+   holds no values.
+2. Reach. The server runs only over standard input and output, started by the
+   app on the same computer: nothing is hosted and nothing listens on a
+   network port.
+3. A fresh clone of the published code (`git clone`, `uv sync --frozen`, no
+   `.env`, the environment cleared to `HOME` and `PATH`): `advisor-mcp
+   --cassette agent/tests/cassettes/flo.json` connected over standard input
+   and output with the four tools; `get_service_brief` (symptom "panel shows
+   FLO", photo `demo-assets/plate-clear.jpg`) paused for the unit;
+   `resume_brief` (Sundance Spas, Optima 880, serial 100915742, made 06/2014,
+   code FLO) returned status ok, 2 steps to try first, both cited, 1 flagged
+   as a safety step and 1 documented candidate, with its cost on the replay
+   ledger and `real_money` false; `property_status` for prop-a gave 3
+   appliances. With no options, `get_service_brief` refused ("replay needs a
+   cassette") and `property_status` still worked. With `--live` and
+   `ADVISOR_MODE=cheap` but no keys, `get_service_brief` refused before
+   sending anything, naming `ANTHROPIC_API_KEY`, `TAVILY_API_KEY` and
+   `TYPESAFE_API_KEY`, and no live ledger was created. With `--live` and no
+   `ADVISOR_MODE`, the server refused to start. On the same clone, a replay
+   server answered a water heater question (`appl-waterheater`, "no hot
+   water"), and an air conditioner's symptom given for the hot tub, with the
+   recorded FLO brief, so the README says that replay answers only that one
+   case.
+4. Claude Code 2.1.299, with a throwaway settings folder (`HOME` and
+   `CLAUDE_CONFIG_DIR` in a scratch folder, so Roanuk's own settings were not
+   touched), ran `claude mcp add property-advisor -- <clone>/.venv/bin/advisor-mcp
+   --cassette <clone>/agent/tests/cassettes/flo.json`, and `claude mcp list`
+   showed it "Connected"; the README's form of the command, with `$PWD`, run
+   from the clone, did the same. Added with `-e ADVISOR_MODE=cheap` after the
+   name, the entry stored that value as plain text in the settings file; that
+   entry was never started and was removed. `/mcp` inside a session was not
+   run, Claude Desktop's settings were not touched, and Windows and Linux are
+   untried.
+5. The published pages make no network call: `test_published_pages.py` fails
+   on fetch, XMLHttpRequest, WebSocket and the like.
+- New tests: 8 test functions, one test case each:
+  `test_mcp_server.py::test_a_live_server_with_no_keys_refuses_before_anything_is_sent`
+  (added to gate phase 7, before its last id); in `test_no_keys.py`,
+  `test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text`,
+  `test_scanner_finds_a_prefixed_key_split_across_two_lines_or_inside_base64`,
+  `test_scan_reads_every_file_git_would_commit_and_never_an_ignored_one`,
+  `test_the_repository_gitignore_keeps_env_files_out_and_the_example_in` and
+  `test_no_file_git_lists_holds_a_key_shaped_string`; and in
+  `test_teardown.py`,
+  `test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays` and
+  `test_no_page_tells_anyone_to_put_a_key_in_an_app_settings_file`.
+  The scanner's samples are built at run time, so no tracked file, this log and
+  `mutations.toml` included, holds a key shaped string.
+- 29 new planted bugs, and one existing planted bug touched:
+  `mcp_live_session_needs_no_keys` and `mcp_live_session_skips_typesafe_key`;
+  `cli_keys_checked_after_ledger`, which now also lists the new MCP test;
+  `no_keys_drops_anthropic_pattern`, `no_keys_drops_tavily_pattern`,
+  `no_keys_drops_typesafe_pattern`, `no_keys_drops_github_pattern`,
+  `no_keys_drops_aws_pattern`, `no_keys_drops_api_key_field_pattern`,
+  `no_keys_drops_bearer_pattern`, `no_keys_hit_carries_the_text`,
+  `no_keys_ignores_split_lines`, `no_keys_ignores_base64`,
+  `no_keys_scans_no_files`, `no_keys_scan_skips_new_files`,
+  `no_keys_scan_reads_ignored_files` and `no_keys_ignore_check_always_true`;
+  `gitignore_drops_env` and `gitignore_ignores_env_example`, planted in
+  `.gitignore` itself; and `readme_mcp_heading_renamed`,
+  `readme_mcp_add_line_dropped`, `readme_mcp_list_dropped`,
+  `readme_mcp_not_hosted_dropped`, `readme_mcp_replay_no_keys_dropped`,
+  `readme_mcp_own_accounts_dropped`, `readme_mcp_not_my_keys_dropped`,
+  `readme_mcp_keys_in_settings_allowed` and
+  `readme_mcp_injection_warning_dropped`; and `docs_mcp_live_line_passes_a_key`
+  and `readme_desktop_env_block_holds_a_key`. All 30 were caught by
+  `mutate.py --only`.
+- Counts: 3,696 tests collected (3,659 before: the 8 new test cases and 29
+  manifest cases, one per new planted bug) and 1,692 planted bugs (1,663
+  before). Gate phase 7 lists 23 test functions, 22 in `test_mcp_server.py`
+  and 1 in `test_mcp_gate.py`, for 393 required node ids (392 before). The
+  server's own counts are now 32 test cases, 28 through the official client
+  (27 in process and 1 over standard input and output), and 53 planted bugs
+  that the server's tests and its gate must catch: 52 added for the server
+  and its gate, and `cli_keys_checked_after_ledger`, an older command line
+  planted bug (decision 52) that now also lists the new server test.
+
+**Pages** (16 October 2026): `README.md`'s MCP section is rewritten as above,
+with a shortened account of what has been shown that keeps every limit it
+stated, and the suite row, the MCP row and the planted bug paragraph carry the
+new counts. `docs/mcp.md` gains "Who pays, and where the keys live", the fresh
+clone and `claude mcp add` check in its status list in place of the line that
+said `claude mcp add` had not been run, `advisor-mcp` as the simplest command
+(the Desktop entry now uses it; Desktop itself ran the `python -m
+agent.mcp_server` form), and the rule to put only `ADVISOR_MODE`, never a key,
+in an app's settings. `index.html`'s MCP section gains two sentences, where it
+says the server runs on the owner's computer: anyone can connect a copy of
+their own by the README's steps; out of the box it replays a recorded case
+with no keys and no cost; a live brief runs only on that person's own keys and
+accounts; and the repository holds no keys, with a test that fails if one is
+committed. Its counts, and those of the Summary's cautions, Part 8 and
+Appendix A, are updated; the TL;DR and the rest of the Summary are unchanged.
+`index.html` was re-hashed in the published manifest.
+
+**Review** (17 October 2026): a review of this work, for security, for a
+stranger following the steps and for style, led to these changes, with no
+runtime code changed:
+- The "Who pays" lists in `README.md` and `docs/mcp.md` gain the warning
+  under "What the server cannot stop" above, held by the README test and
+  `readme_mcp_injection_warning_dropped`. The review found the case on the
+  build machine itself: the server processes Claude Desktop started for the
+  16 October trial were still running with `--live`, since Desktop had not
+  been restarted, and on the morning of 17 October Desktop rewrote its
+  settings file from its own copy, putting the live entry back over
+  decision 106's switch to replay; Claude Code sessions run inside
+  Desktop, in bypass permissions mode, were given the server's tools. No
+  agent called them or changed Desktop's settings. The ledger is
+  unchanged.
+- The key scan gained its two line and base64 passes, for the prefixed
+  kinds, after a probe on samples built at run time found it missed a key
+  wrapped at a hyphen in prose, a string literal broken in two, a key split
+  just after its prefix, base64 of a recorded JSON body and a Basic
+  authorization header. `test_privacy.py` already caught all five in
+  `agent/` and `seed/`; the passes extend that to every other file git
+  lists.
+- `index.html` said the test fails if a key is "ever committed"; it reads
+  the working tree, so it now says "in any file git would commit". A
+  history test was not added: once a key reached pushed history, it would
+  stay red after the key was revoked, until history was rewritten, which
+  needs a force push.
+- `README.md` now says that the steps need Claude Code or Claude Desktop
+  signed in to the person's own account, whose plan or usage the
+  assistant's side of each conversation counts against; that steps 2 and 3
+  are alternatives; that `claude mcp add` saves the server in Claude Code's
+  local scope, for that project only, and `--scope user` for every folder;
+  how to add the Desktop entry to a settings file that does or does not
+  exist, and where Desktop's log for the server is; where to ask the first
+  question and that the photo path needs the clone's path; that a replayed
+  brief needs a photo, an appliance ID or a typed unit and carries the hot
+  tub's FLO steps and sources even under another unit's heading; and that
+  the replay cost line counts the recording's calls and credits, which no
+  replay spends. "Every file in the working copy" became the files git
+  tracks or would commit, since the ignored `.env` was not searched, in
+  `docs/mcp.md` too; "no one can call my copy" became "no one else can
+  connect to my copy"; and the untried list was reworded.
+- The pages' full run dates moved to 17 October 2026, the day the full
+  suite, gates 5 to 7 and the full planted bug run at these counts are to be
+  made, and `index.html`'s 53 planted bugs are now those the server's tests
+  and its gate must catch, not 53 added for them. A docstring in
+  `test_mcp_server.py` named a planted bug that does not exist; it now names
+  `cli_keys_checked_after_ledger`.
+
+Measured on 17 October 2026, with no live or paid call:
+1. Claude Code 2.1.299, with throwaway settings folders: the README's
+   `claude mcp add` line, run from the clone, saved the server to local
+   config; `claude mcp list` from an unrelated folder printed "No MCP
+   servers configured", and from `agent/` inside the clone showed it
+   connected. Added with `--scope user`, it was listed as connected from
+   another folder.
+2. On the fresh clone in replay, through the official client: a question
+   with no photo, appliance ID or typed unit was refused ("give exactly one
+   of photo_path, appliance_id or identity; got none"); asked about
+   `appl-xr16`, the server returned "Brief for Trane XR16 4TTR6036" with
+   the hot tub's two steps; the FLO brief's cost line read "0.0828 USD on
+   the replay ledger (no money was spent), 5 Tavily credits", with no
+   network socket open on the server.
+3. The final scanner over every blob reachable from every ref (806 objects,
+   641 blobs) found 0 hits, and over the 367 files git lists, 0.
+
+**Cost:** $0: no live or paid call. The build has spent $1.5532 of its $5 cap
+and 249 of its 300 Tavily credits, as before.
+
+**Next steps:**
+- For Roanuk, on the build machine: with Claude Desktop fully quit, set its
+  property-advisor entry back to replay (the `--cassette` form, with no
+  `env` block) or remove it, reopen Desktop, and check that the server
+  runs without `--live`, then again after the next restart.
+- The full suite, gates 5 to 7 and the full planted bug run at these
+  counts, dated on the pages 17 October 2026; if they are made on another
+  day, the pages' dates change with them.
+- Someone other than Roanuk connecting a copy of their own by the README's
+  steps, which would show that the steps work for a stranger.
+- The `/mcp` check inside a Claude Code session, the Claude Desktop entry
+  started from `advisor-mcp`, and Windows and Linux, all untried.

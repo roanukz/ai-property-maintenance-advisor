@@ -295,7 +295,7 @@
               models and may favor Claude in the comparison. The check against a
               person's labels has now been run, but the person is me, one
               labeler and not a technician, and 26 safety steps is a small
-              sample. On 16 October 2026, all 3,659 offline tests passed on
+              sample. On 17 October 2026, all 3,696 offline tests passed on
               the code of build 841df66ad9669ef8, with the network blocked, no
               key and no cost (<a href="#method">Appendix A</a>).
             </li>
@@ -1085,8 +1085,16 @@
                 connection between two programs on one computer, so there is no
                 hosted service to sign up for and no network port; a live brief
                 still uses the owner's own keys for the paid services, as the
-                command line does. The server is built on the official MCP
-                library for Python, version 2.2.0, and offers four tools.
+                command line does. Anyone can connect a copy of their own, on
+                their own computer, by the steps in the project's
+                <a href="https://github.com/Roanukz/ai-property-maintenance-advisor#use-it-from-claude-desktop-or-claude-code-mcp">README</a>,
+                the page GitHub shows at the front of the repository. Out of
+                the box a copy replays a recorded case, with no keys and no
+                cost; a live brief runs only on that person's own keys and
+                accounts, and the repository holds no keys, with a test that
+                fails if one is in any file git would commit. The server is
+                built on the official MCP library for Python, version 2.2.0,
+                and offers four tools.
                 <code>get_service_brief</code> and <code>resume_brief</code> run
                 the same pipeline as asking and resuming from the command line.
                 <code>property_status</code> gives a property's warranty
@@ -1120,10 +1128,10 @@
               </p>
               <p>
                 <strong>Tested offline, then connected in replay.</strong> The
-                server's 31 test cases run with the network blocked, and 27 of
+                server's 32 test cases run with the network blocked, and 28 of
                 them go through the official library's own client (a client is
                 the part of an app that calls a server's tools; in these tests a
-                test program plays the app): 26 inside one
+                test program plays the app): 27 inside one
                 process and 1 over real standard input and output. They use the
                 protocol's 2026-07-28 version, and the earlier 2025-11-25 version
                 in the 4 cases on how the server asks the person. They show that
@@ -1139,9 +1147,9 @@
                 so whether the 2025-11-25 version has run outside these tests
                 is not known. The strictest test setting
                 fails any run that leaves out or skips one of the server's tests,
-                and all 50 planted bugs added for the server and that setting
-                (deliberate small breaks, used to check that the tests notice
-                them) were caught. Then, on 16 October 2026 and before any money
+                and all 53 planted bugs that the server's tests and that setting
+                must catch (deliberate small breaks, used to check that the
+                tests notice them) were caught. Then, on 16 October 2026 and before any money
                 was spent, a test program made the first real connection through
                 the official client, in replay mode and at no cost. On the
                 recorded hot tub case it listed
@@ -1394,7 +1402,7 @@
             <li>A refusal or a budget stop clears candidates, steps, upgrade options and maintenance items; tier labels can be lowered by code, never raised; an observed code still narrows the answer.</li>
             <li>A stored fact needs a word for word evidence sentence from its page; a fact that fails is dropped, not downgraded.</li>
             <li>The MCP server keeps them too: the same recorded case through the command line and through its tools writes the same run record, and in offline tests against fake paid services a live call refuses every missing, wrong, reused, foreign or changed confirmation, with nothing sent and no ledger row (<a href="#mcp">Part 7</a>).</li>
-            <li>On 16 October 2026, on the code of build 841df66ad9669ef8, all 3,659 offline tests passed with the network blocked. A full run the same day caught all 1,663 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
+            <li>On 17 October 2026, on the code of build 841df66ad9669ef8, all 3,696 offline tests passed with the network blocked. A full run the same day caught all 1,692 planted bugs. A planted bug is a deliberate small break in the code, used to check that the tests notice it.</li>
           </ul>
 
           <h3>Criteria, bars and results</h3>
@@ -1959,7 +1967,7 @@
             <li>The build ran in phases. Replay phases came first, at no cost; live phases ran only after a typed "proceed", with the planned calls and spend printed first.</li>
             <li>The ledger reserves each call before it is made, against a $5 cap for the whole build.</li>
             <li>Every library name was checked against the current release before use.</li>
-            <li>Planted bugs test the tests: a full run on 16 October 2026, on the code of build 841df66ad9669ef8, caught all 1,663.</li>
+            <li>Planted bugs test the tests: a full run on 17 October 2026, on the code of build 841df66ad9669ef8, caught all 1,692.</li>
             <li>Every run record carries a fingerprint of the code that produced it, so each live v2 result on this page traces to its build: the live evaluation and the demo to build d24ed7c475dcd813, the product recall check to build ad11e6e15a55d30a, Haiku 4.5's comparison figures to builds da738a1559ced359 and 9a64835e86a5a6c8, the labeled set scores to Jev calls on 30 September under the locked settings and model jev-1.13.0, the Claude comparison to build 179b4295c98a3143, the live MCP brief run by a test program to build 17427277685ed433, and the live Claude Desktop brief to build 841df66ad9669ef8. The whole build spend is the one total that also counts runs on other builds.</li>
             <li>The MCP server was built and tested offline first, in replay and against fake versions of the paid services. Its first real connection ran in replay, at no cost. Only then did one live brief run, which I approved in advance at about $0.01. No person was in that run: a test program played the owner, answering "proceed" to each of its two preflights only because each was within limits set beforehand (a typical cost of at most $0.02 and a worst case of at most the $0.15 cap), and confirming the unit the plate shows. Later the same day, Claude Code called the tools in a free replay session. Last, one live brief ran in Claude Desktop, which I approved in advance and confirmed myself, typing "proceed" after reading its preflight; it ended with no reliable answer.</li>
             <li>The safety check was scored on a labeled set built before any scoring, with its settings locked and its choice rule written before the held out half was scored once.</li>

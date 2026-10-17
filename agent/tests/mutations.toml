@@ -6684,8 +6684,8 @@ search = '''    refuse_unapproved_full(mode)
     # agent.ledger imports langchain_core, so it loads only after the scrub.'''
 replace = '''    refuse_unapproved_full(mode)
     # agent.ledger imports langchain_core, so it loads only after the scrub.'''
-tests = ["agent/tests/test_cli.py::test_live_run_refused_without_ledger_unless_new_ledger"]
-why = "orchestrator: a command refused for a missing key must not leave a ledger file behind (decision 52)"
+tests = ["agent/tests/test_cli.py::test_live_run_refused_without_ledger_unless_new_ledger", "agent/tests/test_mcp_server.py::test_a_live_server_with_no_keys_refuses_before_anything_is_sent"]
+why = "orchestrator: a command refused for a missing key must not leave a ledger file behind (decision 52); a new clone's live MCP server is told about the ledger, not its missing keys (decision 107)"
 
 [[mutation]]
 id = "mutate_copies_secrets"
@@ -14165,3 +14165,252 @@ search = '''    + ASK_OWNER + " property_status is offline and free."'''
 replace = '''    + " property_status is offline and free."'''
 tests = ["agent/tests/test_mcp_server.py::test_a_paused_brief_tells_the_assistant_to_leave_the_unit_to_the_owner"]
 why = "the server's standing instructions no longer tell the assistant to leave the unit's fields to the owner"
+
+# ---------------------------------------------------------------------------
+# Others connect their own copy (decision 107): a keyless live server refuses,
+# the repository key scan, and README.md's section on connecting the server
+# ---------------------------------------------------------------------------
+
+[[mutation]]
+id = "mcp_live_session_needs_no_keys"
+file = "agent/mcp_server.py"
+search = '''        ledger = cli.open_live_ledger(mode, new_ledger=False, need=config.LIVE_KEY_NAMES, environ=self.environ)
+        return McpLiveSession(command, mode, ledger, need=config.LIVE_KEY_NAMES, environ=self.environ,'''
+replace = '''        ledger = cli.open_live_ledger(mode, new_ledger=False, need=(), environ=self.environ)
+        return McpLiveSession(command, mode, ledger, need=(), environ=self.environ,'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_server_with_no_keys_refuses_before_anything_is_sent"]
+why = "a live copy with no keys of its own reaches its preflight and hands out a confirmation, to fail only at the paid services"
+
+[[mutation]]
+id = "mcp_live_session_skips_typesafe_key"
+file = "agent/mcp_server.py"
+search = '''        ledger = cli.open_live_ledger(mode, new_ledger=False, need=config.LIVE_KEY_NAMES, environ=self.environ)
+        return McpLiveSession(command, mode, ledger, need=config.LIVE_KEY_NAMES, environ=self.environ,'''
+replace = '''        ledger = cli.open_live_ledger(mode, new_ledger=False, need=config.LIVE_KEY_NAMES[:2], environ=self.environ)
+        return McpLiveSession(command, mode, ledger, need=config.LIVE_KEY_NAMES[:2], environ=self.environ,'''
+tests = ["agent/tests/test_mcp_server.py::test_a_live_server_with_no_keys_refuses_before_anything_is_sent"]
+why = "a live copy without a TypeSafe key is not told it is missing, so Jev's safety check fails mid run"
+
+[[mutation]]
+id = "no_keys_drops_anthropic_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "Anthropic key": re.compile(re.escape("sk" + "-ant-") + KEY_CHARS + "{16,}"),'''
+replace = '''    "Anthropic key": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed Anthropic key passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_tavily_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "Tavily key": re.compile(re.escape("tvly" + "-") + KEY_CHARS + "{16,}"),'''
+replace = '''    "Tavily key": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed Tavily key passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_typesafe_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "TypeSafe key": re.compile(re.escape("apikey" + "_") + KEY_CHARS + "{16,}"),'''
+replace = '''    "TypeSafe key": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed TypeSafe key passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_github_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "GitHub token": re.compile(r"\b(?:gh[pousr]" + "_" + r"[A-Za-z0-9]{30,}|github" + "_pat_" + r"[A-Za-z0-9_]{30,})"),'''
+replace = '''    "GitHub token": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed GitHub token passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_aws_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "AWS key": re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"
+                          r"|(?i:aws_secret_access" + "_key" + r")[\"']?\s*[:=]\s*[\"']?[A-Za-z0-9/+=]{40}"),'''
+replace = '''    "AWS key": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed AWS access key id passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_api_key_field_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "API key field": re.compile(r"(?i:\b[A-Za-z0-9_\-]*" + FIELD_NAME + r"[A-Za-z0-9_\-]*)[\"']?[ \t]*[:=][ \t]*[\"']?"
+                                + VALUE),'''
+replace = '''    "API key field": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a key of any other service, set in an api key, secret, token or password field, passes the scan"
+
+[[mutation]]
+id = "no_keys_drops_bearer_pattern"
+file = "agent/tests/test_no_keys.py"
+search = '''    "Bearer token": re.compile(r"(?i:\bbearer)[ \t]+" + VALUE),'''
+replace = '''    "Bearer token": re.compile(r"(?!)"),'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a committed bearer token in an authorization header passes the scan"
+
+[[mutation]]
+id = "no_keys_hit_carries_the_text"
+file = "agent/tests/test_no_keys.py"
+search = '''                found.append((number, kind))'''
+replace = '''                found.append((number, kind + ": " + line))'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_flags_every_key_shape_by_line_and_kind_never_by_text"]
+why = "a hit reports the line it found, key and all, so a failing scan prints the key"
+
+[[mutation]]
+id = "no_keys_scans_no_files"
+file = "agent/tests/test_no_keys.py"
+search = '''    return sorted({name for name in out.split("\0") if name})'''
+replace = '''    return []'''
+tests = ["agent/tests/test_no_keys.py::test_scan_reads_every_file_git_would_commit_and_never_an_ignored_one", "agent/tests/test_no_keys.py::test_no_file_git_lists_holds_a_key_shaped_string"]
+why = "the scan lists no file, so it passes whatever is committed"
+
+[[mutation]]
+id = "no_keys_scan_skips_new_files"
+file = "agent/tests/test_no_keys.py"
+search = '''"ls-files", "-z", "--cached", "--others", "--exclude-standard"'''
+replace = '''"ls-files", "-z", "--cached"'''
+tests = ["agent/tests/test_no_keys.py::test_scan_reads_every_file_git_would_commit_and_never_an_ignored_one"]
+why = "a key in a new file that git add would commit is not read until after it is committed"
+
+[[mutation]]
+id = "no_keys_scan_reads_ignored_files"
+file = "agent/tests/test_no_keys.py"
+search = '''"ls-files", "-z", "--cached", "--others", "--exclude-standard"'''
+replace = '''"ls-files", "-z", "--cached", "--others"'''
+tests = ["agent/tests/test_no_keys.py::test_scan_reads_every_file_git_would_commit_and_never_an_ignored_one"]
+why = "the scan opens ignored files too, the real .env with its keys among them"
+
+[[mutation]]
+id = "no_keys_ignore_check_always_true"
+file = "agent/tests/test_no_keys.py"
+search = '''    return code == 0'''
+replace = '''    return True'''
+tests = ["agent/tests/test_no_keys.py::test_the_repository_gitignore_keeps_env_files_out_and_the_example_in"]
+why = "the ignore check answers ignored for any name, so it would pass a .gitignore that lets .env in"
+
+[[mutation]]
+id = "gitignore_drops_env"
+file = ".gitignore"
+search = '''.env
+.env.local
+/data/'''
+replace = '''.env.local
+/data/'''
+tests = ["agent/tests/test_no_keys.py::test_the_repository_gitignore_keeps_env_files_out_and_the_example_in"]
+why = "git no longer ignores .env, so git add -A would commit the keys"
+
+[[mutation]]
+id = "gitignore_ignores_env_example"
+file = ".gitignore"
+search = '''.env.*
+!.env.example'''
+replace = '''.env.*'''
+tests = ["agent/tests/test_no_keys.py::test_the_repository_gitignore_keeps_env_files_out_and_the_example_in"]
+why = "git ignores .env.example too, so a new clone's template for its own keys drops out of the repository"
+
+[[mutation]]
+id = "readme_mcp_heading_renamed"
+file = "README.md"
+search = '### Use it from Claude Desktop or Claude Code (MCP)'
+replace = '### Use it from an AI assistant (MCP)'
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the links to #use-it-from-claude-desktop-or-claude-code-mcp land nowhere"
+
+[[mutation]]
+id = "readme_mcp_add_line_dropped"
+file = "README.md"
+search = '''   claude mcp add property-advisor -- "$PWD/.venv/bin/advisor-mcp" --cassette "$PWD/agent/tests/cassettes/flo.json"'''
+replace = '''   claude mcp add property-advisor -- "$PWD/.venv/bin/advisor-mcp"'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the add line loses its recorded case, so the copy it adds refuses every brief"
+
+[[mutation]]
+id = "readme_mcp_list_dropped"
+file = "README.md"
+search = '''   `claude mcp list` should show `property-advisor` as connected.'''
+replace = '''   The server is now added.'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the steps no longer say how to check that the server connects"
+
+[[mutation]]
+id = "readme_mcp_not_hosted_dropped"
+file = "README.md"
+search = '''- **Nothing is hosted.** The server talks'''
+replace = '''- The server talks'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section stops saying that nothing is hosted, so a reader may think others call my copy"
+
+[[mutation]]
+id = "readme_mcp_replay_no_keys_dropped"
+file = "README.md"
+search = '''- **Replay needs no keys and spends nothing.** Replay, the default,'''
+replace = '''- **Replay is the default.** Replay'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section stops saying that replay needs no keys and spends nothing"
+
+[[mutation]]
+id = "readme_mcp_own_accounts_dropped"
+file = "README.md"
+search = '''so a live brief's cost lands on that person's own
+  Anthropic, Tavily and TypeSafe accounts.'''
+replace = '''so a live brief is billed to the keys it is given.'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section stops saying that a live brief's cost lands on the accounts of the person running that copy"
+
+[[mutation]]
+id = "readme_mcp_not_my_keys_dropped"
+file = "README.md"
+search = '''No copy can use my keys: they stay'''
+replace = '''My keys stay'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section stops saying that no copy can use my keys"
+
+[[mutation]]
+id = "readme_mcp_keys_in_settings_allowed"
+file = "README.md"
+search = '''- **Keep keys in your copy's `.env`, never in an app's settings file.**'''
+replace = '''- **Keep keys in your copy's `.env` or in an app's settings file.**'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section allows keys in an app's plain text settings file, outside the repository's .gitignore"
+
+[[mutation]]
+id = "readme_mcp_injection_warning_dropped"
+file = "README.md"
+search = '''- **A live entry answers whatever reaches the assistant.** While an app's'''
+replace = '''- While an app's'''
+tests = ["agent/tests/test_teardown.py::test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays"]
+why = "the section stops warning that a live entry acts on whatever text reaches the assistant, approval prompt or not"
+
+[[mutation]]
+id = "no_keys_ignores_split_lines"
+file = "agent/tests/test_no_keys.py"
+search = '''    found += split_hits(lines, found)'''
+replace = '''    found += split_hits([], found)'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_finds_a_prefixed_key_split_across_two_lines_or_inside_base64"]
+why = "a key wrapped at a hyphen in prose, or a string literal broken in two, passes the scan"
+
+[[mutation]]
+id = "no_keys_ignores_base64"
+file = "agent/tests/test_no_keys.py"
+search = '''    found += base64_hits(lines)'''
+replace = '''    found += base64_hits([])'''
+tests = ["agent/tests/test_no_keys.py::test_scanner_finds_a_prefixed_key_split_across_two_lines_or_inside_base64"]
+why = "a key inside base64 text, such as a recorded request body or a Basic authorization header, passes the scan"
+
+[[mutation]]
+id = "docs_mcp_live_line_passes_a_key"
+file = "docs/mcp.md"
+search = '''-e ADVISOR_MODE=cheap --'''
+replace = '''-e ADVISOR_MODE=cheap -e ANTHROPIC_API_KEY=your-key --'''
+tests = ["agent/tests/test_teardown.py::test_no_page_tells_anyone_to_put_a_key_in_an_app_settings_file"]
+why = "docs/mcp.md's live Claude Code line saves a key as plain text in Claude Code's own settings"
+
+[[mutation]]
+id = "readme_desktop_env_block_holds_a_key"
+file = "README.md"
+search = '''         "args": ["--cassette", "/path/to/ai-property-maintenance-advisor/agent/tests/cassettes/flo.json"]'''
+replace = '''         "args": ["--cassette", "/path/to/ai-property-maintenance-advisor/agent/tests/cassettes/flo.json"],
+         "env": {"ANTHROPIC_API_KEY": "your key here"}'''
+tests = ["agent/tests/test_teardown.py::test_no_page_tells_anyone_to_put_a_key_in_an_app_settings_file"]
+why = "the README's Claude Desktop entry holds a key in its plain text settings file, outside the repository's .gitignore"

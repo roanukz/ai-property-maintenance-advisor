@@ -564,6 +564,38 @@ def test_a_live_failure_is_reported_without_a_key(mcp_live: Path, monkeypatch: p
     assert "every call made so far is in the ledger" in message and FAKE_ANTHROPIC not in message
 
 
+MISSING_KEYS = ("refused: missing ANTHROPIC_API_KEY, TAVILY_API_KEY, TYPESAFE_API_KEY: set each in the environment "
+                "or in the repo's gitignored .env (see .env.example) before a live run.")
+
+
+def test_a_live_server_with_no_keys_refuses_before_anything_is_sent(mcp_live: Path,
+                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    """Someone else's copy, started with --live and ADVISOR_MODE=cheap but with no keys of its own (none in the
+    environment, and only .env.example's empty lines in its .env), refuses get_service_brief before any preflight:
+    nothing is sent, no confirmation is handed out, no ledger row is written, and the refusal names each missing
+    key. With no ledger yet, as on a new clone, it still names the keys first and creates no ledger file. Keys are
+    read only where the server runs, so no copy spends on anyone else's accounts (decision 107). Mutations:
+    mcp_live_session_needs_no_keys (a copy with no keys reaches its preflight and hands out a confirmation);
+    mcp_live_session_skips_typesafe_key (the refusal leaves TYPESAFE_API_KEY out);
+    cli_keys_checked_after_ledger (a new clone is told about the ledger, not the keys)."""
+    fakes = LiveFakes(flo_data()).install(monkeypatch)
+    for name in KEY_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    config.ENV_FILE.write_text((config.REPO_ROOT / ".env.example").read_text(encoding="utf-8"), encoding="utf-8")
+    server = mcp_server.build_server(live=True)
+
+    refused = call(server, "get_service_brief", LIVE_ASK)
+    assert refused.is_error and MISSING_KEYS in text_of(refused), text_of(refused)
+    assert len(server.advisor.pending) == 0
+    _nothing_sent(fakes)
+
+    config.LEDGER_PATH.unlink()
+    again = call(server, "get_service_brief", LIVE_ASK)
+    assert again.is_error and MISSING_KEYS in text_of(again), text_of(again)
+    assert not config.LEDGER_PATH.exists() and len(server.advisor.pending) == 0
+    assert fakes.constructed == [] and fakes.stubs == {} and fakes.jev_requests == []
+
+
 # ---------------------------------------------------------------------------
 # resume_brief refusals, property_status, and the pending answers
 # ---------------------------------------------------------------------------

@@ -67,6 +67,14 @@ def resolve_node_bin() -> str:
     )
 
 
+def resolve_git_bin() -> str:
+    """Find git on PATH."""
+    on_path = shutil.which("git")
+    if on_path:
+        return on_path
+    raise FileNotFoundError("git not found: put git on PATH")
+
+
 def child_env(
     kind: Literal["python", "node"],
     env_extra: Mapping[str, str | None] | None = None,
@@ -92,7 +100,7 @@ def child_env(
 def spawn_offline_child(
     argv: Sequence[str],
     *,
-    kind: Literal["python", "node"],
+    kind: Literal["python", "node", "git"],
     env_extra: Mapping[str, str | None] | None = None,
     cwd: str | Path | None = None,
     timeout: float = DEFAULT_CHILD_TIMEOUT_S,
@@ -100,13 +108,17 @@ def spawn_offline_child(
     """Run a guarded child process and capture its output as text.
 
     `argv` is everything after the interpreter: for Python, for example
-    ["-m", "agent.cli", "ask", ...]; for Node, a script path and its arguments.
-    The interpreter is this venv's Python or the resolved node binary.
+    ["-m", "agent.cli", "ask", ...]; for Node, a script path and its arguments;
+    for git, its arguments. The interpreter is this venv's Python, the resolved
+    node binary or git on PATH. A git child gets the scrubbed environment but no
+    network guard, so tests run it only on local repositories (test_no_keys.py).
     """
     if kind == "python":
         command = [sys.executable, *argv]
     elif kind == "node":
         command = [resolve_node_bin(), "--import", NODE_GUARD.resolve().as_uri(), *argv]
+    elif kind == "git":
+        command = [resolve_git_bin(), *argv]
     else:
         raise ValueError(f"unknown child kind: {kind!r}")
     return subprocess.run(

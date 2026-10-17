@@ -181,6 +181,10 @@ def child_env(extra: dict[str, str]) -> dict[str, str]:
     # The copies leave data out; the Phase 5 recording test reads (never
     # writes) the repo's own data folder through this variable.
     env.setdefault("ADVISOR_PHASE5_DATA_DIR", str(REPO_ROOT / "data"))
+    # The copies leave .git out too; the repository key scan (test_no_keys.py)
+    # lists the files git would commit through the repo's own .git, read only.
+    if (REPO_ROOT / ".git").is_dir():
+        env.setdefault("ADVISOR_GIT_DIR", str(REPO_ROOT / ".git"))
     env.update(extra)
     return env
 

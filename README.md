@@ -191,7 +191,7 @@ the share of its flags that were real safety steps.
 
 | Criterion | Result | How it was measured | Build |
 | --- | --- | --- | --- |
-| The offline suite passes with no key and no network | Pass | 3,659 tests, run with the network blocked on the build machine on 16 October 2026: all 3,659 pass, in normal mode and in gate mode at phases 5, 6 and 7 (`ADVISOR_GATE`; a gate run fails if any test its phase requires is missing or skipped, and phase 7 adds all 21 of the MCP server's test functions and the 1 test that checks phase 7's list, for 392 required node ids). A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. | The code of `841df66ad9669ef8` |
+| The offline suite passes with no key and no network | Pass | 3,696 tests, run with the network blocked on the build machine on 17 October 2026: all 3,696 pass, in normal mode and in gate mode at phases 5, 6 and 7 (`ADVISOR_GATE`; a gate run fails if any test its phase requires is missing or skipped, and phase 7 adds all 22 of the MCP server's test functions and the 1 test that checks phase 7's list, for 393 required node ids). A fresh clone runs fewer: the v1 comparison below needs v1's private source, and the tests that replay v2's live recordings need the build machine's untracked `data/` folder. 14 of v1's 17 guardrail behaviors are ported; the other 3 tested parsing a JSON block that structured output removed and are marked obsolete. | The code of `841df66ad9669ef8` |
 | v1's and v2's validators agree | Pass | 180 payloads through v1's own TypeScript validator and v2's Python port; every accept and reject decision matches. Last run against v1's private source on 14 October 2026. | The code of `d24ed7c475dcd813` |
 | The five v1 cases give v1's outcome | Pass, replay | One confirmed candidate for a panel code, several for a vague symptom, no invented codes, NO RELIABLE ANSWER for an invented model, a halt on a blurry plate. | The code of `d24ed7c475dcd813` |
 | A refusal never carries candidates | Pass | Unit and property tests. | The code of `d24ed7c475dcd813` |
@@ -212,7 +212,7 @@ the share of its flags that were real safety steps.
 | Every safety step in new live briefs is flagged (SC12b) | Pass, live: 11 of 11 | The seven briefs from those ten first lookups held 18 steps; the same three model readers called 11 of them safety steps, 10 of them on the hot tub. As the briefs show them, all 11 were flagged, with 3 false flags (11 of 14). The writer flagged 10 of 11 by itself, with 3 false flags (10 of 13); Jev flagged 10 of 11 with 1 false flag (10 of 11), and every Jev call answered, so Jev added the one the writer missed. The tuned word rule, which ships only as the backup for a failed Jev call, flagged 11 of 11 with 3 false flags (11 of 14). The sample is small: the lower end of recall's 95% interval, the range the true rate plausibly falls in given so few steps (a Wilson interval), is 0.741. On Claude Haiku 4.5 (build `9a64835e86a5a6c8`) 14 of 14 safety steps in its ten briefs were flagged. | `d24ed7c475dcd813` |
 | A person checks the safety step labels (SC12c) | Measured: I agree with the model readers on 162 of 175 held out steps, and by my labels Jev caught 22 of 26 safety steps, a lead over the word lists inside overlapping intervals | The safety rows above are scored against three model readers' labels. On 15 October 2026 I labeled all 175 held out steps myself on the labeling page, one at a time and blind, with the readers' protocol and worked examples, and my answers were sealed with a fingerprint of the file (it changes if one byte does) before anything was scored. Under the protocol, a yes that names only "other" as the hazard counts as no, as it does for the readers. Against the majority of the three readers, which are Claude models, I agree on 162 of 175 (92.6%), Cohen's kappa 0.728 (Cohen's kappa is agreement corrected for chance: 0 is what chance alone would give, 1 is full agreement); I called 26 steps safety steps, the readers 31. Against my 26, with 95% Wilson intervals: Jev at 0.51 caught 22 (recall 0.846, interval 0.665 to 0.938) at precision 0.537 (0.387 to 0.679); the published word list 18 (recall 0.692, interval 0.500 to 0.835) at precision 0.643; the tuned word list 18 (recall 0.692) at precision 0.529. Jev still catches the most safety steps by a person's reading, but with 26 safety steps its lead over the word lists sits inside overlapping 95% intervals, and about half of its flags are steps I would not call safety steps. After seeing the 13 steps where we disagreed I revised 3 labels (2 now match the readers); the revisions are recorded separately, and every number here uses the sealed blind labels. One person labeled the steps, me, and I am not a technician, so a technician might draw the line elsewhere; 26 safety steps is a small sample. A paired test added on 16 October, after these results were known (it compares two checks step by step on the same steps, counting only where they disagree; the p value is the chance of a split at least this lopsided if the two were equally good), finds Jev caught 4 of my safety steps that each word list missed and neither list caught one Jev missed (p 0.125), so by my labels Jev's lead is still not shown; on false flags the published list leads, 8 to Jev's 17 (p 0.108), also not shown; by the readers' labels Jev's leads over the published list (11 to 1, p 0.006) and the tuned list (8 to 0, p 0.008) are the most lopsided of 24 comparisons, reported with no correction for their number. $0. | None: labeled and scored on 15 October 2026 against SC12a's recorded answers; the page and scorer sit outside the build fingerprint |
 | A Claude judge asked Jev's question, set before its run (decision 95) | Measured, live: by my labels Claude caught 19 of 26 safety steps, Jev 22 | Registered before it ran: on the same 175 held out steps, Claude Haiku 5.5 was asked Jev's exact question, one call per step, at low effort; a true answer is a flag, with no threshold and no tuning. All 175 answered, none declined, for $0.0182. Against my labels: recall 0.731 (19 of 26, interval 0.539 to 0.863), precision 0.576 (0.408 to 0.728); Jev's lead over Claude, 22 to 19, also sits inside overlapping intervals. Every safety step by my labels that Jev missed, Claude missed as well. Against the readers' majority: 28 of 31 (recall 0.903) at precision 0.848, against Jev's 30 of 31 at 0.732; the readers are Claude models, which may favor Claude, and Claude's precision falls from 0.848 against them to 0.576 against my labels. Claude and Jev agree on 163 of 175 steps (93.1%), Cohen's kappa 0.795. From the ledger, Claude cost $0.000104 a step against Jev's $0.000028, about 3.7 times as much, and took a median 1.08 s a step (90th percentile 1.67 s). A paired test on the same steps, chosen after these results were known and four of the 24 comparisons reported with no correction for their number, does not show a difference: by my labels Jev caught 3 safety steps Claude missed and Claude none Jev missed (p 0.250), and of the 149 other steps Jev raised 7 false flags Claude did not and Claude 2 Jev did not (p 0.180); by the readers' labels the splits are 3 to 1 on catches (p 0.625) and 7 to 1 on false flags (p 0.070). Nothing in the shipped check changed. | `179b4295c98a3143`: settings fingerprint `658f072743accb13`, run `claude-judge-152437a0a5ed`, 15 October 2026 |
-| The MCP server gives the same brief and spends only after its preflight and "proceed" (decisions 97 to 106) | Shown, with no bar set before the build: replay parity with the command line, one live brief through the official SDK's client, Claude Code calling the tools in a free replay session, and one live brief in Claude Desktop, which ended with no reliable answer | Offline, 31 test cases in `agent/tests/test_mcp_server.py` run with the network blocked, 27 of them through the SDK's own client, 26 in process and 1 over real stdio (standard input and output, a direct connection between two programs on one computer), on protocol version 2026-07-28 and, in the 4 cases on how the server asks the person, the earlier 2025-11-25. They show the same run record through `advisor ask` and `advisor resume` as through the tools (replay parity with the command line); in offline tests against fake paid services, a live call refusing every missing, wrong, reused, foreign or changed confirmation, with nothing sent and no ledger row; and every citation and safety flag reaching the response on nine recorded cases. A form (elicitation, in which the server asks the app to show the person a form) has been answered only in these tests. A confirmation is used once, bound to the tool, its exact arguments and the exact preflight lines, and expires after ten minutes. All 50 planted bugs for the server and its gate are caught. On 16 October 2026 a test program drove the SDK's client over stdio, first in replay at no cost on the recorded FLO case (all four tools listed; the replayed brief paused, resumed and came back with 2 steps to try first, both cited, and 1 safety flag; `property_status` returned its 3 appliances), then for one live brief on protocol version 2026-07-28 without forms. No person was in the live run: the test program played the owner under my approval given in advance at about $0.01, sending "proceed" only to a preflight with a typical cost of at most $0.02 and a worst case of at most the $0.15 cap, and confirming the unit the plate shows. `get_service_brief` with the clear plate photo and "panel shows FLO" returned `confirmation_required` with the preflight (typical $0.0109, worst case $0.15, the run cap) in 0.35 s, and nothing was sent. After "proceed" it read the plate exactly (Sundance Spas, Optima 880, serial 100915742, 06/2014) and paused for the owner to confirm the unit and the code FLO, which came from the owner's words, not the plate, in 5.37 s. `resume_brief` returned its own preflight (typical $0.0105, worst case $0.1497) in 0.20 s, and after "proceed" it finished with status ok in 10.03 s. The four tool calls took 15.95 s; the whole session, from starting the server to closing it, 17.82 s. The brief was answered from memory, from facts an earlier lookup verified (the graph route, 0 searches, 0 Tavily credits, no Jev call), with one confirmed candidate, the FLO meaning "Flow Switch Error: Water flow is restricted or the switch is stuck.", cited to a dealer page. It cost $0.0014 by the ledger, inside the $0.15 cap (SC11 pass), about the same as the $0.0015 the same question cost from memory through the command line on 14 October (`t-d644c199cbd74532`); the difference is the length of what the model wrote in the brief writing call (1,080 output tokens against 1,274, with the same input), not the server's. Its run record gives 12.97 s of processing, against 9.8 s on 14 October, 12.96 s of it in the two model calls. Later that day Claude Code 2.1.299, running Claude Opus 5.5, was given the server for one session only, in replay: non-interactive, with nothing added to its settings and only the three tools it needed allowed in advance. It found the four tools and on its own called `get_service_brief` and `property_status`; the server's form question was canceled automatically, so the brief stayed paused, and Claude sent the confirmed unit itself, taken from the owner's request, through `resume_brief`, the path for apps without forms. The brief came back ok with 2 steps to try first, both cited to dealer pages, and 1 safety flag set by the writer; Jev's check shows as not recorded, because the older recording holds no Jev answers. Claude's answer gave both steps with their sources, the safety flag word for word and that the writer raised it, that Jev's check was not recorded, the cost labeled as the replay ledger with `real_money` false, the run ID, and the property's warranty, product recall and replacement status, and it added its own reading, calling two lines in the brief contradictory: a replay artifact, since the recorded model text predates the unit details given in this session. 34.5 s and 5 turns, $0 to the project. Then decision 105 made two fixes to what the server says, which moved the build to `841df66ad9669ef8`: result messages count in the singular at 1, and a paused brief and the server's standing instructions tell the assistant to show the owner what was read, ask them to confirm or correct it, and never fill in or change a field itself. On that build, Claude Desktop 2.42304.0 on macOS ran the server from its own settings file with live spending allowed in cheap mode (`--live`, `ADVISOR_MODE=cheap`), for run `t-7f23f74a338140bd`. I chose the trial and approved the money in advance, then read the preflight and typed "proceed" myself in the Desktop chat. My request: "The water heater at my rental isn't making hot water. Use the property-advisor tools to get me a service brief for appliance appl-waterheater at property prop-b." There was no plate photo: the unit came from the property's synthetic registry record (a Rheem PRO+E50 M2 RH92 CL electric water heater), so there was no plate reading and no pause to confirm the unit, and decision 105's instruction was not put to Desktop. `get_service_brief` returned its preflight and sent nothing in 0.41 s by Desktop's log (16:20:24.046 to 16:20:24.456 UTC): typical $0.0105 and worst case $0.15 against the $0.15 cap; model calls typical 7, at most 17; Tavily credits typical 5, at most 10; Jev calls 8 planned for one draft, up to 16 for two; the whole build at $1.5471 of its $5. The server sent no form: it took the fallback path for apps without forms (`confirmation_required`, then a call with `confirm="proceed"` and the `confirmation_id`), and Desktop's log shows only results from the server, no request to the app. Desktop showed the preflight as text in the chat and asked me to type proceed, so "proceed" passed through the assistant. Desktop's log does not record which protocol version it used, and this trial does not show whether Desktop can show forms. The next call reached the server 25.7 s after the preflight left it, a gap that includes the assistant writing its message and my reading and typing. That call took 47.50 s in Desktop's log (16:20:50.161 to 16:21:37.656 UTC); the run record gives 43.45 s of processing, 26.06 s of it in research and 17.30 s writing the brief. Route: history and research (the graph had nothing verified for this unit or its family; the registry held 1 record for the appliance), with 5 web searches, 3 page fetches and 7 Tavily credits. It cost $0.0061 by the ledger (0.0060734), against the preflight's typical $0.0105, inside the $0.15 cap (SC11 pass). The brief ended with no reliable answer, refused by the model: the only manuals found belong to sibling models with different suffixes (RH95 EC1), the retailer and marketing pages describe no procedure, and matching the symptom would need general knowledge about electric water heaters, which the brief does not use. Jev's check was skipped, because there were no steps to check; no steps, no safety flags. Desktop then called `property_status` for prop-b on its own (0.09 s, offline and free) and searched the web itself. Its answer reported the refusal and its reason correctly, the cost ($0.0061 and 7 credits, 51 of 300 left) and the location of the brief's page, and said the property's record is synthetic. Then it added its own content, outside the tool: warranty terms of closely related models from the maker's product pages, with an inference that parts are probably still covered; troubleshooting steps it labeled as general electric water heater knowledge, "not from the advisor"; and its own pick of what to do. Before the run it had also added a safety caution of its own. The tool refused to fill the gap from general knowledge, and the assistant filled it, labeled as its own: the retelling limit below, seen in a live run. Claude Desktop's own usage on my Claude plan was not measured and is outside the project's ledger. After the trial, Desktop was set back to replay. Limits: no live brief through an assistant has yet carried steps to try first or safety flags. No form has yet reached a person outside the tests: Claude Code's non-interactive session canceled the one it was sent, and the server sent Claude Desktop none. Which apps show MCP forms to the person is unverified, and without forms both the owner's confirmation of the unit and the "proceed" pass through the assistant, which could send either without asking, even a model number the plate did not show; the pause to confirm the unit has not been put to an assistant since decision 105. So the app's own approval prompt is the owner's only check: keep it on, and never set these tools to always allow; how each app shows that prompt is unverified. The assistant's retelling is outside the tool's control: Claude Code added its own reading, and Claude Desktop filled a refusal's gap with general advice. Neither live brief had steps or safety flags, so safety flags reaching the response is shown on recorded cases only. Evidence, kept out of the public repo: the test program's script and logs in `data/runs/t-bc31dd881bff44c4.client/`, the only source of the per call times, both preflights and the replay connection (the replay log ends with the test script's own crash on its final summary line, after every call had printed; the script was fixed before the live part); the Claude Code session in `data/evidence/claude_code_replay_20261016/`; and the Claude Desktop trial in `data/evidence/claude_desktop_live_20261016/`: the chat as I pasted it, Desktop's own log of the server's messages (the source of each call's times), the same lines from its MCP log, the server entry it ran and the ledger's readout of the run, beside the run record `data/runs/t-7f23f74a338140bd.json` and the brief's page `data/briefs/t-7f23f74a338140bd.html`. | `17427277685ed433`: live run `t-bc31dd881bff44c4` and Claude Code's replay run `t-7ecdeb193c584be8`; `841df66ad9669ef8`: Claude Desktop's live run `t-7f23f74a338140bd`; all 16 October 2026 |
+| The MCP server gives the same brief and spends only after its preflight and "proceed" (decisions 97 to 106) | Shown, with no bar set before the build: replay parity with the command line, one live brief through the official SDK's client, Claude Code calling the tools in a free replay session, and one live brief in Claude Desktop, which ended with no reliable answer | Offline, 32 test cases in `agent/tests/test_mcp_server.py` run with the network blocked, 28 of them through the SDK's own client, 27 in process and 1 over real stdio (standard input and output, a direct connection between two programs on one computer), on protocol version 2026-07-28 and, in the 4 cases on how the server asks the person, the earlier 2025-11-25. They show the same run record through `advisor ask` and `advisor resume` as through the tools (replay parity with the command line); in offline tests against fake paid services, a live call refusing every missing, wrong, reused, foreign or changed confirmation, with nothing sent and no ledger row; and every citation and safety flag reaching the response on nine recorded cases. A form (elicitation, in which the server asks the app to show the person a form) has been answered only in these tests. A confirmation is used once, bound to the tool, its exact arguments and the exact preflight lines, and expires after ten minutes. All 53 planted bugs for the server and its gate are caught. On 16 October 2026 a test program drove the SDK's client over stdio, first in replay at no cost on the recorded FLO case (all four tools listed; the replayed brief paused, resumed and came back with 2 steps to try first, both cited, and 1 safety flag; `property_status` returned its 3 appliances), then for one live brief on protocol version 2026-07-28 without forms. No person was in the live run: the test program played the owner under my approval given in advance at about $0.01, sending "proceed" only to a preflight with a typical cost of at most $0.02 and a worst case of at most the $0.15 cap, and confirming the unit the plate shows. `get_service_brief` with the clear plate photo and "panel shows FLO" returned `confirmation_required` with the preflight (typical $0.0109, worst case $0.15, the run cap) in 0.35 s, and nothing was sent. After "proceed" it read the plate exactly (Sundance Spas, Optima 880, serial 100915742, 06/2014) and paused for the owner to confirm the unit and the code FLO, which came from the owner's words, not the plate, in 5.37 s. `resume_brief` returned its own preflight (typical $0.0105, worst case $0.1497) in 0.20 s, and after "proceed" it finished with status ok in 10.03 s. The four tool calls took 15.95 s; the whole session, from starting the server to closing it, 17.82 s. The brief was answered from memory, from facts an earlier lookup verified (the graph route, 0 searches, 0 Tavily credits, no Jev call), with one confirmed candidate, the FLO meaning "Flow Switch Error: Water flow is restricted or the switch is stuck.", cited to a dealer page. It cost $0.0014 by the ledger, inside the $0.15 cap (SC11 pass), about the same as the $0.0015 the same question cost from memory through the command line on 14 October (`t-d644c199cbd74532`); the difference is the length of what the model wrote in the brief writing call (1,080 output tokens against 1,274, with the same input), not the server's. Its run record gives 12.97 s of processing, against 9.8 s on 14 October, 12.96 s of it in the two model calls. Later that day Claude Code 2.1.299, running Claude Opus 5.5, was given the server for one session only, in replay: non-interactive, with nothing added to its settings and only the three tools it needed allowed in advance. It found the four tools and on its own called `get_service_brief` and `property_status`; the server's form question was canceled automatically, so the brief stayed paused, and Claude sent the confirmed unit itself, taken from the owner's request, through `resume_brief`, the path for apps without forms. The brief came back ok with 2 steps to try first, both cited to dealer pages, and 1 safety flag set by the writer; Jev's check shows as not recorded, because the older recording holds no Jev answers. Claude's answer gave both steps with their sources, the safety flag word for word and that the writer raised it, that Jev's check was not recorded, the cost labeled as the replay ledger with `real_money` false, the run ID, and the property's warranty, product recall and replacement status, and it added its own reading, calling two lines in the brief contradictory: a replay artifact, since the recorded model text predates the unit details given in this session. 34.5 s and 5 turns, $0 to the project. Then decision 105 made two fixes to what the server says, which moved the build to `841df66ad9669ef8`: result messages count in the singular at 1, and a paused brief and the server's standing instructions tell the assistant to show the owner what was read, ask them to confirm or correct it, and never fill in or change a field itself. On that build, Claude Desktop 2.42304.0 on macOS ran the server from its own settings file with live spending allowed in cheap mode (`--live`, `ADVISOR_MODE=cheap`), for run `t-7f23f74a338140bd`. I chose the trial and approved the money in advance, then read the preflight and typed "proceed" myself in the Desktop chat. My request: "The water heater at my rental isn't making hot water. Use the property-advisor tools to get me a service brief for appliance appl-waterheater at property prop-b." There was no plate photo: the unit came from the property's synthetic registry record (a Rheem PRO+E50 M2 RH92 CL electric water heater), so there was no plate reading and no pause to confirm the unit, and decision 105's instruction was not put to Desktop. `get_service_brief` returned its preflight and sent nothing in 0.41 s by Desktop's log (16:20:24.046 to 16:20:24.456 UTC): typical $0.0105 and worst case $0.15 against the $0.15 cap; model calls typical 7, at most 17; Tavily credits typical 5, at most 10; Jev calls 8 planned for one draft, up to 16 for two; the whole build at $1.5471 of its $5. The server sent no form: it took the fallback path for apps without forms (`confirmation_required`, then a call with `confirm="proceed"` and the `confirmation_id`), and Desktop's log shows only results from the server, no request to the app. Desktop showed the preflight as text in the chat and asked me to type proceed, so "proceed" passed through the assistant. Desktop's log does not record which protocol version it used, and this trial does not show whether Desktop can show forms. The next call reached the server 25.7 s after the preflight left it, a gap that includes the assistant writing its message and my reading and typing. That call took 47.50 s in Desktop's log (16:20:50.161 to 16:21:37.656 UTC); the run record gives 43.45 s of processing, 26.06 s of it in research and 17.30 s writing the brief. Route: history and research (the graph had nothing verified for this unit or its family; the registry held 1 record for the appliance), with 5 web searches, 3 page fetches and 7 Tavily credits. It cost $0.0061 by the ledger (0.0060734), against the preflight's typical $0.0105, inside the $0.15 cap (SC11 pass). The brief ended with no reliable answer, refused by the model: the only manuals found belong to sibling models with different suffixes (RH95 EC1), the retailer and marketing pages describe no procedure, and matching the symptom would need general knowledge about electric water heaters, which the brief does not use. Jev's check was skipped, because there were no steps to check; no steps, no safety flags. Desktop then called `property_status` for prop-b on its own (0.09 s, offline and free) and searched the web itself. Its answer reported the refusal and its reason correctly, the cost ($0.0061 and 7 credits, 51 of 300 left) and the location of the brief's page, and said the property's record is synthetic. Then it added its own content, outside the tool: warranty terms of closely related models from the maker's product pages, with an inference that parts are probably still covered; troubleshooting steps it labeled as general electric water heater knowledge, "not from the advisor"; and its own pick of what to do. Before the run it had also added a safety caution of its own. The tool refused to fill the gap from general knowledge, and the assistant filled it, labeled as its own: the retelling limit below, seen in a live run. Claude Desktop's own usage on my Claude plan was not measured and is outside the project's ledger. After the trial, Desktop was set back to replay. Limits: no live brief through an assistant has yet carried steps to try first or safety flags. No form has yet reached a person outside the tests: Claude Code's non-interactive session canceled the one it was sent, and the server sent Claude Desktop none. Which apps show MCP forms to the person is unverified, and without forms both the owner's confirmation of the unit and the "proceed" pass through the assistant, which could send either without asking, even a model number the plate did not show; the pause to confirm the unit has not been put to an assistant since decision 105. So the app's own approval prompt is the owner's only check: keep it on, and never set these tools to always allow; how each app shows that prompt is unverified. The assistant's retelling is outside the tool's control: Claude Code added its own reading, and Claude Desktop filled a refusal's gap with general advice. Neither live brief had steps or safety flags, so safety flags reaching the response is shown on recorded cases only. Evidence, kept out of the public repo: the test program's script and logs in `data/runs/t-bc31dd881bff44c4.client/`, the only source of the per call times, both preflights and the replay connection (the replay log ends with the test script's own crash on its final summary line, after every call had printed; the script was fixed before the live part); the Claude Code session in `data/evidence/claude_code_replay_20261016/`; and the Claude Desktop trial in `data/evidence/claude_desktop_live_20261016/`: the chat as I pasted it, Desktop's own log of the server's messages (the source of each call's times), the same lines from its MCP log, the server entry it ran and the ledger's readout of the run, beside the run record `data/runs/t-7f23f74a338140bd.json` and the brief's page `data/briefs/t-7f23f74a338140bd.html`. | `17427277685ed433`: live run `t-bc31dd881bff44c4` and Claude Code's replay run `t-7ecdeb193c584be8`; `841df66ad9669ef8`: Claude Desktop's live run `t-7f23f74a338140bd`; all 16 October 2026 |
 
 Latency had no target. Claude Haiku 5.5 is slower than Haiku 4.5 in every
 set of timed runs, while costing much less. The ten SC12b first lookups
@@ -245,8 +245,8 @@ and 14 October was on a build with the backup, but every Jev call answered, so
 the backup never ran live; it is shown working only by the offline tests.
 
 Every test is paired with a planted bug in `agent/tests/mutations.toml` that it
-must catch. A full run on 16 October 2026, on the code of build
-`841df66ad9669ef8`, caught all 1,663. What was decided, what it cost, and what went wrong on the way is
+must catch. A full run on 17 October 2026, on the code of build
+`841df66ad9669ef8`, caught all 1,692. What was decided, what it cost, and what went wrong on the way is
 in `DECISION-LOG.md`.
 
 ### The recorded v2 demo
@@ -335,45 +335,198 @@ as Claude Desktop or Claude Code, as four tools: `get_service_brief` and
 `resume_brief` (the same pipeline as `advisor ask` and `advisor resume`),
 `property_status` (a property's warranty coverage, its "plan a replacement"
 rows and its stored product recall checks; free and offline) and
-`check_product_recalls` (the live CPSC check; free, but it asks first). The app
-starts the server on your own computer and talks to it over standard input and
-output, a direct connection between two programs on one computer. There is no
-hosted service to sign up for and no network port; a live brief still uses your
-own keys for the paid services, as the command line does.
+`check_product_recalls` (the live CPSC check; free, but it asks first). A
+finished brief reaches the assistant with every step to try first and its
+source, every safety flag word for word, the documented candidates, the
+warranty coverage line, the cost, the run ID and the location of the brief's
+page on your computer, the file to send a technician.
+
+#### Connect your own copy
+
+Each person runs their own copy of the server, on their own computer; the
+server itself has nothing to sign up for. You need Python 3.12 and
+[uv](https://docs.astral.sh/uv/), as in "Run it" above, and Claude Code or
+Claude Desktop, signed in to your own account. The assistant's part of each
+conversation counts against that account's own plan or usage, as any chat
+does, never against mine; the server's replay spends nothing.
+
+1. Clone the repository and install it. `uv sync` installs the project and its
+   pinned dependencies in the clone's own `.venv` folder, with the server's
+   entry point, the command that starts it, at `.venv/bin/advisor-mcp`.
+
+   ```bash
+   git clone https://github.com/roanukz/ai-property-maintenance-advisor.git
+   cd ai-property-maintenance-advisor
+   uv sync
+   ```
+
+2. **Claude Code.** (Steps 2 and 3 are alternatives: do the one for your
+   app.) From the cloned folder, add the server, then check that it connects.
+   `$PWD` is the shell's name for the current folder, so the command saves
+   full paths, which the app needs because it starts the server without a
+   shell. `--cassette` names the recorded case (a cassette: recorded model
+   replies) that the server replays.
+
+   ```bash
+   claude mcp add property-advisor -- "$PWD/.venv/bin/advisor-mcp" --cassette "$PWD/agent/tests/cassettes/flo.json"
+   claude mcp list
+   ```
+
+   `claude mcp list` should show `property-advisor` as connected.
+   `claude mcp add` saves the server in Claude Code's local scope, for this
+   project only: a `claude` session started in the cloned folder, or a folder
+   inside it, has the property-advisor tools, and one started anywhere else
+   does not. To use it from every folder, put `--scope user` after
+   `claude mcp add`. I checked on 17 October 2026 that this form, run from the
+   clone, lists the server as connected in `claude mcp list` from another
+   folder.
+
+3. **Claude Desktop (macOS).** Quit Desktop completely and open
+   `~/Library/Application Support/Claude/claude_desktop_config.json`. If the
+   file does not exist, create it with the block below as its whole content.
+   If it does, add only the `"property-advisor"` entry inside its existing
+   `"mcpServers"` object (adding that object if there is none), and keep the
+   rest of the file. Either way, replace
+   `/path/to/ai-property-maintenance-advisor` with the full path of your clone
+   (run `pwd` in it to see it):
+
+   ```json
+   {
+     "mcpServers": {
+       "property-advisor": {
+         "command": "/path/to/ai-property-maintenance-advisor/.venv/bin/advisor-mcp",
+         "args": ["--cassette", "/path/to/ai-property-maintenance-advisor/agent/tests/cassettes/flo.json"]
+       }
+     }
+   }
+   ```
+
+   Then open Desktop again. Desktop may rewrite this file from its own copy
+   while it is open, which can undo an edit made then, so edit it with Desktop
+   closed, and check it again after the next restart. If the property-advisor
+   tools do not appear in Desktop, the server's log is
+   `~/Library/Logs/Claude/mcp-server-property-advisor.log`.
+
+4. **Ask a first question the replay answers.** In Claude Code, start
+   `claude` from the cloned folder (or from any folder, if you added the
+   server with `--scope user`); in Claude Desktop, open a new chat. Replace
+   `/path/to/ai-property-maintenance-advisor` with your clone's full path
+   (run `pwd` in the clone to see it), and ask, for example: "My hot tub's
+   panel shows FLO. The data plate photo is at
+   /path/to/ai-property-maintenance-advisor/demo-assets/plate-clear.jpg. Use
+   the property-advisor tools to get me a service brief." When the brief
+   pauses for you to confirm the unit, compare what was read with the photo (a
+   Sundance Spas Optima 880) and confirm it yourself. Replay answers only that
+   one recorded case. A question needs a plate photo path, an appliance ID
+   from the synthetic property registry such as `appl-optima880`, or the
+   unit's maker and model typed from its plate; with none of them, the server
+   refuses. With any of them, a replayed brief carries the hot tub's FLO steps
+   and sources, even when its heading and property record lines name another
+   unit. Asked about `appl-xr16`, the air conditioner at prop-a, it returned
+   "Brief for Trane XR16 4TTR6036" with the hot tub's steps. So read every
+   replayed brief as the hot tub's, whatever unit it names. `property_status`
+   answers for both synthetic properties, prop-a and prop-b, offline.
+
+What I checked on 16 October 2026, on a fresh clone with no keys and no `.env`:
+started from `advisor-mcp` with `--cassette`, the server connected over
+standard input and output, a direct connection between two programs on one
+computer, with its four tools; the replayed FLO brief paused for the unit, then
+came back with status ok, 2 steps to try first, both cited, 1 flagged as a
+safety step, 1 documented candidate, and its cost labeled as the replay ledger
+with `real_money` false; and `property_status` for prop-a listed its 3
+appliances. Claude Code 2.1.299, run with a throwaway settings folder, added
+the server with the `claude mcp add` command above, and `claude mcp list`
+showed it connected. Not yet tried: Windows and Linux (only macOS has been
+tried); Claude Desktop started from the `advisor-mcp` entry above (it has run
+the same code, started as `.venv/bin/python -m agent.mcp_server`); and `/mcp`
+inside a Claude Code session.
+
+#### Who pays, and where the keys live
+
+- **Nothing is hosted.** The server talks to the app only over standard input
+  and output. It opens no network port and has no address anyone else can
+  reach, so no one else can connect to my copy, and I cannot connect to
+  yours: everyone who connects runs their own copy.
+- **Replay needs no keys and spends nothing.** Replay, the default, answers
+  from recorded model replies and labels its cost as the replay ledger, with
+  `real_money` false. Its cost line still counts the calls the recording
+  holds, priced at the recorded model's prices, for example "0.0828 USD on
+  the replay ledger (no money was spent), 5 Tavily credits" for the FLO
+  brief: those figures describe the recording, and a replay sends no
+  request, so it spends no money and no Tavily credit on anyone's account.
+  Started with neither `--cassette` nor `--live`, the server refuses a
+  brief, since replay needs a cassette, and `property_status` still works
+  offline.
+- **A live brief is paid for by whoever runs that copy.** The server reads keys
+  only on the computer running it, from that computer's environment or the
+  copy's own `.env`, so a live brief's cost lands on that person's own
+  Anthropic, Tavily and TypeSafe accounts. No copy can use my keys: they stay
+  on my computer and are not in the repository.
+- **The repository holds no keys.** On 16 October 2026 every file in the
+  repository's history, on every branch and the published pages included, and
+  every file in the working copy that git tracks or would commit was searched
+  for my three key values, and none appeared; a scan for key shaped strings
+  found none either. A test, `agent/tests/test_no_keys.py`, now fails the
+  suite if a key shaped string is in any file git would commit, and checks
+  that `.gitignore` keeps `.env` and `.env.local` out.
+- **The product recall check is free and keyless**, in any mode, but it sends
+  requests to CPSC's public recall service, so it asks first.
+- **Keep keys in your copy's `.env`, never in an app's settings file.** Copy
+  `.env.example` to `.env` in the clone and fill it in; git ignores `.env`, and
+  it must never be committed. An `env` block in `claude_desktop_config.json`,
+  or a key passed to `claude mcp add` with `-e`, is saved as plain text in the
+  app's own settings, outside this repository's `.gitignore`, and with
+  `--scope project`, in a `.mcp.json` file inside the clone that git would
+  commit; put only `ADVISOR_MODE` there.
+- **A live entry answers whatever reaches the assistant.** While an app's
+  entry for the server has `--live`, text in a web page, a file, an email or
+  another tool's reply can ask the assistant to start a brief and send
+  `confirm="proceed"` itself. In an app without forms the app's approval
+  prompt is the only check, and any mode or rule that approves tool calls
+  without asking you, such as Claude Code's bypass permissions mode, its auto
+  mode or an always allow rule, removes it for these tools too. Add a live
+  entry only for a live run you are watching, in a session that asks before
+  each tool call, then switch back to replay and restart the app.
+
+A live brief needs all of these, on your own accounts: your own
+`ANTHROPIC_API_KEY`, `TAVILY_API_KEY` and `TYPESAFE_API_KEY` in the clone's
+`.env`; a spend ledger, created once with a live `advisor` command and
+`--new-ledger` (see "Run it"); and the server started with `--live` in place of
+the cassette, with `ADVISOR_MODE=cheap` in its environment. Without the keys, a
+live server refuses a brief before anything is sent and names each missing
+key; given `--live` without `ADVISOR_MODE`, it refuses to start. The server
+never creates a ledger. [docs/mcp.md](docs/mcp.md) gives the live settings for
+both apps.
 
 Every rule stays in the advisor's code: the tools run the same graph as the
-command line, under the same ledger and caps. A paid or outbound call first
-returns the command's own preflight and goes ahead only on exactly `proceed`,
-typed into a form in an app that shows MCP forms (elicitation, in which the
-server asks the app to show the person a form), or sent back as
-`confirm="proceed"` with the preflight's `confirmation_id`, which works once,
-for the same tool, arguments and preflight lines, within ten minutes. In an app
-without forms, both the owner's confirmation of the unit and that `proceed`
-pass through the assistant: the server cannot tell who supplied them, and the
-assistant could send either without asking, even a model number the plate did
-not show. So the app's own approval prompt is the owner's only check: keep it
-on, and never set these tools to always allow. How each app shows that prompt
-has not been verified.
+command line, under the same ledger and the same caps, $0.15 per brief and $5
+for the whole build, kept in each copy's own ledger. A paid or outbound call
+first returns the command's own preflight, the planned calls and their cost,
+and goes ahead only on exactly `proceed`, typed into a form in an app that
+shows MCP forms (elicitation, in which the server asks the app to show the
+person a form), or sent back as `confirm="proceed"` with the preflight's
+`confirmation_id`, which works once, for the same tool, arguments and preflight
+lines, within ten minutes. In an app without forms, both the owner's
+confirmation of the unit and that `proceed` pass through the assistant: the
+server cannot tell who supplied them, and the assistant could send either
+without asking, even a model number the plate did not show. So the app's own
+approval prompt is the owner's only check: keep it on, and never set these
+tools to always allow. How each app shows that prompt has not been verified.
 
-What has been shown, on 16 October 2026: Claude Code called the tools in a free
-replay session, and when its non-interactive session canceled the server's form,
-it sent the unit details itself, taken from the owner's request; one live brief
-ran through the official SDK's client, driven by a test program that played the
-owner; and one live brief ran in Claude Desktop 2.42304.0, where I read the
-preflight and typed "proceed" myself (the MCP row in the results above). The
-server sent Desktop no form, taking the path for apps without forms: Desktop put
-the preflight in the chat as text, and my "proceed" reached the server through
-the assistant. That brief researched the water heater and ended with no
-reliable answer, so no live brief through an assistant has yet carried steps
-to try first or safety flags, and with no plate photo, the pause to confirm
-the unit has not been put to an assistant since decision 105. Desktop reported
-the refusal correctly, then filled the gap with general advice it labeled as
-its own. The evidence is kept out of the public repo, in
-`data/evidence/claude_code_replay_20261016/`,
-`data/runs/t-bc31dd881bff44c4.client/` and
-`data/evidence/claude_desktop_live_20261016/`. [docs/mcp.md](docs/mcp.md) gives
-the command and the settings for both apps, in replay or live, and the status
-in full.
+What has been shown, on 16 October 2026 (the MCP row in the results above):
+Claude Code called the tools in a free replay session, and when its
+non-interactive session canceled the server's form, it sent the unit details
+itself, taken from the owner's request; one live brief ran through the
+official SDK's client, with a test program playing the owner; and one live
+brief ran in Claude Desktop 2.42304.0, where I read the preflight and typed
+"proceed" myself. The server sent Desktop no form, so my "proceed" reached the
+server through the assistant. That brief ended with no reliable answer, so no
+live brief through an assistant has yet carried steps to try first or safety
+flags, and with no plate photo, the pause to confirm the unit has not been put
+to an assistant since decision 105. Desktop reported the refusal correctly,
+then filled the gap with general advice it labeled as its own. The evidence is
+kept out of the public repo; [docs/mcp.md](docs/mcp.md) says where, and gives
+the full status and the settings for both apps, in replay or live.
 
 ## Repository
 

@@ -4,10 +4,13 @@ The front of index.html is layered: the lede says why to care, the TL;DR says
 what was found, the Summary argues it in scientific method order, and the
 numbered parts show it. Each layer has a length and a shape, held here rather
 than remembered. The same file also keeps em and en dashes out of the text a
-reader sees on index.html and tool.html.
+reader sees on index.html and tool.html, holds README.md's section on
+connecting the MCP server to what a stranger needs, and keeps README.md and
+docs/mcp.md from telling anyone to put a key in an app's settings (decision
+107).
 
-These tests only read index.html and tool.html. Each test names the mutation
-in mutations.toml that turns it red.
+These tests only read index.html, tool.html, README.md and docs/mcp.md. Each
+test names the mutation in mutations.toml that turns it red.
 """
 
 from __future__ import annotations
@@ -48,6 +51,31 @@ MCP_LIMITS = (
     "never set these tools to always allow",
     "that retelling is outside the tool's control",
     "shown on the recorded cases, not on a live run",
+)
+# README.md's MCP section: other text links to its heading's anchor, and it must tell anyone how to connect
+# a copy of their own, and who pays for it (decision 107).
+README_MCP_HEADING = "### Use it from Claude Desktop or Claude Code (MCP)"
+README_MCP_STEPS = (
+    'claude mcp add property-advisor -- "$PWD/.venv/bin/advisor-mcp" --cassette '
+    '"$PWD/agent/tests/cassettes/flo.json"',
+    "`claude mcp list` should show `property-advisor` as connected",
+)
+README_MCP_WHO_PAYS = (
+    "**Nothing is hosted.**",
+    "**Replay needs no keys and spends nothing.**",
+    "a live brief's cost lands on that person's own Anthropic, Tavily and TypeSafe accounts",
+    "No copy can use my keys",
+    "**Keep keys in your copy's `.env`, never in an app's settings file.**",
+    "**A live entry answers whatever reaches the assistant.**",
+    "bypass permissions",
+)
+# No page may tell a reader to put a key in an app's settings: a key set with -e or --env on `claude mcp add`, or a
+# key name as a field of a JSON env block (decision 107). docs/mcp.md's live settings must still show the safe form.
+KEY_IN_APP_SETTINGS = re.compile(r"(?:-e|--env)\s+[\"']?(?:ANTHROPIC|TAVILY|TYPESAFE|LANGSMITH)_[A-Z_]*="
+                                 r"|\"(?:ANTHROPIC|TAVILY|TYPESAFE|LANGSMITH)_[A-Z_]*\"\s*:")
+DOCS_MCP_LIVE = (
+    'claude mcp add property-advisor -e ADVISOR_MODE=cheap -- "$PWD/.venv/bin/advisor-mcp" --live',
+    "Put only `ADVISOR_MODE` in",
 )
 # Attributes whose text a reader sees or hears (tooltips, alt text, labels).
 VISIBLE_ATTRS = ("alt", "title", "aria-label", "placeholder", "value")
@@ -355,3 +383,43 @@ def test_mcp_section_names_its_run_build_and_limits() -> None:
     missing = [limit for limit in MCP_LIMITS if limit not in section]
     assert not missing, f"the MCP section no longer states: {missing}"
     assert "MCP: the Model Context Protocol, an open standard" in _text(_section("terms"))
+
+
+def _readme_mcp_section() -> str:
+    """README.md's MCP section, from its heading to the next heading of its level or higher, whitespace collapsed."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert readme.count(README_MCP_HEADING + "\n") == 1, f"README.md must have one {README_MCP_HEADING!r} heading"
+    body = readme.split(README_MCP_HEADING + "\n", 1)[1]
+    end = re.search(r"^#{1,3} ", body, flags=re.MULTILINE)
+    return re.sub(r"\s+", " ", body[:end.start()] if end else body)
+
+
+def test_readme_tells_anyone_how_to_connect_a_copy_and_who_pays() -> None:
+    """README.md's MCP section keeps its heading, which other text links to, and tells a stranger how to connect a
+    copy of their own (the `claude mcp add` line with the `advisor-mcp` entry point and the recorded case, then
+    `claude mcp list`) and who pays: nothing is hosted, replay needs no keys, a live brief's cost lands on the
+    person running that copy, no copy can use my keys, keys belong in the copy's .env, never in an app's settings
+    file, and a live entry answers whatever reaches the assistant, with nothing to stop it once a mode such as
+    bypass permissions approves tool calls without asking (decision 107). Mutations
+    readme_mcp_heading_renamed, readme_mcp_add_line_dropped, readme_mcp_list_dropped,
+    readme_mcp_not_hosted_dropped, readme_mcp_replay_no_keys_dropped, readme_mcp_own_accounts_dropped,
+    readme_mcp_not_my_keys_dropped, readme_mcp_keys_in_settings_allowed and readme_mcp_injection_warning_dropped."""
+    section = _readme_mcp_section()
+    missing = [fact for fact in (*README_MCP_STEPS, *README_MCP_WHO_PAYS) if fact not in section]
+    assert not missing, f"README.md's MCP section no longer states: {missing}"
+    assert "(#use-it-from-claude-desktop-or-claude-code-mcp)" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def test_no_page_tells_anyone_to_put_a_key_in_an_app_settings_file() -> None:
+    """README.md and docs/mcp.md never set a key with -e or --env on `claude mcp add`, nor name one as a field of a
+    JSON env block such as Claude Desktop's, since both are saved as plain text in the app's own settings; and
+    docs/mcp.md's live settings still pass only ADVISOR_MODE (decision 107). Mutations
+    docs_mcp_live_line_passes_a_key (the live `claude mcp add` line also passes a key with -e) and
+    readme_desktop_env_block_holds_a_key (the README's Desktop entry gains an env block holding a key)."""
+    for name in ("README.md", "docs/mcp.md"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        found = [match.group(0) for match in KEY_IN_APP_SETTINGS.finditer(text)]
+        assert not found, f"{name} puts a key in an app's settings: {found}"
+    docs = re.sub(r"\s+", " ", (ROOT / "docs" / "mcp.md").read_text(encoding="utf-8"))
+    missing = [line for line in DOCS_MCP_LIVE if line not in docs]
+    assert not missing, f"docs/mcp.md no longer states: {missing}"
